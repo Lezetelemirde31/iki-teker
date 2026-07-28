@@ -1,0 +1,68 @@
+{
+  "app": {
+    "name": "IKI-TEKER",
+    "tagline": "İkitəkərli texnikanı al, sat, təmir et və icarəyə götür",
+    "description": "Azərbaycanda motosiklet, skuter, elektrik nəqliyyatı və velosipedlər üçün marketpleys — al, sat, ehtiyat hissəsi tap, servisə yazıl və ya günlük icarəyə götür."
+  },
+  "nav": {
+    "home": "Əsas",
+    "search": "Axtarış",
+    "post": "Elan ver",
+    "chats": "Söhbətlər",
+    "account": "Kabinet"
+  },
+  "categories": {
+    "motorcycles": "Motosikletlər",
+    "scooters": "Skuterlər",
+    "electric": "Elektro",
+    "bicycles": "Velosipedlər",
+    "parts": "Ehtiyat hissələri",
+    "gear": "Ekipirovka",
+    "services": "Servislər",
+    "rental": "İcarə"
+  },
+  "common": {
+    "all": "hamısı",
+    "seeAll": "Hamısına bax",
+    "apply": "Tətbiq et",
+    "back": "Geri",
+    "cancel": "Ləğv et",
+    "close": "Bağla",
+    "confirm": "Təsdiqlə",
+    "continue": "Davam et",
+    "next": "İrəli",
+    "reset": "Sıfırla",
+    "retry": "Yenidən cəhd et",
+    "save": "Yadda saxla",
+    "loading": "Yüklənir…",
+    "perDay": "/ gün",
+    "perHour": "/ saat",
+    "perWeek": "/ həftə",
+    "deposit": "Depozit",
+    "min": "Min",
+    "max": "Maks",
+    "start": "Başlanğıc",
+    "end": "Son",
+    "today": "Bu gün"
+  },
+  "settings": {
+    "appearance": "Görünüş",
+    "themeLight": "İşıqlı",
+    "themeDark": "Qaranlıq",
+    "themeSystem": "Sistem",
+    "language": "Dil",
+    "city": "Şəhər"
+  },
+  "errors": {
+    "notFoundTitle": "Səhifə tapılmadı",
+    "notFoundBody": "Bu elan satıla, icarəyə verilə və ya moderator tərəfindən silinə bilər.",
+    "notFoundAction": "Əsas səhifəyə qayıt",
+    "genericTitle": "Nəsə səhv getdi",
+    "genericBody": "Bu ekranı yükləmək mümkün olmadı. Yenidən cəhd edin.",
+    "genericAction": "Yenidən cəhd et"
+  },
+  "preview": {
+    "badge": "Cihaz önizləməsi",
+    "hint": "IKI-TEKER mobil məhsuldur. Telefonda açın və ya pəncərənin ölçüsünü dəyişin."
+  }
+}

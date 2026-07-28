@@ -1,0 +1,68 @@
+{
+  "app": {
+    "name": "IKI-TEKER",
+    "tagline": "Buy, sell, service and rent two-wheelers",
+    "description": "Azerbaijan's marketplace for motorcycles, scooters, electric vehicles and bicycles — buy, sell, find parts, book a workshop, or rent by the day."
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "post": "Post",
+    "chats": "Chats",
+    "account": "Account"
+  },
+  "categories": {
+    "motorcycles": "Motorcycles",
+    "scooters": "Scooters",
+    "electric": "Electric",
+    "bicycles": "Bicycles",
+    "parts": "Spare parts",
+    "gear": "Gear",
+    "services": "Services",
+    "rental": "Rental"
+  },
+  "common": {
+    "all": "all",
+    "seeAll": "See all",
+    "apply": "Apply",
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "next": "Next",
+    "reset": "Reset",
+    "retry": "Try again",
+    "save": "Save",
+    "loading": "Loading…",
+    "perDay": "/ day",
+    "perHour": "/ hour",
+    "perWeek": "/ week",
+    "deposit": "Deposit",
+    "min": "Min",
+    "max": "Max",
+    "start": "Start",
+    "end": "End",
+    "today": "Today"
+  },
+  "settings": {
+    "appearance": "Appearance",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "language": "Language",
+    "city": "City"
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This listing may have been sold, rented out, or taken down by a moderator.",
+    "notFoundAction": "Back to home",
+    "genericTitle": "Something went wrong",
+    "genericBody": "We couldn't load this screen. Give it another try.",
+    "genericAction": "Try again"
+  },
+  "preview": {
+    "badge": "Device preview",
+    "hint": "IKI-TEKER is a mobile product. Open it on a phone, or resize this window."
+  }
+}
