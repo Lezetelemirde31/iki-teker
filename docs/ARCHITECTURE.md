@@ -220,4 +220,7 @@ Delivered module by module; each stops for approval before the next begins.
 | 0 | Foundation — config, design tokens, fonts, theming, locale routing, device frame | — | ✅ delivered |
 | 1 | Domain types & mock data | — | ✅ delivered |
 | 2 | Design system & app shell — UI primitives, generated vehicle artwork, tab bar, headers, bottom sheets, page transitions, skeleton/empty states | Splash, Onboarding, Home, Search + filters, Vehicle details | ✅ delivered |
-| 3 | Transaction & personal | Rental details, Booking calendar, Checkout, Confirmation, Seller profile, Chat, Favorites, User profile | |
+| 3 | Transaction & personal | Rental details, Booking calendar, Checkout, Confirmation, Seller profile, Chat, Favorites, User profile | ✅ delivered |
+
+**Demo complete.** Live at https://iki-teker.vercel.app — every screen in the
+agreed scope is built and running on mock data.
