@@ -1,0 +1,73 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { EmptyState } from "@/components/common/empty-state";
+import { ListingRow } from "@/components/listing/listing-cards";
+import { SearchControls } from "@/components/search/search-controls";
+import { Button } from "@/components/ui/button";
+import { isLocale } from "@/i18n/config";
+import { getMessages } from "@/i18n/dictionaries";
+import { createTranslator } from "@/i18n/translate";
+import { getOfferForListing, searchCatalog } from "@/lib/queries";
+import { parseSearchQuery } from "@/lib/search-params";
+
+export default async function SearchPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const raw = await searchParams;
+  const query = parseSearchQuery(raw);
+  const engineBucket = Array.isArray(raw.engine) ? raw.engine[0] : raw.engine;
+
+  const messages = await getMessages(locale);
+  const t = createTranslator(messages);
+  const results = searchCatalog(query, 1, 40);
+
+  return (
+    <>
+      <SearchControls
+        query={query}
+        locale={locale}
+        engineBucket={engineBucket}
+        resultCount={results.total}
+      />
+
+      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+        {results.items.length === 0 ? (
+          <EmptyState
+            title={t("search.emptyTitle")}
+            body={t("search.emptyBody")}
+            action={
+              <Button variant="outline" asChild>
+                <Link href={`/${locale}/search`}>{t("search.clearAll")}</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-2 px-4 py-3">
+            {results.items.map((item) => (
+              <ListingRow
+                key={item.id}
+                item={item}
+                locale={locale}
+                messages={messages}
+                href={`/${locale}/listing/${item.id}`}
+                rentalOffer={
+                  item.kind === "vehicle" && item.rentalOfferId
+                    ? getOfferForListing(item.id)
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
+      </main>
+    </>
+  );
+}

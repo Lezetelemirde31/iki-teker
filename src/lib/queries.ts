@@ -217,6 +217,18 @@ export function locationOf(item: { cityId: string; districtId: string }) {
   return { city: cityById.get(item.cityId), district: districtById.get(item.districtId) };
 }
 
+/**
+ * The single most useful place label for a compact card.
+ *
+ * In Baku the district is what tells listings apart; elsewhere the districts
+ * are just "city centre", so the city name carries the information instead.
+ */
+export function placeLabel(item: { cityId: string; districtId: string }) {
+  const city = cityById.get(item.cityId);
+  const district = districtById.get(item.districtId);
+  return city?.primary && district ? district.name : city?.name;
+}
+
 /** Listings from the same category and a comparable price band. */
 export function similarListings(listing: Listing, limit = 6): Listing[] {
   return activeListings

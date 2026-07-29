@@ -43,7 +43,11 @@
     "max": "Max",
     "start": "Start",
     "end": "End",
-    "today": "Today"
+    "today": "Today",
+    "from": "From",
+    "share": "Share",
+    "favorite": "Save",
+    "any": "Any"
   },
   "settings": {
     "appearance": "Appearance",
@@ -64,5 +68,75 @@
   "preview": {
     "badge": "Device preview",
     "hint": "IKI-TEKER is a mobile product. Open it on a phone, or resize this window."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "start": "Get started",
+    "slide1Title": "Every two-wheeler in one place",
+    "slide1Body": "Motorcycles, scooters, electric vehicles and bicycles — new and used, from private sellers and dealers across Azerbaijan.",
+    "slide2Title": "Rent by the day, not by chance",
+    "slide2Body": "Real availability calendars, transparent deposits and an agreement signed by SMS. No more negotiating over chat.",
+    "slide3Title": "Parts and workshops that fit",
+    "slide3Body": "Search parts by your exact make and model, and book a rated workshop straight from the listing.",
+    "slide4Title": "Deals that stay on the platform",
+    "slide4Body": "Full chat history, reviews only after a completed rental, and contacts revealed once a booking is confirmed."
+  },
+  "home": {
+    "searchPlaceholder": "Motorcycle, scooter, spare part…",
+    "availableToRent": "Available to rent",
+    "availableToRentHint": "Free today, priced per day",
+    "vip": "VIP listings",
+    "fresh": "New arrivals",
+    "parts": "Popular parts",
+    "workshops": "Workshops nearby",
+    "availableFrom": "From {date}"
+  },
+  "search": {
+    "placeholder": "Make, model or keyword",
+    "results": "{count} listings",
+    "filters": "Filters",
+    "sort": "Sort",
+    "show": "Show {count} listings",
+    "emptyTitle": "Nothing matched",
+    "emptyBody": "Try widening the price range or clearing a filter.",
+    "clearAll": "Clear all filters",
+    "category": "Category",
+    "makeModel": "Make and model",
+    "make": "Make",
+    "model": "Model",
+    "city": "City",
+    "price": "Price",
+    "year": "Year of manufacture",
+    "additional": "Additional",
+    "hasRental": "Has rental",
+    "customsCleared": "Customs cleared",
+    "withDelivery": "With delivery",
+    "vipOnly": "VIP only",
+    "condition": "Condition"
+  },
+  "listing": {
+    "published": "published {date}",
+    "views": "{count} views",
+    "negotiable": "Negotiable",
+    "specs": "Specifications",
+    "description": "Description",
+    "seller": "Seller",
+    "showPhone": "Show phone number",
+    "message": "Message",
+    "similar": "Similar listings",
+    "rentTitle": "Also available to rent",
+    "rentBody": "{price} per day · deposit {deposit}",
+    "rentAction": "View rental",
+    "onPlatform": "on the platform",
+    "responds": "replies in",
+    "listingsCount": "listings",
+    "verified": "Verified shop",
+    "customsCleared": "Customs cleared",
+    "delivery": "Delivery",
+    "shop": "Shop",
+    "private": "Private seller",
+    "rentalCompany": "Rental company",
+    "photoOf": "Photo {index} of {total}",
+    "contactRevealed": "Contact reveals are counted — the seller sees how often the listing worked."
   }
 }

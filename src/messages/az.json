@@ -43,7 +43,11 @@
     "max": "Maks",
     "start": "Başlanğıc",
     "end": "Son",
-    "today": "Bu gün"
+    "today": "Bu gün",
+    "from": "-dən",
+    "share": "Paylaş",
+    "favorite": "Seçilmişlərə",
+    "any": "Fərq etməz"
   },
   "settings": {
     "appearance": "Görünüş",
@@ -64,5 +68,75 @@
   "preview": {
     "badge": "Cihaz önizləməsi",
     "hint": "IKI-TEKER mobil məhsuldur. Telefonda açın və ya pəncərənin ölçüsünü dəyişin."
+  },
+  "onboarding": {
+    "skip": "Keç",
+    "start": "Başlayaq",
+    "slide1Title": "Bütün ikitəkərli texnika bir yerdə",
+    "slide1Body": "Motosikletlər, skuterlər, elektrik nəqliyyatı və velosipedlər — yeni və işlənmiş, bütün Azərbaycan üzrə şəxslərdən və salonlardan.",
+    "slide2Title": "Təsadüfən yox, günlük icarə",
+    "slide2Body": "Real məşğulluq təqvimi, şəffaf depozit və SMS ilə imzalanan müqavilə. Yazışmada danışıqlara son.",
+    "slide3Title": "Uyğun gələn hissə və servis",
+    "slide3Body": "Ehtiyat hissəsini öz marka və modelinizə görə tapın, reytinqli servisə birbaşa elandan yazılın.",
+    "slide4Title": "Sövdələşmə platformada qalır",
+    "slide4Body": "Tam yazışma tarixçəsi, yalnız tamamlanmış icarədən sonra rəylər və bron təsdiqlənəndən sonra açılan kontaktlar."
+  },
+  "home": {
+    "searchPlaceholder": "Motosiklet, skuter, ehtiyat hissəsi…",
+    "availableToRent": "İcarəyə sərbəst",
+    "availableToRentHint": "Bu gün boş, günlük qiymətlə",
+    "vip": "VIP elanlar",
+    "fresh": "Yeni əlavələr",
+    "parts": "Populyar hissələr",
+    "workshops": "Yaxınlıqdakı servislər",
+    "availableFrom": "Boş: {date}"
+  },
+  "search": {
+    "placeholder": "Marka, model və ya açar söz",
+    "results": "{count} elan",
+    "filters": "Filtrlər",
+    "sort": "Sıralama",
+    "show": "{count} elanı göstər",
+    "emptyTitle": "Uyğun nəticə yoxdur",
+    "emptyBody": "Qiymət aralığını genişləndirin və ya bir filtri götürün.",
+    "clearAll": "Bütün filtrləri təmizlə",
+    "category": "Kateqoriya",
+    "makeModel": "Marka və model",
+    "make": "Marka",
+    "model": "Model",
+    "city": "Şəhər",
+    "price": "Qiymət",
+    "year": "Buraxılış ili",
+    "additional": "Əlavə",
+    "hasRental": "İcarə var",
+    "customsCleared": "Rüsumu ödənilib",
+    "withDelivery": "Çatdırılma ilə",
+    "vipOnly": "Yalnız VIP",
+    "condition": "Vəziyyət"
+  },
+  "listing": {
+    "published": "{date} tarixində yerləşdirilib",
+    "views": "{count} baxış",
+    "negotiable": "Razılaşma yolu ilə",
+    "specs": "Xüsusiyyətlər",
+    "description": "Təsvir",
+    "seller": "Satıcı",
+    "showPhone": "Nömrəni göstər",
+    "message": "Yaz",
+    "similar": "Oxşar elanlar",
+    "rentTitle": "İcarəyə də verilir",
+    "rentBody": "Gündə {price} · depozit {deposit}",
+    "rentAction": "İcarəyə bax",
+    "onPlatform": "platformada",
+    "responds": "cavab müddəti",
+    "listingsCount": "elan",
+    "verified": "Təsdiqlənmiş mağaza",
+    "customsCleared": "Rüsumu ödənilib",
+    "delivery": "Çatdırılma",
+    "shop": "Mağaza",
+    "private": "Şəxsi satıcı",
+    "rentalCompany": "İcarə şirkəti",
+    "photoOf": "Şəkil {index} / {total}",
+    "contactRevealed": "Nömrəyə hər baxış sayılır — satıcı elanın neçə dəfə işlədiyini görür."
   }
 }

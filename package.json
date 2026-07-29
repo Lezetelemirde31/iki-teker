@@ -9,8 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "check:mocks": "tsx scripts/check-mocks.ts",
-    "build:verify": "next build --distDir .next-verify"
+    "check:mocks": "tsx scripts/check-mocks.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",
