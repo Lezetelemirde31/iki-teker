@@ -43,6 +43,8 @@ export type RentalOffer = {
   blockedDates: ISODate[];
   /** First date the vehicle is free, used for the "TODAY" / "FROM AUG 2" badge. */
   availableFrom: ISODate;
+  /** Time of day handover and return happen, e.g. "10:00". */
+  handoverTime: string;
   instantBook: boolean;
   rating: number;
   rentalsCount: number;

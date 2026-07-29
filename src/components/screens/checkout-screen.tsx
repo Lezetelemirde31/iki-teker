@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { Locale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/translate";
 import type { Messages } from "@/i18n/types";
-import { formatDateRange, formatPrice, localized } from "@/lib/format";
+import { formatDate, formatPrice, localized } from "@/lib/format";
 import type { Quote } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { Listing, RentalOffer, User } from "@/types";
@@ -79,8 +79,13 @@ export function CheckoutScreen({
             )}
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">{listing.title}</p>
+              {/* Handover and return happen at a set time, so the window is
+                  shown to the hour rather than as bare dates. */}
               <p className="text-muted-foreground tabular mt-0.5 text-xs">
-                {formatDateRange(range.start, range.end, locale)} ·{" "}
+                {formatDate(range.start, locale, "dayMonth")} {offer.handoverTime} →{" "}
+                {formatDate(range.end, locale, "dayMonth")} {offer.handoverTime}
+              </p>
+              <p className="text-subtle-foreground tabular mt-0.5 text-[0.6875rem]">
                 {t("rental.days", { count: quote.days })}
               </p>
               <p className="text-subtle-foreground mt-0.5 truncate text-[0.6875rem]">

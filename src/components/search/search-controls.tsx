@@ -13,7 +13,14 @@ import { formatNumber, formatPrice, localized } from "@/lib/format";
 import { countMatches } from "@/lib/queries";
 import { activeFilterCount, serialiseSearchQuery } from "@/lib/search-params";
 import { categories, cities, makesFor, sortLabels } from "@/mocks";
-import { categorySchemas, conditionLabels } from "@/mocks/taxonomy";
+import { cityById } from "@/mocks/geo";
+import {
+  categorySchemas,
+  conditionLabels,
+  makeById,
+  modelById,
+  modelsFor,
+} from "@/mocks/taxonomy";
 import { cn } from "@/lib/utils";
 import type { SearchQuery, SortOption, VehicleCategorySlug } from "@/types";
 
@@ -78,6 +85,10 @@ export function SearchControls({
   const draftMakes = draft.category
     ? makesFor(draft.category as VehicleCategorySlug)
     : [];
+  const draftModels =
+    draft.makeId && draft.category
+      ? modelsFor(draft.makeId, draft.category as VehicleCategorySlug)
+      : [];
   const engineBuckets =
     draft.category && draft.category in categorySchemas
       ? (categorySchemas[draft.category as keyof typeof categorySchemas].find(
@@ -87,9 +98,89 @@ export function SearchControls({
 
   const update = (patch: Partial<SearchQuery>) => setDraft((current) => ({ ...current, ...patch }));
 
+  /**
+   * Applied values shown as removable chips — "Baku", "≤ ₼15,000", "2015+" —
+   * so what is filtering the list is visible and can be undone without
+   * reopening the sheet.
+   */
+  const appliedChips: { key: string; label: string; onClear: () => void }[] = [];
+
+  if (query.cityId) {
+    appliedChips.push({
+      key: "city",
+      label: localized(cityById.get(query.cityId)?.name, locale),
+      onClear: () => push({ ...query, cityId: undefined }, engineBucket),
+    });
+  }
+  if (query.makeId) {
+    appliedChips.push({
+      key: "make",
+      label: makeById.get(query.makeId)?.name ?? "",
+      onClear: () => push({ ...query, makeId: undefined, modelId: undefined }, engineBucket),
+    });
+  }
+  if (query.modelId) {
+    appliedChips.push({
+      key: "model",
+      label: modelById.get(query.modelId)?.name ?? "",
+      onClear: () => push({ ...query, modelId: undefined }, engineBucket),
+    });
+  }
+  if (query.priceMax !== undefined) {
+    appliedChips.push({
+      key: "priceMax",
+      label: `≤ ${formatPrice(query.priceMax, locale)}`,
+      onClear: () => push({ ...query, priceMax: undefined }, engineBucket),
+    });
+  }
+  if (query.priceMin !== undefined) {
+    appliedChips.push({
+      key: "priceMin",
+      label: `≥ ${formatPrice(query.priceMin, locale)}`,
+      onClear: () => push({ ...query, priceMin: undefined }, engineBucket),
+    });
+  }
+  if (query.yearMin !== undefined) {
+    appliedChips.push({
+      key: "yearMin",
+      label: `${query.yearMin}+`,
+      onClear: () => push({ ...query, yearMin: undefined }, engineBucket),
+    });
+  }
+  if (query.condition) {
+    appliedChips.push({
+      key: "condition",
+      label: localized(conditionLabels[query.condition as "new" | "used"], locale),
+      onClear: () => push({ ...query, condition: undefined }, engineBucket),
+    });
+  }
+  if (engineBucket) {
+    // Label comes from the applied category's schema, not the sheet's draft —
+    // the two diverge while the sheet is open.
+    const applied =
+      query.category && query.category in categorySchemas
+        ? (categorySchemas[query.category as keyof typeof categorySchemas].find(
+            (attribute) => attribute.key === "engineCc",
+          )?.buckets ?? [])
+        : [];
+    const bucket = applied.find((entry) => entry.value === engineBucket);
+    appliedChips.push({
+      key: "engine",
+      label: `${bucket ? localized(bucket.label, locale) : engineBucket} cm³`,
+      onClear: () => push({ ...query, attributes: undefined }, undefined),
+    });
+  }
+
   return (
     <>
       <div className="glass border-border z-30 shrink-0 border-b">
+        {/* Browsing a category names it, the way a pushed screen would. */}
+        {query.category && (
+          <h1 className="font-display px-4 pt-2.5 text-base font-extrabold">
+            {t(`categories.${query.category}` as Parameters<typeof t>[0])}
+          </h1>
+        )}
+
         <form onSubmit={submitSearch} className="px-4 pt-2 pb-2.5">
           <div className="bg-card border-border flex h-11 items-center gap-2.5 rounded-xl border px-3.5">
             <Search className="text-subtle-foreground size-4.5 shrink-0" strokeWidth={2} />
@@ -136,6 +227,18 @@ export function SearchControls({
               </span>
             )}
           </button>
+
+          {appliedChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.onClear}
+              className="bg-secondary text-secondary-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-2.5 pl-3.5 text-xs font-semibold whitespace-nowrap transition-transform active:scale-[0.97]"
+            >
+              {chip.label}
+              <X className="size-3.5 opacity-70" strokeWidth={2.8} />
+            </button>
+          ))}
 
           <Chip
             selected={query.hasRental}
@@ -276,9 +379,34 @@ export function SearchControls({
                   <Chip
                     key={make.id}
                     selected={draft.makeId === make.id}
-                    onClick={() => update({ makeId: make.id })}
+                    onClick={() =>
+                      update({
+                        makeId: make.id,
+                        // A model from the previous make can't apply to this one.
+                        modelId: undefined,
+                      })
+                    }
                   >
                     {make.name}
+                  </Chip>
+                ))}
+              </div>
+            </Group>
+          )}
+
+          {draftModels.length > 0 && (
+            <Group label={t("search.model")}>
+              <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                <Chip selected={!draft.modelId} onClick={() => update({ modelId: undefined })}>
+                  {t("common.any")}
+                </Chip>
+                {draftModels.map((model) => (
+                  <Chip
+                    key={model.id}
+                    selected={draft.modelId === model.id}
+                    onClick={() => update({ modelId: model.id })}
+                  >
+                    {model.name}
                   </Chip>
                 ))}
               </div>

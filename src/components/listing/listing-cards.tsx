@@ -7,7 +7,7 @@ import type { Locale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/translate";
 import type { Messages } from "@/i18n/types";
 import { formatDate, formatMileage, formatPrice, localized } from "@/lib/format";
-import { locationOf, placeLabel } from "@/lib/queries";
+import { getUser, locationOf, placeLabel } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { CatalogItem, Listing, RentalOffer } from "@/types";
 
@@ -170,6 +170,9 @@ export function ListingRow({
   const cover = item.photos[0];
   const place = locationOf(item);
   const specs = specLine(item, locale);
+  // Whether you are buying from a dealer or a private owner changes how you
+  // read the listing, so the source design puts it on the card.
+  const sellerKind = getUser(item.sellerId)?.kind;
 
   return (
     <Link
@@ -212,6 +215,15 @@ export function ListingRow({
           {rentalOffer && (
             <Badge variant="rentalSoft">
               {formatPrice(rentalOffer.rates.day, locale)} {t("common.perDay")}
+            </Badge>
+          )}
+          {sellerKind && (
+            <Badge variant="outline">
+              {sellerKind === "shop"
+                ? t("listing.shop")
+                : sellerKind === "rental"
+                  ? t("listing.rentalCompany")
+                  : t("listing.private")}
             </Badge>
           )}
           {item.negotiable && <Badge variant="outline">{t("listing.negotiable")}</Badge>}

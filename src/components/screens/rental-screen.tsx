@@ -1,10 +1,11 @@
 "use client";
 
-import { CalendarDays, Check, MapPin, Zap } from "lucide-react";
+import { Check, MapPin, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AvailabilityCalendar, type Range } from "@/components/rental/availability-calendar";
+import { SpecTable } from "@/components/listing/spec-table";
 import { PriceBreakdown } from "@/components/rental/price-breakdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Sheet } from "@/components/ui/sheet";
 import type { Locale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/translate";
 import type { Messages, MessageKey } from "@/i18n/types";
-import { formatDate, formatDateRange, formatPrice, localized } from "@/lib/format";
+import { formatDate, formatPrice, localized } from "@/lib/format";
 import { quote as buildQuote } from "@/lib/queries";
 import type { Listing, RentalOffer } from "@/types";
 
@@ -132,24 +133,20 @@ export function RentalScreen({
             </Badge>
           </div>
 
-          {/* Date selection opens the availability calendar. */}
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            className="border-border bg-surface-2 mt-3.5 flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-transform active:scale-[0.99]"
-          >
-            <CalendarDays className="text-muted-foreground size-5 shrink-0" strokeWidth={2} />
-            <span className="min-w-0 flex-1">
-              <span className="text-subtle-foreground block text-[0.625rem] font-semibold tracking-wide uppercase">
-                {t("rental.selectDates")}
-              </span>
-              <span className="tabular block truncate text-sm font-bold">
-                {complete
-                  ? formatDateRange(range.start!, range.end!, locale)
-                  : t("calendar.title")}
-              </span>
-            </span>
-          </button>
+          {/* Start and end as two fields, matching the source design — both
+              open the same availability calendar. */}
+          <div className="mt-3.5 grid grid-cols-2 gap-2">
+            <DateField
+              label={t("common.start")}
+              value={range.start ? formatDate(range.start, locale, "weekdayShort") : "—"}
+              onClick={() => setPickerOpen(true)}
+            />
+            <DateField
+              label={t("common.end")}
+              value={range.end ? formatDate(range.end, locale, "weekdayShort") : "—"}
+              onClick={() => setPickerOpen(true)}
+            />
+          </div>
 
           {currentQuote && !tooShort && (
             <PriceBreakdown
@@ -199,6 +196,20 @@ export function RentalScreen({
               </div>
             ))}
           </div>
+        </section>
+
+        {/* The vehicle's own specs — displacement, licence class and the rest,
+            so a renter is not sent back to the sale listing to find them. */}
+        <section className="space-y-2.5">
+          <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
+            {t("listing.specs")}
+          </h2>
+          <SpecTable
+            category={listing.category}
+            attributes={listing.attributes}
+            extra={[{ label: t("search.year"), value: String(listing.year) }]}
+            locale={locale}
+          />
         </section>
 
         {offer.includes.length > 0 && (
@@ -259,5 +270,28 @@ export function RentalScreen({
         )}
       </Sheet>
     </>
+  );
+}
+
+function DateField({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="border-border bg-surface-2 rounded-xl border px-3.5 py-2.5 text-left transition-transform active:scale-[0.98]"
+    >
+      <span className="text-subtle-foreground block text-[0.625rem] font-semibold tracking-wide uppercase">
+        {label}
+      </span>
+      <span className="tabular mt-0.5 block truncate text-sm font-bold">{value}</span>
+    </button>
   );
 }
