@@ -8,8 +8,7 @@ import { isLocale, locales, localeMeta, type Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { I18nProvider } from "@/i18n/provider";
 import { fontVariables } from "@/lib/fonts";
-
-const SITE_URL = "https://iki-teker.az";
+import { siteUrl } from "@/lib/site";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -26,7 +25,7 @@ export async function generateMetadata({
   const messages = await getMessages(locale);
 
   return {
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(siteUrl()),
     title: {
       default: `${messages.app.name} — ${messages.app.tagline}`,
       template: `%s · ${messages.app.name}`,
