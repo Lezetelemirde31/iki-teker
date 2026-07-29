@@ -6,6 +6,7 @@ import { HazardDivider } from "@/components/brand/hazard-divider";
 import { Logo } from "@/components/brand/logo";
 import { CategoryIcon } from "@/components/common/category-icon";
 import { Rail } from "@/components/common/rail";
+import { LocalePicker } from "@/components/i18n/locale-picker";
 import { CityPicker } from "@/components/layout/city-picker";
 import { RailCard, RentalRailCard } from "@/components/listing/listing-cards";
 import { PageTransition } from "@/components/motion/page-transition";
@@ -33,7 +34,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <header className="glass z-40 shrink-0">
         <div className="flex items-center justify-between gap-2 px-4 pt-2.5 pb-3">
           <Logo />
-          <CityPicker cities={cities} />
+          <div className="flex shrink-0 items-center gap-1.5">
+            <CityPicker cities={cities} />
+            <LocalePicker />
+          </div>
         </div>
         <HazardDivider />
       </header>
@@ -60,7 +64,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   ? `/${locale}/search?hasRental=true`
                   : `/${locale}/search?category=${category.slug}`
               }
-              className="bg-card border-border flex flex-col items-center gap-1.5 rounded-xl border px-1 py-3 shadow-[var(--shadow-card)] transition-transform active:scale-95"
+              className="bg-card border-border flex flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 shadow-[var(--shadow-card)] transition-transform active:scale-95"
             >
               <CategoryIcon
                 slug={category.slug}

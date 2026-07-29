@@ -47,7 +47,10 @@ export function RailCard({
   return (
     <Link
       href={href}
-      className="bg-card border-border w-44 shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-card)] transition-transform active:scale-[0.97]"
+      // Sized as a share of the viewport so two cards always land fully on
+      // screen with the third peeking in, on a 360px Android and a 430px iPhone
+      // alike. A fixed width only ever fits one device.
+      className="bg-card border-border w-[41%] max-w-44 shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-card)] transition-transform active:scale-[0.97]"
     >
       <div className="relative">
         {cover && (
@@ -56,7 +59,7 @@ export function RailCard({
             tone={cover.tone}
             shape={shapeOf(item)}
             rounded="rounded-none"
-            className="h-28 w-full"
+            className="h-24 w-full"
           />
         )}
         {item.promotion.vip && (
@@ -110,7 +113,7 @@ export function RentalRailCard({
   return (
     <Link
       href={href}
-      className="bg-card border-border w-48 shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-card)] transition-transform active:scale-[0.97]"
+      className="bg-card border-border w-[43%] max-w-48 shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-card)] transition-transform active:scale-[0.97]"
     >
       <div className="relative">
         {cover && (
@@ -119,7 +122,7 @@ export function RentalRailCard({
             tone={cover.tone}
             shape={listing.category}
             rounded="rounded-none"
-            className="h-28 w-full"
+            className="h-24 w-full"
           />
         )}
         <Badge variant={free ? "rental" : "ink"} className="absolute top-2 left-2">
