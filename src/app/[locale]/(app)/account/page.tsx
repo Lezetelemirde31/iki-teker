@@ -18,7 +18,7 @@ import {
   formatPrice,
   formatRating,
 } from "@/lib/format";
-import { getListing, getMyRentals, getUser } from "@/lib/queries";
+import { getListing, getMyRentals, getUser } from "@/server/data";
 import { currentUserId } from "@/mocks/users";
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -27,10 +27,17 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const user = getUser(currentUserId);
+  const user = await getUser(currentUserId);
   if (!user) notFound();
 
-  const rentals = getMyRentals(currentUserId);
+  const rentals = await getMyRentals(currentUserId);
+
+  // One lookup per distinct vehicle, resolved before the list renders.
+  const rentedListings = new Map(
+    (await Promise.all([...new Set(rentals.map((b) => b.listingId))].map((id) => getListing(id))))
+      .filter((listing) => listing !== undefined)
+      .map((listing) => [listing.id, listing]),
+  );
 
   return (
     <PageTransition>
@@ -92,7 +99,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             ) : (
               <div className="space-y-2">
                 {rentals.map((booking) => {
-                  const listing = getListing(booking.listingId);
+                  const listing = rentedListings.get(booking.listingId);
                   const cover = listing?.photos[0];
                   const settled = booking.status === "returned";
 

@@ -36,10 +36,10 @@ async function main() {
 
   /* ---- 1. Overlapping booking must be refused ---------------------------- */
   const existing = await db.query.bookings.findFirst({
-    where: inArray(schema.bookings.status, ["pending", "confirmed", "active"]),
+    where: inArray(schema.bookings.status, ["confirmed", "active"]),
   });
   if (!existing) {
-    fail("no live booking to test against");
+    fail("no confirmed booking to test against");
   } else {
     // Distinguish "the insert succeeded" from "it failed for some other
     // reason" — collapsing the two would let a broken guard pass as long as

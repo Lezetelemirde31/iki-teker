@@ -11,7 +11,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatDate, formatDateRange, formatResponseTime } from "@/lib/format";
-import { getListing, getOfferForListing, getUser, quote } from "@/lib/queries";
+import { getListing, getOfferForListing, getUser, quote } from "@/server/data";
 
 /**
  * Booking confirmation.
@@ -30,8 +30,8 @@ export default async function ConfirmationPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const listing = getListing(id);
-  const offer = listing ? getOfferForListing(listing.id) : undefined;
+  const listing = await getListing(id);
+  const offer = listing ? await getOfferForListing(listing.id) : undefined;
   if (!listing || !offer) notFound();
 
   const { start, end } = await searchParams;
@@ -39,7 +39,7 @@ export default async function ConfirmationPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const owner = getUser(offer.ownerId);
+  const owner = await getUser(offer.ownerId);
   const priced = quote(offer, start, end);
   const cover = listing.photos[0];
 

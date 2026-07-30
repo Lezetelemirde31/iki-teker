@@ -9,7 +9,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { demoISODate } from "@/lib/demo-clock";
-import { getListing, getOfferForListing } from "@/lib/queries";
+import { getListing, getOfferForListing } from "@/server/data";
 
 export default async function RentalPage({
   params,
@@ -21,8 +21,8 @@ export default async function RentalPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const listing = getListing(id);
-  const offer = listing ? getOfferForListing(listing.id) : undefined;
+  const listing = await getListing(id);
+  const offer = listing ? await getOfferForListing(listing.id) : undefined;
   if (!listing || !offer) notFound();
 
   const messages = await getMessages(locale);

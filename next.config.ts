@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion", "date-fns"],
   },
+  // PGlite loads its own WebAssembly and data files at runtime. Bundling it
+  // rewrites those paths into URL objects that Node's fs rejects, which shows
+  // up as a 500 on every page that touches the database.
+  serverExternalPackages: ["@electric-sql/pglite"],
 };
 
 export default nextConfig;

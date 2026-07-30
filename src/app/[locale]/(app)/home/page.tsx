@@ -17,7 +17,7 @@ import { createTranslator } from "@/i18n/translate";
 import type { MessageKey } from "@/i18n/types";
 import { demoISODate } from "@/lib/demo-clock";
 import { formatRating, localized } from "@/lib/format";
-import { getHomeFeed } from "@/lib/queries";
+import { getHomeFeed } from "@/server/data";
 import { cn } from "@/lib/utils";
 import { categories, cities } from "@/mocks";
 
@@ -27,7 +27,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const feed = getHomeFeed();
+  const feed = await getHomeFeed();
   const today = demoISODate(0);
 
   return (

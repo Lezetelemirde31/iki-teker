@@ -6,7 +6,7 @@ import { CheckoutScreen } from "@/components/screens/checkout-screen";
 import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
-import { getListing, getOfferForListing, getUser, isRangeAvailable, quote } from "@/lib/queries";
+import { getListing, getOfferForListing, getUser, isRangeAvailable, quote } from "@/server/data";
 import { currentUserId } from "@/mocks/users";
 
 export default async function CheckoutPage({
@@ -19,8 +19,8 @@ export default async function CheckoutPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const listing = getListing(id);
-  const offer = listing ? getOfferForListing(listing.id) : undefined;
+  const listing = await getListing(id);
+  const offer = listing ? await getOfferForListing(listing.id) : undefined;
   if (!listing || !offer) notFound();
 
   // Without a valid, still-available range there is nothing to check out.
@@ -31,7 +31,7 @@ export default async function CheckoutPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const renter = getUser(currentUserId);
+  const renter = await getUser(currentUserId);
   if (!renter) notFound();
 
   return (

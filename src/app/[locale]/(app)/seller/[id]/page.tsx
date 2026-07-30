@@ -16,7 +16,7 @@ import {
   formatResponseTime,
   localized,
 } from "@/lib/format";
-import { getSellerProfile, getUser } from "@/lib/queries";
+import { getSellerProfile, getUser } from "@/server/data";
 
 export default async function SellerPage({
   params,
@@ -26,13 +26,20 @@ export default async function SellerPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const profile = getSellerProfile(id);
+  const profile = await getSellerProfile(id);
   if (!profile) notFound();
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
   const { user, listings, parts, reviews } = profile;
   const items = [...listings, ...parts];
+
+  // Review authors, resolved once before the list renders.
+  const authors = new Map(
+    (await Promise.all([...new Set(reviews.map((r) => r.authorId))].map((id) => getUser(id))))
+      .filter((author) => author !== undefined)
+      .map((author) => [author.id, author]),
+  );
 
   return (
     <PageTransition>
@@ -141,7 +148,7 @@ export default async function SellerPage({
             ) : (
               <div className="space-y-2">
                 {reviews.map((review) => {
-                  const author = getUser(review.authorId);
+                  const author = authors.get(review.authorId);
                   return (
                     <article
                       key={review.id}

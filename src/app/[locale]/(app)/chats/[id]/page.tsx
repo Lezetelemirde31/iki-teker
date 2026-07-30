@@ -9,7 +9,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
-import { getCatalogItem, getThread, getUser } from "@/lib/queries";
+import { getCatalogItem, getThread, getUser } from "@/server/data";
 import { currentUserId } from "@/mocks/users";
 
 export default async function ChatThreadPage({
@@ -20,14 +20,14 @@ export default async function ChatThreadPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const thread = getThread(id);
+  const thread = await getThread(id);
   if (!thread) notFound();
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
   const otherId = thread.participantIds.find((participant) => participant !== currentUserId);
-  const other = otherId ? getUser(otherId) : undefined;
-  const item = thread.listingId ? getCatalogItem(thread.listingId) : undefined;
+  const other = otherId ? await getUser(otherId) : undefined;
+  const item = thread.listingId ? await getCatalogItem(thread.listingId) : undefined;
   const cover = item?.photos[0];
 
   return (

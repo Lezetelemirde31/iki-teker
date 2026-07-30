@@ -468,5 +468,5 @@ export const bookingOverlapGuard = sql`
       offer_id WITH =,
       daterange(start_date, end_date, '[]') WITH &&
     )
-    WHERE (status IN ('pending', 'confirmed', 'active'));
+    WHERE (status IN ('confirmed', 'active'));
 `;

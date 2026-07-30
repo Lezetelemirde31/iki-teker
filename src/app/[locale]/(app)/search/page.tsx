@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
-import { getOfferForListing, searchCatalog } from "@/lib/queries";
+import { getOfferForListing, searchCatalog } from "@/server/data";
 import { parseSearchQuery } from "@/lib/search-params";
 
 export default async function SearchPage({
@@ -27,7 +27,16 @@ export default async function SearchPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const results = searchCatalog(query, 1, 40);
+  const results = await searchCatalog(query, 1, 40);
+
+  // Offers are resolved up front rather than inside the render loop: awaiting
+  // per row would issue one query per result and serialise them all.
+  const rentable = results.items.filter((item) => item.kind === "vehicle");
+  const offers = new Map(
+    (await Promise.all(rentable.map((item) => getOfferForListing(item.id))))
+      .filter((offer) => offer !== undefined)
+      .map((offer) => [offer.listingId, offer]),
+  );
 
   return (
     <>
@@ -58,11 +67,7 @@ export default async function SearchPage({
                 locale={locale}
                 messages={messages}
                 href={`/${locale}/listing/${item.id}`}
-                rentalOffer={
-                  item.kind === "vehicle" && item.rentalOfferId
-                    ? getOfferForListing(item.id)
-                    : undefined
-                }
+                rentalOffer={offers.get(item.id)}
               />
             ))}
           </div>

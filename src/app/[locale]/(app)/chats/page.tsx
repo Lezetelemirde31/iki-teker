@@ -10,7 +10,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatRelativeTime } from "@/lib/format";
-import { getCatalogItem, getInbox, getUser } from "@/lib/queries";
+import { getCatalogItem, getInbox, getUser } from "@/server/data";
 import { currentUserId } from "@/mocks/users";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,29 @@ export default async function ChatsPage({ params }: { params: Promise<{ locale: 
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const threads = getInbox(currentUserId);
+  const threads = await getInbox(currentUserId);
+
+  // Both lookups are resolved before rendering: awaiting inside the list would
+  // fire a query per row and run them one after another.
+  const otherIds = [
+    ...new Set(
+      threads
+        .map((thread) => thread.participantIds.find((id) => id !== currentUserId))
+        .filter((id) => id !== undefined),
+    ),
+  ];
+  const listingIds = [
+    ...new Set(threads.map((thread) => thread.listingId).filter((id) => id !== undefined)),
+  ];
+
+  const [people, items] = await Promise.all([
+    Promise.all(otherIds.map((id) => getUser(id))).then(
+      (users) => new Map(users.filter((u) => u !== undefined).map((u) => [u.id, u])),
+    ),
+    Promise.all(listingIds.map((id) => getCatalogItem(id))).then(
+      (found) => new Map(found.filter((i) => i !== undefined).map((i) => [i.id, i])),
+    ),
+  ]);
 
   return (
     <PageTransition>
@@ -37,8 +59,8 @@ export default async function ChatsPage({ params }: { params: Promise<{ locale: 
           <ul className="divide-border divide-y">
             {threads.map((thread) => {
               const otherId = thread.participantIds.find((id) => id !== currentUserId);
-              const other = otherId ? getUser(otherId) : undefined;
-              const item = thread.listingId ? getCatalogItem(thread.listingId) : undefined;
+              const other = otherId ? people.get(otherId) : undefined;
+              const item = thread.listingId ? items.get(thread.listingId) : undefined;
               const last = thread.messages[thread.messages.length - 1];
               const cover = item?.photos[0];
 

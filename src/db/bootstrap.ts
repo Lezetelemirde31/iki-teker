@@ -14,6 +14,11 @@ import type { Database } from "./client";
  * two requests arriving in the same instant would both read a free calendar and
  * both write a booking. Only the database, holding a lock over the range, can
  * reject the second one.
+ *
+ * It covers confirmed and active bookings only. A pending request is not a
+ * claim on the dates — several renters may ask for the same window and the
+ * owner picks one. Including pending here would mean the first person to tap
+ * "request" locked everyone else out of dates nobody had agreed to yet.
  */
 export async function applyConstraints(database: Database) {
   // `offer_id WITH =` inside a GiST index needs btree_gist.
@@ -31,7 +36,7 @@ export async function applyConstraints(database: Database) {
             offer_id WITH =,
             daterange(start_date, end_date, '[]') WITH &&
           )
-          WHERE (status IN ('pending', 'confirmed', 'active'));
+          WHERE (status IN ('confirmed', 'active'));
       END IF;
     END $$;
   `);

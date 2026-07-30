@@ -30,7 +30,7 @@ import {
   getUser,
   locationOf,
   similarListings,
-} from "@/lib/queries";
+} from "@/server/data";
 import { conditionLabels } from "@/mocks/taxonomy";
 
 export default async function ListingPage({
@@ -41,15 +41,15 @@ export default async function ListingPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const item = getCatalogItem(id);
+  const item = await getCatalogItem(id);
   if (!item) notFound();
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const seller = getUser(item.sellerId);
+  const seller = await getUser(item.sellerId);
   const place = locationOf(item);
-  const offer = item.kind === "vehicle" ? getOfferForListing(item.id) : undefined;
-  const similar = item.kind === "vehicle" ? similarListings(item) : [];
+  const offer = item.kind === "vehicle" ? await getOfferForListing(item.id) : undefined;
+  const similar = item.kind === "vehicle" ? await similarListings(item) : [];
   const today = demoISODate(0);
 
   const extraRows = [

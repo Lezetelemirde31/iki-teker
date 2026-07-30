@@ -225,7 +225,7 @@ async function main() {
   // Blackouts that are not explained by a live booking stay owner-set.
   const bookedDays = new Set<string>();
   for (const b of mockBookings) {
-    if (!["pending", "confirmed", "active"].includes(b.status)) continue;
+    if (!["confirmed", "active"].includes(b.status)) continue;
     const cursor = new Date(`${b.start}T00:00:00`);
     const last = new Date(`${b.end}T00:00:00`);
     while (cursor <= last) {
