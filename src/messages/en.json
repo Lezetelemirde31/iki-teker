@@ -253,6 +253,23 @@
   "install": {
     "title": "Install the app",
     "body": "Add it to your home screen — opens without a browser",
-    "action": "Install"
+    "action": "Install",
+    "pageTitle": "Install the Iki Tekerli app",
+    "pageLead": "Added to your phone in one tap. No download, no sign-up, no app store.",
+    "installNow": "Install now",
+    "installed": "The app is already installed",
+    "openApp": "Open the app",
+    "androidTitle": "Android · Chrome",
+    "androidSteps": "Tap the button below and choose Install. If the button is missing: browser menu (⋮) → Install app.",
+    "iosTitle": "iPhone · Safari",
+    "iosSteps": "Tap the Share icon (□↑) below, then choose Add to Home Screen.",
+    "desktopTitle": "Desktop",
+    "desktopSteps": "Click the install icon at the right of the address bar. Open it on a phone for the best experience.",
+    "whatYouGet": "What you get",
+    "benefit1": "Its own icon on your home screen",
+    "benefit2": "Full screen — no browser chrome",
+    "benefit3": "Pages you have visited work without a connection",
+    "benefit4": "Three languages: Azerbaijani, English, Russian",
+    "skip": "Browse without installing"
   }
 }

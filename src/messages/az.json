@@ -253,6 +253,23 @@
   "install": {
     "title": "Tətbiqi quraşdır",
     "body": "Ana ekrana əlavə edin — brauzersiz açılır",
-    "action": "Quraşdır"
+    "action": "Quraşdır",
+    "pageTitle": "Iki Tekerli tətbiqini quraşdırın",
+    "pageLead": "Bir toxunuşla telefonunuza əlavə olunur. Yükləmə, qeydiyyat və ya mağaza lazım deyil.",
+    "installNow": "İndi quraşdır",
+    "installed": "Tətbiq artıq quraşdırılıb",
+    "openApp": "Tətbiqi aç",
+    "androidTitle": "Android · Chrome",
+    "androidSteps": "Aşağıdakı düyməyə toxunun və «Quraşdır» seçin. Düymə görünmürsə: brauzer menyusu (⋮) → «Tətbiqi quraşdır».",
+    "iosTitle": "iPhone · Safari",
+    "iosSteps": "Aşağıdakı «Paylaş» işarəsinə (□↑) toxunun, sonra siyahıdan «Ana ekrana əlavə et» seçin.",
+    "desktopTitle": "Kompüter",
+    "desktopSteps": "Ünvan sətrinin sağındakı quraşdırma işarəsinə klikləyin. Ən yaxşı təcrübə üçün telefonda açın.",
+    "whatYouGet": "Nə əldə edirsiniz",
+    "benefit1": "Ana ekranda öz ikonu",
+    "benefit2": "Tam ekran — brauzer çərçivəsi yoxdur",
+    "benefit3": "İnternetsiz də baxdığınız səhifələr açılır",
+    "benefit4": "Üç dil: Azərbaycan, English, Русский",
+    "skip": "Quraşdırmadan bax"
   }
 }
