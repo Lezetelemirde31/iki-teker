@@ -18,6 +18,7 @@ import type { MessageKey } from "@/i18n/types";
 import { demoISODate } from "@/lib/demo-clock";
 import { formatRating, localized } from "@/lib/format";
 import { getHomeFeed } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 import { categories, cities } from "@/mocks";
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
@@ -66,13 +67,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               }
               className="bg-card border-border flex flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 shadow-[var(--shadow-card)] transition-transform active:scale-95"
             >
+              {/* The two motorised vehicle sections carry the green accent;
+                  the service and rental entry points keep the brand yellow. */}
               <CategoryIcon
                 slug={category.slug}
-                className={
-                  category.slug === "rental" || category.slug === "services"
-                    ? "text-primary size-5"
-                    : "text-foreground size-5"
-                }
+                className={cn(
+                  "size-5",
+                  category.slug === "motorcycles" || category.slug === "scooters"
+                    ? "text-rental"
+                    : category.slug === "rental" || category.slug === "services"
+                      ? "text-primary"
+                      : "text-foreground",
+                )}
               />
               <span className="text-center text-[0.625rem] leading-tight font-medium">
                 {t(category.labelKey as MessageKey)}

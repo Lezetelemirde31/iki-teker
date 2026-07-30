@@ -246,31 +246,15 @@
   padding-inline: max(env(safe-area-inset-left), 0px) max(env(safe-area-inset-right), 0px);
 }
 
-/* The brand's hazard stripe under the app header.
-   Two green bands lead at the left edge before the yellow takes over — a small
-   accent that keeps the stripe from reading as one flat texture. The green is
-   the rental colour, so the mark stays inside the product's own palette. */
+/* The brand's yellow/black hazard stripe that sits under the app header. */
 @utility hazard-stripe {
-  background-image:
-    repeating-linear-gradient(
-      -45deg,
-      var(--rental) 0px,
-      var(--rental) 8px,
-      var(--hazard-b) 8px,
-      var(--hazard-b) 16px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      var(--hazard-a) 0px,
-      var(--hazard-a) 8px,
-      var(--hazard-b) 8px,
-      var(--hazard-b) 16px
-    );
-  background-size:
-    32px 100%,
-    auto;
-  background-repeat: no-repeat, repeat;
-  background-position: left top;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--hazard-a) 0px,
+    var(--hazard-a) 8px,
+    var(--hazard-b) 8px,
+    var(--hazard-b) 16px
+  );
 }
 
 /* Frosted chrome for sticky headers and the tab bar. */
