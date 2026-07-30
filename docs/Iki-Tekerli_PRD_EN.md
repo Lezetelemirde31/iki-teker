@@ -1,4 +1,4 @@
-# IKI-TEKER — Two-Wheeler Marketplace for Azerbaijan
+# Iki Tekerli — Two-Wheeler Marketplace for Azerbaijan
 
 **Product Requirements Document (English edition)**
 
@@ -13,7 +13,7 @@
 
 ## Slide 01 — Cover
 
-**IKI-TEKER**
+**Iki Tekerli**
 
 A two-wheeler marketplace for Azerbaijan: buy, sell, service, and rent — motorcycles, scooters, electric vehicles, and bicycles.
 
@@ -69,7 +69,7 @@ A live feed that proves the platform isn't empty and gives people a reason to co
 
 #### Screen walkthrough — Home
 
-The home screen opens as a phone-first layout. A status bar reads `9:41` with `Baku · 5G`. The header carries the **IT IKI-TEKER** wordmark on the left and two pill toggles on the right — a city selector (`Bakı`) and a language selector (`RU`) — separated from the content by the brand's yellow-and-black hazard-stripe divider.
+The home screen opens as a phone-first layout. A status bar reads `9:41` with `Baku · 5G`. The header carries the **IT Iki Tekerli** wordmark on the left and two pill toggles on the right — a city selector (`Bakı`) and a language selector (`RU`) — separated from the content by the brand's yellow-and-black hazard-stripe divider.
 
 Below it sits a full-width search field with the placeholder *"Motorcycle, scooter, spare part…"*, then an eight-tile category grid:
 
@@ -578,7 +578,7 @@ Each milestone is a result you can open and verify — not a checkbox on a calen
 
 # Part II — Project and Work Plan (Commercial Proposal)
 
-**IKI-TEKER** — Two-wheeler marketplace
+**Iki Tekerli** — Two-wheeler marketplace
 *Project and work plan, dated July 26, 2026*
 *To: [client name]*
 

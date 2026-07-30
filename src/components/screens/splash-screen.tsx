@@ -51,7 +51,7 @@ export function SplashScreen({ locale, messages }: { locale: Locale; messages: M
           IT
         </span>
         <span className="font-display text-secondary-foreground mt-5 text-3xl font-extrabold tracking-tight">
-          IKI-TEKER
+          Iki Tekerli
         </span>
       </motion.div>
 

@@ -1,4 +1,4 @@
-# IKI-TEKER
+# Iki Tekerli
 
 A two-wheeler marketplace for Azerbaijan — buy, sell, service and rent motorcycles, scooters, electric vehicles and bicycles.
 
@@ -10,7 +10,7 @@ Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v4 ·
 
 ## Platform
 
-IKI-TEKER is designed as a mobile application, so there is deliberately no desktop layout:
+Iki Tekerli is designed as a mobile application, so there is deliberately no desktop layout:
 
 - **Below 528px** the app is full-bleed — what would ship to a phone.
 - **At 528px and above** the identical UI is centred inside a device frame on an ambient backdrop, so it can be demoed on a laptop without pretending to be a desktop website.
@@ -48,4 +48,4 @@ src/
 - The demo runs on a fixed clock (`src/lib/demo-clock.ts`, 27 July 2026) so relative timestamps and availability calendars look identical on every machine.
 - Listing artwork is generated from a seed rather than fetched, so nothing can fail to load during a presentation.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full screen and component plan, and [docs/IKI-TEKER_PRD_EN.md](docs/IKI-TEKER_PRD_EN.md) for the product requirements.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full screen and component plan, and [docs/Iki-Tekerli_PRD_EN.md](docs/Iki-Tekerli_PRD_EN.md) for the product requirements.

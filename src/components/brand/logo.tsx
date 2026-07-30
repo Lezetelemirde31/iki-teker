@@ -7,7 +7,7 @@ const sizes = {
 } as const;
 
 /**
- * Brand lockup: yellow "IT" mark plus the IKI-TEKER wordmark, matching the
+ * Brand lockup: yellow "IT" mark plus the Iki Tekerli wordmark, matching the
  * source prototype's header.
  */
 export function Logo({
@@ -34,10 +34,10 @@ export function Logo({
       </span>
       {wordmark && (
         <span className={cn("font-display font-extrabold tracking-tight", scale.word)}>
-          IKI-TEKER
+          Iki Tekerli
         </span>
       )}
-      <span className="sr-only">IKI-TEKER</span>
+      <span className="sr-only">Iki Tekerli</span>
     </span>
   );
 }

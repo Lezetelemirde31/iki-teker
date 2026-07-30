@@ -4,12 +4,14 @@ import { getMessages } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/translate";
 
+import { InstallPrompt } from "@/components/pwa/install-prompt";
+
 import { DeviceStatusBar } from "./device-status-bar";
 
 /**
  * Presentation shell.
  *
- * IKI-TEKER is designed as a native mobile application, so there is deliberately
+ * Iki Tekerli is designed as a native mobile application, so there is deliberately
  * no desktop layout. Below ~528px the app is full-bleed — exactly what ships to
  * a phone. Above it, the identical UI is centred inside a device frame so the
  * product can be demoed on a laptop without pretending to be a desktop website.
@@ -33,6 +35,9 @@ export async function DeviceFrame({
         <div className="device-screen">
           <DeviceStatusBar />
           {children}
+          {/* Sits below the app's own chrome, as a sibling of the screen content,
+              so it never overlaps a sticky footer or the tab bar. */}
+          <InstallPrompt />
         </div>
       </div>
 

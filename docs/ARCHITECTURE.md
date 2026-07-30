@@ -1,4 +1,4 @@
-# IKI-TEKER — Frontend Architecture
+# Iki Tekerli — Frontend Architecture
 
 Production-quality frontend prototype. Mock data only — no auth, no APIs, no database.
 
@@ -6,7 +6,7 @@ Production-quality frontend prototype. Mock data only — no auth, no APIs, no d
 
 ## 0. Platform decision — mobile is the source of truth
 
-IKI-TEKER is a mobile application (iOS/Android), not a responsive website. There is **no desktop layout**:
+Iki Tekerli is a mobile application (iOS/Android), not a responsive website. There is **no desktop layout**:
 
 - **< 528px** — the app is full-bleed. This is what ships to a phone: no bezel, no simulated status bar, the OS draws its own chrome, `safe-*` utilities handle notch and home-indicator insets.
 - **≥ 528px** — the identical UI is centred inside a device frame (430×884, iPhone Pro Max logical width) on an ambient backdrop, with a simulated status bar and dynamic island. Chrome only — no component is aware it is being framed.

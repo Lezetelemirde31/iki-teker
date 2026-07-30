@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================
-   IKI-TEKER design tokens
+   Iki Tekerli design tokens
    Palette lifted from the prototype screens in the source specification:
    warm off-white canvas, near-black ink, signal yellow brand, forest green
    for rental availability.
@@ -291,7 +291,7 @@
 
 /* ============================================================================
    Device shell
-   IKI-TEKER is a mobile product. On a phone the app is full-bleed; on anything
+   Iki Tekerli is a mobile product. On a phone the app is full-bleed; on anything
    wider we present the same UI inside a centred device frame rather than
    inventing a desktop layout that will never ship.
    ========================================================================== */

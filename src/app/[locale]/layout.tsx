@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DeviceFrame } from "@/components/layout/device-frame";
+import { ServiceWorkerRegistration } from "@/components/pwa/service-worker";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { isLocale, locales, localeMeta, type Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
@@ -48,6 +49,19 @@ export async function generateMetadata({
     },
     twitter: { card: "summary_large_image" },
     robots: { index: true, follow: true },
+    icons: {
+      icon: [
+        { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      ],
+      apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    },
+    // iOS has no manifest support, so standalone mode is opted into here.
+    appleWebApp: {
+      capable: true,
+      title: messages.app.name,
+      statusBarStyle: "default",
+    },
   };
 }
 
@@ -86,6 +100,7 @@ export default async function LocaleLayout({
         <ThemeProvider>
           <I18nProvider locale={typedLocale} messages={messages}>
             <DeviceFrame locale={typedLocale}>{children}</DeviceFrame>
+            <ServiceWorkerRegistration />
           </I18nProvider>
         </ThemeProvider>
       </body>

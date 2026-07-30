@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "IKI-TEKER",
+    "name": "Iki Tekerli",
     "tagline": "İkitəkərli texnikanı al, sat, təmir et və icarəyə götür",
     "description": "Azərbaycanda motosiklet, skuter, elektrik nəqliyyatı və velosipedlər üçün marketpleys — al, sat, ehtiyat hissəsi tap, servisə yazıl və ya günlük icarəyə götür."
   },
@@ -67,7 +67,7 @@
   },
   "preview": {
     "badge": "Cihaz önizləməsi",
-    "hint": "IKI-TEKER mobil məhsuldur. Telefonda açın və ya pəncərənin ölçüsünü dəyişin."
+    "hint": "Iki Tekerli mobil məhsuldur. Telefonda açın və ya pəncərənin ölçüsünü dəyişin."
   },
   "onboarding": {
     "skip": "Keç",
@@ -249,5 +249,10 @@
     "phoneVerified": "Nömrə təsdiqlənib",
     "demoNote": "Demo hesab. Giriş, elan idarəetməsi və bildirişlər tam məhsulun bir hissəsidir.",
     "noRentals": "Hələ icarə yoxdur"
+  },
+  "install": {
+    "title": "Tətbiqi quraşdır",
+    "body": "Ana ekrana əlavə edin — brauzersiz açılır",
+    "action": "Quraşdır"
   }
 }

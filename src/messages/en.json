@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "IKI-TEKER",
+    "name": "Iki Tekerli",
     "tagline": "Buy, sell, service and rent two-wheelers",
     "description": "Azerbaijan's marketplace for motorcycles, scooters, electric vehicles and bicycles — buy, sell, find parts, book a workshop, or rent by the day."
   },
@@ -67,7 +67,7 @@
   },
   "preview": {
     "badge": "Device preview",
-    "hint": "IKI-TEKER is a mobile product. Open it on a phone, or resize this window."
+    "hint": "Iki Tekerli is a mobile product. Open it on a phone, or resize this window."
   },
   "onboarding": {
     "skip": "Skip",
@@ -249,5 +249,10 @@
     "phoneVerified": "Phone verified",
     "demoNote": "Demo account. Sign-in, listing management and notifications are part of the full product.",
     "noRentals": "No rentals yet"
+  },
+  "install": {
+    "title": "Install the app",
+    "body": "Add it to your home screen — opens without a browser",
+    "action": "Install"
   }
 }
