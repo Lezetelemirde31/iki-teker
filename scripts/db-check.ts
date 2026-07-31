@@ -10,6 +10,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
+import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import * as schema from "../src/db/schema";
 
@@ -30,9 +32,35 @@ function describe(error: unknown): string {
   return parts.join(" | ");
 }
 
-async function main() {
+/**
+ * Runs against whichever database is configured.
+ *
+ * Checking the hosted one matters more than checking the local one: PGlite and
+ * a real Postgres server are the same engine, but only the hosted database is
+ * the one customers will actually book against.
+ */
+async function open() {
+  const url = process.env.DATABASE_URL;
+  if (url) {
+    const client = postgres(url, { max: 1, prepare: false });
+    return {
+      db: drizzlePostgres(client, { schema }),
+      close: () => client.end(),
+      label: "hosted Postgres",
+    };
+  }
   const pglite = new PGlite(DATA_DIR, { extensions: { btree_gist } });
-  const db = drizzle(pglite, { schema });
+  return {
+    db: drizzle(pglite, { schema }),
+    close: () => pglite.close(),
+    label: `embedded PGlite (${DATA_DIR})`,
+  };
+}
+
+async function main() {
+  const engine = await open();
+  const db = engine.db;
+  console.log(`target: ${engine.label}\n`);
 
   /* ---- 1. Overlapping booking must be refused ---------------------------- */
   const existing = await db.query.bookings.findFirst({
@@ -157,7 +185,7 @@ async function main() {
   if (income !== 640) fail(`Rəşad July income is ${income}, expected 640`);
   console.log("  ✓ derived income still ₼640");
 
-  await pglite.close();
+  await engine.close();
 
   console.log("");
   if (problems.length) {

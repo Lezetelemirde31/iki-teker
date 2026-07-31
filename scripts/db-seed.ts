@@ -12,8 +12,10 @@ import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
+import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import postgres from "postgres";
 
 import { applyConstraints, hasOverlapGuard } from "../src/db/bootstrap";
 import * as schema from "../src/db/schema";
@@ -68,10 +70,70 @@ async function checkLock() {
   process.exit(1);
 }
 
-async function main() {
+/**
+ * Opens whichever database is configured and hides the difference behind three
+ * operations this script needs: raw DDL, a scalar count, and close.
+ *
+ * Seeding a hosted database is a legitimate thing to want — a demo deployment
+ * with an empty catalogue looks broken — but it truncates, so it refuses to run
+ * against a hosted server unless that is said out loud.
+ */
+async function open() {
+  const url = process.env.DATABASE_URL;
+
+  if (url) {
+    if (process.env.ALLOW_REMOTE_SEED !== "1") {
+      console.error(
+        [
+          "DATABASE_URL is set, and this script TRUNCATES every table before loading.",
+          "",
+          "If that is really what you want — a demo deployment seeded with the",
+          "sample catalogue — say so explicitly:",
+          "",
+          "  ALLOW_REMOTE_SEED=1 npm run db:seed",
+          "",
+          "To create the schema without touching data, use `npm run db:migrate`.",
+          "To load only cities, makes and models, use `npm run db:reference`.",
+        ].join("\n"),
+      );
+      process.exit(1);
+    }
+
+    const client = postgres(url, { max: 1, prepare: false });
+    return {
+      db: drizzlePostgres(client, { schema }),
+      exec: (statement: string) => client.unsafe(statement),
+      count: async (table: string) => {
+        const [row] = await client.unsafe<{ n: string }[]>(
+          `SELECT count(*)::text AS n FROM ${table}`,
+        );
+        return row?.n ?? "0";
+      },
+      close: () => client.end(),
+      label: "hosted Postgres",
+    };
+  }
+
   await checkLock();
   const pglite = new PGlite(DATA_DIR, { extensions: { btree_gist } });
-  const db = drizzle(pglite, { schema });
+  return {
+    db: drizzle(pglite, { schema }),
+    exec: (statement: string) => pglite.exec(statement),
+    count: async (table: string) => {
+      const result = await pglite.query<{ n: string }>(
+        `SELECT count(*)::text AS n FROM ${table}`,
+      );
+      return result.rows[0]?.n ?? "0";
+    },
+    close: () => pglite.close(),
+    label: `embedded PGlite (${DATA_DIR})`,
+  };
+}
+
+async function main() {
+  const engine = await open();
+  const { db } = engine;
+  console.log(`target: ${engine.label}\n`);
 
   // ---- schema -------------------------------------------------------------
   const migrationDir = path.join(process.cwd(), "drizzle");
@@ -85,7 +147,7 @@ async function main() {
       const trimmed = statement.trim();
       if (!trimmed) continue;
       try {
-        await pglite.exec(trimmed);
+        await engine.exec(trimmed);
       } catch (error) {
         const message = String(error);
         // Re-running against an existing database is expected.
@@ -351,10 +413,7 @@ async function main() {
   );
 
   // ---- report -------------------------------------------------------------
-  const count = async (table: string) => {
-    const result = await pglite.query<{ n: string }>(`SELECT count(*)::text AS n FROM ${table}`);
-    return result.rows[0]?.n ?? "0";
-  };
+  const count = engine.count;
 
   console.log("\nseeded:");
   for (const table of [
@@ -374,7 +433,7 @@ async function main() {
     console.log(`  ${table.padEnd(18)} ${(await count(table)).padStart(4)}`);
   }
 
-  await pglite.close();
+  await engine.close();
 }
 
 main().catch((error) => {

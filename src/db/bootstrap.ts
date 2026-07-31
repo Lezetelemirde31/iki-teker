@@ -42,11 +42,24 @@ export async function applyConstraints(database: Database) {
   `);
 }
 
-/** Reports whether the guard is in place — used by the integrity check. */
+/**
+ * Reports whether the guard is in place — used by the integrity check and by
+ * the migration script, which refuses to finish without it.
+ *
+ * The two drivers disagree about what `execute` returns: PGlite hands back a
+ * result object with a `rows` array, postgres-js hands back the array itself.
+ * Reading only one shape made a healthy hosted database report its safety
+ * constraint as missing, which is the most misleading way this could fail —
+ * so both are handled.
+ */
 export async function hasOverlapGuard(database: Database) {
   const result = await database.execute<{ count: string }>(
     sql`SELECT count(*)::text AS count FROM pg_constraint WHERE conname = 'bookings_no_overlap'`,
   );
-  const rows = (result as unknown as { rows?: { count: string }[] }).rows ?? [];
+
+  const rows: { count?: string }[] = Array.isArray(result)
+    ? result
+    : ((result as unknown as { rows?: { count: string }[] }).rows ?? []);
+
   return Number(rows[0]?.count ?? 0) > 0;
 }
