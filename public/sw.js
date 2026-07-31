@@ -15,7 +15,7 @@
  * Bumping CACHE_VERSION discards every previous cache on the next activation.
  */
 
-const CACHE_VERSION = "iki-teker-v1";
+const CACHE_VERSION = "iki-tekerli-v2";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];

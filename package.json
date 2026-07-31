@@ -14,7 +14,9 @@
     "db:seed": "tsx scripts/db-seed.ts",
     "db:check": "tsx scripts/db-check.ts",
     "icons": "tsx scripts/generate-icons.ts",
-    "check:api": "node scripts/api-check.mjs"
+    "check:api": "node scripts/api-check.mjs",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:reference": "tsx scripts/db-reference.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
