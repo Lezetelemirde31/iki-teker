@@ -145,7 +145,17 @@ export function mapCatalogItem(row: ListingRow): CatalogItem {
   return part;
 }
 
-export function mapOffer(row: OfferRow, blackouts: string[], availableFrom: string): RentalOffer {
+/**
+ * The owner's rating and completed-rental count are stored on the user, not the
+ * offer, but the rental card shows them next to the price — so they are passed
+ * in rather than looked up here, letting the caller fetch every owner at once.
+ */
+export function mapOffer(
+  row: OfferRow,
+  blackouts: string[],
+  availableFrom: string,
+  owner: { rating: number; rentalsCount: number },
+): RentalOffer {
   return {
     id: row.id,
     listingId: row.listingId,
@@ -170,8 +180,8 @@ export function mapOffer(row: OfferRow, blackouts: string[], availableFrom: stri
     availableFrom,
     handoverTime: row.handoverTime,
     instantBook: row.instantBook,
-    rating: 0,
-    rentalsCount: 0,
+    rating: owner.rating,
+    rentalsCount: owner.rentalsCount,
     commissionRate: Number(row.commissionRate),
   };
 }

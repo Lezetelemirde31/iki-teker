@@ -2,15 +2,15 @@
 
 import { ArrowUpDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
+import { useMatchCount } from "@/hooks/use-match-count";
 import type { Locale } from "@/i18n/config";
 import { useT } from "@/i18n/provider";
 import { formatNumber, formatPrice, localized } from "@/lib/format";
-import { countMatches } from "@/lib/queries";
 import { activeFilterCount, serialiseSearchQuery } from "@/lib/search-params";
 import { categories, cities, makesFor, sortLabels } from "@/mocks";
 import { cityById } from "@/mocks/geo";
@@ -79,7 +79,12 @@ export function SearchControls({
     setFiltersOpen(true);
   }
 
-  const draftCount = useMemo(() => countMatches(draft), [draft]);
+  // Counted server-side, and only while the sheet is open — the draft equals
+  // the applied query until then, so `resultCount` is already the right answer.
+  const draftCount = useMatchCount(draft, draftEngine, {
+    enabled: filtersOpen,
+    initial: resultCount,
+  });
 
   const vehicleCategories = categories.filter((category) => category.kind === "vehicle");
   const draftMakes = draft.category

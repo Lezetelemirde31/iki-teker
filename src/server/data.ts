@@ -52,6 +52,12 @@ export async function searchCatalog(
   return database.searchCatalog(query, page, pageSize);
 }
 
+/** Drives the filter sheet's live "show N listings" button. */
+export async function countMatches(query: SearchQuery): Promise<number> {
+  if (!useDatabase) return mocks.countMatches(query);
+  return database.countMatches(query);
+}
+
 export async function getCatalogItem(id: string): Promise<CatalogItem | undefined> {
   if (!useDatabase) return mocks.getCatalogItem(id);
   return database.getCatalogItem(id);

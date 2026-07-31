@@ -119,10 +119,53 @@ function firstFreeDay(blocked: string[]): string {
 }
 
 async function loadOffers(rows: (typeof schema.rentalOffers.$inferSelect)[]) {
-  const blocked = await blockedDaysFor(rows.map((row) => row.id));
+  if (rows.length === 0) return [];
+
+  const [blocked, owners] = await Promise.all([
+    blockedDaysFor(rows.map((row) => row.id)),
+    db
+      .select({
+        id: schema.users.id,
+        rating: schema.users.rating,
+        rentalsCount: schema.users.rentalsCount,
+      })
+      .from(schema.users)
+      .where(inArray(schema.users.id, [...new Set(rows.map((row) => row.ownerId))])),
+  ]);
+
+  const ownerById = new Map(owners.map((owner) => [owner.id, owner]));
+
   return rows.map((row) => {
     const days = blocked.get(row.id) ?? [];
-    return mapOffer(row, days, firstFreeDay(days));
+    const owner = ownerById.get(row.ownerId);
+    return mapOffer(row, days, firstFreeDay(days), {
+      // Stored as numeric, which the driver hands back as a string.
+      rating: Number(owner?.rating ?? 0),
+      rentalsCount: owner?.rentalsCount ?? 0,
+    });
+  });
+}
+
+/**
+ * Stamps each vehicle with the id of its rental offer, if it has one.
+ *
+ * The mock listings carry this inline; in the database the relationship is
+ * owned by the offer, so it is filled in on read — once per batch rather than
+ * once per card.
+ */
+async function withRentalOffers<T extends CatalogItem>(items: T[]): Promise<T[]> {
+  const vehicleIds = items.filter((item) => item.kind === "vehicle").map((item) => item.id);
+  if (vehicleIds.length === 0) return items;
+
+  const rows = await db
+    .select({ id: schema.rentalOffers.id, listingId: schema.rentalOffers.listingId })
+    .from(schema.rentalOffers)
+    .where(inArray(schema.rentalOffers.listingId, vehicleIds));
+
+  const offerByListing = new Map(rows.map((row) => [row.listingId, row.id]));
+  return items.map((item) => {
+    const offerId = item.kind === "vehicle" ? offerByListing.get(item.id) : undefined;
+    return offerId ? { ...item, rentalOfferId: offerId } : item;
   });
 }
 
@@ -132,7 +175,9 @@ async function loadOffers(rows: (typeof schema.rentalOffers.$inferSelect)[]) {
 
 export async function getCatalogItem(id: string): Promise<CatalogItem | undefined> {
   const row = await db.query.listings.findFirst({ where: eq(schema.listings.id, id) });
-  return row ? withNames(mapCatalogItem(row)) : undefined;
+  if (!row) return undefined;
+  const [item] = await withRentalOffers([withNames(mapCatalogItem(row))]);
+  return item;
 }
 
 export async function getListing(id: string): Promise<Listing | undefined> {
@@ -167,7 +212,8 @@ export async function similarListings(listing: Listing, limit = 6): Promise<List
     ),
     limit,
   });
-  return rows.map((row) => withNames(mapCatalogItem(row))).filter((i): i is Listing => i.kind === "vehicle");
+  const items = await withRentalOffers(rows.map((row) => withNames(mapCatalogItem(row))));
+  return items.filter((i): i is Listing => i.kind === "vehicle");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -266,7 +312,7 @@ export async function searchCatalog(
 
   const total = totals?.n ?? 0;
   return {
-    items: rows.map((row) => withNames(mapCatalogItem(row))),
+    items: await withRentalOffers(rows.map((row) => withNames(mapCatalogItem(row)))),
     total,
     page,
     pageSize,
@@ -309,7 +355,10 @@ export async function getHomeFeed() {
       offers.map((offer) => offer.listingId),
     ),
   });
-  const byId = new Map(listingRows.map((row) => [row.id, withNames(mapCatalogItem(row))]));
+  const rentalListings = await withRentalOffers(
+    listingRows.map((row) => withNames(mapCatalogItem(row))),
+  );
+  const byId = new Map(rentalListings.map((item) => [item.id, item]));
 
   const rentals = offers
     .map((offer) => ({ listing: byId.get(offer.listingId), offer }))
@@ -318,12 +367,13 @@ export async function getHomeFeed() {
     )
     .sort((a, b) => a.offer.availableFrom.localeCompare(b.offer.availableFrom));
 
-  return {
-    rentals,
-    vip: vipRows.map((row) => withNames(mapCatalogItem(row))),
-    fresh: freshRows.map((row) => withNames(mapCatalogItem(row))),
-    parts: partRows.map((row) => withNames(mapCatalogItem(row))),
-  };
+  const [vip, fresh, parts] = await Promise.all(
+    [vipRows, freshRows, partRows].map((batch) =>
+      withRentalOffers(batch.map((row) => withNames(mapCatalogItem(row)))),
+    ),
+  );
+
+  return { rentals, vip: vip ?? [], fresh: fresh ?? [], parts: parts ?? [] };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -345,7 +395,7 @@ export async function getSellerProfile(sellerId: string) {
 
   if (!userRow) return undefined;
 
-  const items = itemRows.map((row) => withNames(mapCatalogItem(row)));
+  const items = await withRentalOffers(itemRows.map((row) => withNames(mapCatalogItem(row))));
   return {
     user: { ...mapUser(userRow), listingsCount: items.length },
     listings: items.filter((item): item is Listing => item.kind === "vehicle"),
