@@ -19,17 +19,14 @@ const tabs = [
   { href: "/account", icon: User, labelKey: "nav.account" },
 ] as const;
 
-/**
- * Only the vehicle categories lead anywhere yet — parts and gear need a
- * different set of fields (part number, compatibility, sizes) and are a
- * separate build. Listing them here with nothing behind them would be worse
- * than leaving them out.
- */
+/** Every option leads to a form. Vehicles and parts use different ones. */
 const postOptions: { slug: CategorySlug; labelKey: MessageKey }[] = [
   { slug: "motorcycles", labelKey: "categories.motorcycles" },
   { slug: "scooters", labelKey: "categories.scooters" },
   { slug: "electric", labelKey: "categories.electric" },
   { slug: "bicycles", labelKey: "categories.bicycles" },
+  { slug: "parts", labelKey: "categories.parts" },
+  { slug: "gear", labelKey: "categories.gear" },
 ];
 
 /**

@@ -84,7 +84,7 @@ src/
 │   │       ├── layout.tsx            App shell + bottom nav. force-dynamic.
 │   │       ├── home/  search/  favorites/  account/
 │   │       ├── listing/[id]/         Listing detail
-│   │       ├── post/                 Publish a vehicle (?category=…)
+│   │       ├── post/                 Publish a vehicle, part or gear (?category=…)
 │   │       ├── rental/[id]/          Rental offer → checkout → confirmation
 │   │       ├── seller/[id]/          Public seller profile
 │   │       └── chats/  chats/[id]/   Inbox and thread
@@ -247,6 +247,7 @@ See §10. The `ui/` folder holds the primitives (`button`, `badge`, `chip`, `she
 
 ### Selling
 - **Publish a vehicle** — dependent make/model selects, category-specific attributes, full server-side validation, generated artwork
+- **Publish a part or gear** — a separate form: the seller writes the title (a part name is not derivable from a taxonomy), plus brand, type, part number, stock, and fitment as makes + a year window. Gear requires a size and carries no fitment
 - **Manage your own listing** — mark sold, archive, republish, delete (with confirmation)
 - **Real counters** — views and contacts increment in the database; the seller's own visits do not count
 
@@ -269,7 +270,6 @@ Nothing is half-written in the working tree. The following are **specified and m
 
 | Feature | State |
 |---|---|
-| **Parts and gear listing forms** | Types, mocks, DB columns and search all support them. Only the *creation form* is missing — the post sheet deliberately offers vehicle categories only, because offering a category with nothing behind it is worse than omitting it |
 | **Admin / moderation panel** | `src/mocks/admin.ts` has a moderation queue, complaints, disputes, an audit log and revenue records. `src/types/admin.ts` types them. **No UI, no tables, no routes** |
 | **Workshops / service booking** | `src/mocks/services.ts` has workshops, service items and appointments. Only the home-feed shortcut renders. **No tables** |
 | **Reviews** | Read and displayed on seller profiles. **No way to write one** |
@@ -285,7 +285,6 @@ Nothing is half-written in the working tree. The following are **specified and m
 ### P1 — the product is not credible without these
 - [ ] **Photo upload.** Cloudflare R2, free tier. Presigned upload from the client, store keys in `listings.photos`. Keep `VehicleArt` as the fallback for photoless listings. Only `src/server/listings.ts` and the post form change.
 - [ ] **Admin / moderation panel.** Then flip `status: "active"` → `"moderation"` in `createListing` (it is a one-word change, commented in place). Needs tables for complaints, disputes and audit entries.
-- [ ] **Parts and gear listing forms.** Parts need brand, part type, part number, stock and compatibility; gear needs sizes and certification.
 
 ### P2 — trust and retention
 - [ ] **Writing reviews** — after a returned booking or a confirmed sale
@@ -598,7 +597,6 @@ Below `33rem` (528px) the app is full-bleed. Above it, a 430×884 frame is centr
 1. **No authentication.** Anyone can act as the demo persona. Every ownership check is correct but rests on a cookie
 2. **No photo upload.** All listings show generated artwork
 3. **No admin panel**, so `createListing` publishes straight to `active`
-4. **Parts and gear cannot be created** through the UI
 5. **Reviews cannot be written**
 6. **No notifications.** A booking request with nobody watching the account screen is a lost rental
 7. **Favourites are device-local.** The `favorites` table is unused
@@ -661,7 +659,7 @@ No unit test framework. Verification is done by scripts that exercise real behav
 ```bash
 npm run check:mocks   # referential integrity + arithmetic across the mock dataset
 npm run db:check      # proves the database refuses a double booking (either engine)
-npm run check:api     # 61 assertions over the write APIs (needs a running DB-backed server)
+npm run check:api     # 78 assertions over the write APIs (needs a running DB-backed server)
 ```
 
 **Add to these when you add behaviour.** A test that asserts a row count proves nothing; these attempt the thing that must fail and check that it did.
@@ -695,19 +693,17 @@ In this order.
 
 **1. Photo upload (R2).** Highest value per unit of work and not blocked by anything. Half a listing's value is its photos. Add a storage adapter, presigned uploads, and store keys in `listings.photos`. Keep `VehicleArt` for photoless listings. Touches `src/server/listings.ts` and the post form only.
 
-**2. Parts and gear listing forms.** The data model, search and detail views already support them; only creation is missing. Extend `src/server/listings.ts` with a `createPart` path and add the fields to the post screen. Then restore parts and gear to the post sheet in `bottom-nav.tsx`.
+**2. Admin / moderation panel.** Tables for complaints, disputes and audit entries; a queue screen; then flip `createListing` to `status: "moderation"`. Without this, nothing stands between a scam listing and the catalogue.
 
-**3. Admin / moderation panel.** Tables for complaints, disputes and audit entries; a queue screen; then flip `createListing` to `status: "moderation"`. Without this, nothing stands between a scam listing and the catalogue.
+**3. Authentication** — as soon as the SMS provider and legal entity exist. Everything above works without it; everything below needs it. Replace `currentUser()`; add sign-in screens and route protection.
 
-**4. Authentication** — as soon as the SMS provider and legal entity exist. Everything above works without it; everything below needs it. Replace `currentUser()`; add sign-in screens and route protection.
+**4. Notifications.** Web Push first — the service worker exists. A booking request nobody sees is a lost rental.
 
-**5. Notifications.** Web Push first — the service worker exists. A booking request nobody sees is a lost rental.
+**5. Reviews.** After a returned booking or a confirmed sale.
 
-**6. Reviews.** After a returned booking or a confirmed sale.
+**6. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly.
 
-**7. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly.
-
-**8. Play Store (TWA).** Android only. iOS needs a different approach.
+**7. Play Store (TWA).** Android only. iOS needs a different approach.
 
 ---
 

@@ -302,5 +302,90 @@ heading("the new listing is a real listing");
   line("excluded by a price ceiling below it", byPrice < 55 ? "yes" : "no", "yes");
 }
 
+/* ========================================================================== *
+ *  Parts and gear                                                             *
+ * ========================================================================== */
+
+const postPart = (body, user = "u-motoparts-az") => post("/api/parts", user, body);
+
+const validPart = {
+  category: "parts",
+  partType: "brakes",
+  brand: "Brembo",
+  title: "Brembo SA brake pads, front",
+  partNumber: "07BB33SA",
+  stock: 14,
+  price: 78,
+  negotiable: false,
+  condition: "new",
+  cityId: "city-baku",
+  districtId: "d-binagadi",
+  description: "Sintered pads, stable braking in wet and dry conditions.",
+  delivery: true,
+  attributes: { oem: true, warrantyMonths: 12 },
+  fitsMakeIds: ["make-honda", "make-yamaha"],
+  fitsYearFrom: 2015,
+  fitsYearTo: 2026,
+  locale: "az",
+};
+
+heading("part validation");
+{
+  let r;
+  r = await postPart({ ...validPart, partType: "helmet" });
+  line("a gear type on a part", r.status, 422, r.json?.error);
+  r = await postPart({ ...validPart, brand: "B" });
+  line("brand too short", r.status, 422, r.json?.error);
+  r = await postPart({ ...validPart, title: "Pad" });
+  line("title too short", r.status, 422, r.json?.error);
+  r = await postPart({ ...validPart, stock: 0 });
+  line("nothing in stock", r.status, 422, r.json?.error);
+  r = await postPart({ ...validPart, fitsMakeIds: ["make-nope"] });
+  line("fits an unknown make", r.status, 422, r.json?.error);
+  r = await postPart({ ...validPart, fitsYearFrom: 2026, fitsYearTo: 2015 });
+  line("year range runs backwards", r.status, 422, r.json?.error);
+}
+
+heading("publishing a part");
+{
+  const before = await countListings("category=parts");
+  const r = await postPart(validPart);
+  const l = r.json?.listing;
+  line("accepted", r.status, 201, l?.id);
+  line("stored as a part", l?.kind, "part");
+  line("seller keeps their own title", l?.title, validPart.title);
+  line("fitment recorded for both makes", l?.compatibility?.length, 2);
+  line("fitment carries the year window", l?.compatibility?.[0]?.yearTo, 2026);
+  line("empty models means every model", l?.compatibility?.[0]?.modelIds?.length, 0);
+  line("parts search grew by one", await countListings("category=parts"), before + 1);
+}
+
+heading("gear is not a part");
+{
+  const gear = {
+    category: "gear",
+    partType: "helmet",
+    brand: "AGV",
+    title: "AGV K6 S helmet",
+    stock: 5,
+    price: 890,
+    condition: "new",
+    cityId: "city-baku",
+    districtId: "d-binagadi",
+    description: "Lightweight carbon shell, ECE 22.06 certified, current model.",
+    delivery: true,
+    attributes: { certification: "ece2206" },
+    locale: "az",
+  };
+
+  let r = await postPart(gear);
+  line("size is required for gear", r.status, 422, r.json?.field);
+  r = await postPart({ ...gear, attributes: { ...gear.attributes, size: "l" } });
+  line("accepted with a size", r.status, 201, r.json?.listing?.id);
+  line("gear carries no fitment", r.json?.listing?.compatibility?.length, 0);
+  r = await postPart({ ...gear, partType: "brakes", attributes: { size: "l" } });
+  line("a part type on gear", r.status, 422, r.json?.error);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

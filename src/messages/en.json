@@ -325,10 +325,25 @@
       "unknownCity": "That city was not recognised.",
       "districtMismatch": "That district does not belong to the chosen city.",
       "descriptionTooShort": "The description needs at least 20 characters.",
-      "missingAttribute": "One of the required fields is empty."
+      "missingAttribute": "One of the required fields is empty.",
+      "unknownPartType": "That type does not belong to the chosen category.",
+      "brandTooShort": "The brand name is too short.",
+      "titleTooShort": "The title needs at least 6 characters.",
+      "invalidStock": "Stock must be at least 1.",
+      "invalidYearRange": "That year range is not valid."
     },
     "created": "Listing ready",
-    "demoNotStored": "This demo has no database attached, so the listing was not stored. Once one is connected, listings will be published for real."
+    "demoNotStored": "This demo has no database attached, so the listing was not stored. Once one is connected, listings will be published for real.",
+    "partType": "Type",
+    "brand": "Brand",
+    "partTitle": "Title",
+    "partTitleExample": "Brembo SA brake pads, front",
+    "partNumber": "Part number",
+    "stock": "In stock",
+    "fits": "Fits which motorcycles",
+    "fitsHint": "leave empty for universal",
+    "yearFrom": "from",
+    "yearTo": "to"
   },
   "owner": {
     "stats": "{views} views · {contacts} contacts",
@@ -340,5 +355,22 @@
     "deleteYes": "Yes, delete",
     "soldBadge": "Sold",
     "archivedBadge": "Archived"
+  },
+  "partTypes": {
+    "engine": "Engine",
+    "brakes": "Brakes",
+    "tires": "Tires",
+    "transmission": "Transmission",
+    "filters": "Filters",
+    "electrical": "Electrical",
+    "body": "Body",
+    "battery": "Battery",
+    "suspension": "Suspension",
+    "helmet": "Helmet",
+    "jacket": "Jacket",
+    "gloves": "Gloves",
+    "boots": "Boots",
+    "protection": "Protection",
+    "luggage": "Luggage"
   }
 }

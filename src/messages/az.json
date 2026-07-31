@@ -325,10 +325,25 @@
       "unknownCity": "Şəhər tanınmadı.",
       "districtMismatch": "Bu rayon seçilmiş şəhərə aid deyil.",
       "descriptionTooShort": "Təsvir ən azı 20 simvol olmalıdır.",
-      "missingAttribute": "Məcburi xanalardan biri boşdur."
+      "missingAttribute": "Məcburi xanalardan biri boşdur.",
+      "unknownPartType": "Bu növ seçilmiş kateqoriyaya uyğun deyil.",
+      "brandTooShort": "Brend adı çox qısadır.",
+      "titleTooShort": "Başlıq ən azı 6 simvol olmalıdır.",
+      "invalidStock": "Say ən azı 1 olmalıdır.",
+      "invalidYearRange": "İl aralığı düzgün deyil."
     },
     "created": "Elan hazırdır",
-    "demoNotStored": "Bu nümayiş versiyasında baza qoşulmayıb, ona görə elan saxlanılmadı. Baza qoşulan kimi elanlar həqiqətən dərc olunacaq."
+    "demoNotStored": "Bu nümayiş versiyasında baza qoşulmayıb, ona görə elan saxlanılmadı. Baza qoşulan kimi elanlar həqiqətən dərc olunacaq.",
+    "partType": "Növ",
+    "brand": "Brend",
+    "partTitle": "Başlıq",
+    "partTitleExample": "Brembo SA əyləc altlıqları, ön",
+    "partNumber": "Kataloq nömrəsi",
+    "stock": "Say",
+    "fits": "Hansı motosikletlərə uyğundur",
+    "fitsHint": "seçməsəniz — universal",
+    "yearFrom": "ildən",
+    "yearTo": "ilədək"
   },
   "owner": {
     "stats": "{views} baxış · {contacts} əlaqə",
@@ -340,5 +355,22 @@
     "deleteYes": "Bəli, sil",
     "soldBadge": "Satılıb",
     "archivedBadge": "Arxivdə"
+  },
+  "partTypes": {
+    "engine": "Mühərrik",
+    "brakes": "Əyləc",
+    "tires": "Təkər",
+    "transmission": "Ötürücü",
+    "filters": "Filtr",
+    "electrical": "Elektrika",
+    "body": "Kuzov",
+    "battery": "Akkumulyator",
+    "suspension": "Asqı",
+    "helmet": "Dəbilqə",
+    "jacket": "Gödəkçə",
+    "gloves": "Əlcək",
+    "boots": "Çəkmə",
+    "protection": "Qoruyucu",
+    "luggage": "Baqaj"
   }
 }
