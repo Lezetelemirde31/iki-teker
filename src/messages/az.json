@@ -293,5 +293,39 @@
     "confirmed": "Təsdiqləndi",
     "declined": "İmtina edildi",
     "taken": "Bu tarixlər artıq tutulub"
+  },
+  "post": {
+    "title": "Elan ver",
+    "choose": "Seçin",
+    "chooseMakeFirst": "Əvvəlcə marka seçin",
+    "chooseCityFirst": "Əvvəlcə şəhər seçin",
+    "make": "Marka",
+    "model": "Model",
+    "year": "Buraxılış ili",
+    "condition": "Vəziyyət",
+    "price": "Qiymət",
+    "city": "Şəhər",
+    "district": "Rayon",
+    "description": "Təsvir",
+    "descriptionPlaceholder": "Nəqliyyat vasitəsinin vəziyyəti, sənədləri və dəyişdirilmiş hissələri barədə yazın.",
+    "optional": "istəyə bağlı",
+    "publish": "Dərc et",
+    "photosLater": "Şəkil yükləmə hələ hazır deyil. Elan avtomatik yaradılan qrafika ilə dərc olunacaq, sonra şəkillərinizi əlavə edə biləcəksiniz.",
+    "error": {
+      "generic": "Elan dərc olunmadı. Bir az sonra yenidən yoxlayın.",
+      "offline": "İnternet bağlantısı yoxdur. Bağlantını yoxlayıb yenidən cəhd edin.",
+      "unknownCategory": "Kateqoriya tanınmadı.",
+      "unknownMake": "Bu marka seçilmiş kateqoriyaya uyğun deyil.",
+      "unknownModel": "Model tanınmadı.",
+      "modelMismatch": "Bu model seçilmiş markaya aid deyil.",
+      "invalidYear": "Buraxılış ili bu model üçün mümkün deyil.",
+      "invalidPrice": "Qiymət düzgün deyil.",
+      "unknownCity": "Şəhər tanınmadı.",
+      "districtMismatch": "Bu rayon seçilmiş şəhərə aid deyil.",
+      "descriptionTooShort": "Təsvir ən azı 20 simvol olmalıdır.",
+      "missingAttribute": "Məcburi xanalardan biri boşdur."
+    },
+    "created": "Elan hazırdır",
+    "demoNotStored": "Bu nümayiş versiyasında baza qoşulmayıb, ona görə elan saxlanılmadı. Baza qoşulan kimi elanlar həqiqətən dərc olunacaq."
   }
 }

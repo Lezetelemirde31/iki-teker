@@ -2,7 +2,7 @@
 
 import { House, MessageCircle, Plus, Search, User } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CategoryIcon } from "@/components/common/category-icon";
@@ -19,10 +19,17 @@ const tabs = [
   { href: "/account", icon: User, labelKey: "nav.account" },
 ] as const;
 
+/**
+ * Only the vehicle categories lead anywhere yet — parts and gear need a
+ * different set of fields (part number, compatibility, sizes) and are a
+ * separate build. Listing them here with nothing behind them would be worse
+ * than leaving them out.
+ */
 const postOptions: { slug: CategorySlug; labelKey: MessageKey }[] = [
   { slug: "motorcycles", labelKey: "categories.motorcycles" },
-  { slug: "parts", labelKey: "categories.parts" },
-  { slug: "gear", labelKey: "categories.gear" },
+  { slug: "scooters", labelKey: "categories.scooters" },
+  { slug: "electric", labelKey: "categories.electric" },
+  { slug: "bicycles", labelKey: "categories.bicycles" },
 ];
 
 /**
@@ -33,6 +40,7 @@ const postOptions: { slug: CategorySlug; labelKey: MessageKey }[] = [
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const locale = useLocale();
   const t = useT();
   const [postOpen, setPostOpen] = useState(false);
@@ -70,7 +78,10 @@ export function BottomNav() {
             <button
               key={option.slug}
               type="button"
-              onClick={() => setPostOpen(false)}
+              onClick={() => {
+                setPostOpen(false);
+                router.push(`/${locale}/post?category=${option.slug}`);
+              }}
               className="bg-surface-2 border-border hover:bg-muted flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-colors active:scale-[0.99]"
             >
               <span className="bg-card text-foreground grid size-10 shrink-0 place-items-center rounded-lg">

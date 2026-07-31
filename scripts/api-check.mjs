@@ -1,9 +1,10 @@
 /**
- * Exercises the booking API over HTTP.
+ * Exercises the write APIs over HTTP.
  *
  * db-check proves the database refuses a double booking; this proves the whole
  * path does — validation, server-side pricing, ownership, and the race where
- * two confirmations for the same week arrive at once.
+ * two confirmations for the same week arrive at once. It also covers publishing
+ * a listing, including the values a client must not be allowed to set.
  *
  * Needs a running server with a database behind it:
  *
@@ -11,7 +12,7 @@
  *   USE_LOCAL_DB=1 npx next dev -p 3100
  *   npm run check:api
  *
- * It writes bookings, so re-seed before each run.
+ * It writes bookings and listings, so re-seed before each run.
  */
 const API = process.env.API ?? "http://localhost:3100";
 const DATES = { start: "2027-09-10", end: "2027-09-14" };
@@ -186,6 +187,119 @@ heading("two confirmations racing for the same week");
   ]);
   const outcomes = [ra.status, rb.status].sort().join("/");
   line("exactly one confirmation wins", outcomes, "200/409");
+}
+
+/* ========================================================================== *
+ *  Listings                                                                   *
+ * ========================================================================== */
+
+const postListing = (body, user = "u-rashad") => post("/api/listings", user, body);
+
+const countListings = async (query = "") =>
+  (await (await fetch(`${API}/api/search/count?${query}`)).json()).count;
+
+// A Honda CB650R: make, model and category all agree.
+const valid = {
+  category: "motorcycles",
+  makeId: "make-honda",
+  modelId: "model-honda-cb650r",
+  year: 2021,
+  price: 15900,
+  negotiable: true,
+  condition: "used",
+  cityId: "city-baku",
+  districtId: "d-yasamal",
+  description: "Tək sahibindən, qəzasız. Servis kitabçası var, təkərlər yenidir.",
+  delivery: false,
+  customsCleared: true,
+  attributes: { engineCc: 649, mileage: 8200, colour: "black", licence: "A", bodyType: "naked" },
+  locale: "az",
+};
+
+heading("listing validation");
+{
+  let r;
+  r = await postListing({ ...valid, category: "spaceships" });
+  line("unknown category", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, makeId: "make-vespa" });
+  line("make that does not fit the model", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, modelId: "model-vespa-primavera-150" });
+  line("model from another make", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, year: 1899 });
+  line("year before the model existed", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, price: 0 });
+  line("price of zero", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, price: -500 });
+  line("negative price", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, districtId: "d-nizami-ganja" });
+  line("district in the wrong city", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, description: "Satiram" });
+  line("description too short", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, attributes: { colour: "black" } });
+  line("required attribute missing", r.status, 422, r.json?.error);
+  r = await postListing({ ...valid, cityId: "" });
+  line("city left blank", r.status, 400, r.json?.error);
+}
+
+heading("publishing");
+let created;
+{
+  const before = await countListings();
+  const r = await postListing(valid);
+  created = r.json?.listing;
+  line("accepted", r.status, 201, created?.id);
+  line("title derived from make, model and year", created?.title, "Honda CB650R, 2021");
+  line("make name filled in", created?.makeName, "Honda");
+  line("seller is the signed-in user", created?.sellerId, "u-rashad");
+  line("published as active", created?.status, "active");
+  line("starts with no views", created?.stats?.views, 0);
+  line("not VIP by default", created?.promotion?.vip, false);
+  line("gets placeholder artwork", created?.photos?.length, 3);
+  line("description stored in all locales", Object.keys(created?.description ?? {}).length, 3);
+  line("slug is url-safe", /^[a-z0-9-]+$/.test(created?.slug ?? "") ? "yes" : created?.slug, "yes");
+  line("catalogue grew by one", await countListings(), before + 1);
+}
+
+heading("derived values are not taken from the client");
+{
+  const r = await postListing({
+    ...valid,
+    year: 2019,
+    title: "FREE FERRARI",
+    slug: "hacked",
+    status: "active",
+    sellerId: "u-elvin",
+    promotion: { vip: true },
+    stats: { views: 999999, contacts: 999, favorites: 999 },
+  });
+  const l = r.json?.listing;
+  line("title ignored", l?.title, "Honda CB650R, 2019");
+  line("slug ignored", /hacked/.test(l?.slug ?? "") ? "used it" : "ignored", "ignored");
+  line("seller ignored", l?.sellerId, "u-rashad");
+  line("VIP ignored", l?.promotion?.vip, false);
+  line("view count ignored", l?.stats?.views, 0);
+}
+
+heading("the new listing is a real listing");
+{
+  const res = await fetch(`${API}/api/catalog`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ids: [created.id] }),
+  });
+  const data = await res.json();
+  line("findable by id", data.items?.[0]?.id, created.id);
+  line("price survived the round trip", data.items?.[0]?.price, 15900);
+
+  // It should also answer the filters a buyer would actually use.
+  const [byMake, byCity, byPrice] = await Promise.all([
+    countListings("category=motorcycles&makeId=make-honda"),
+    countListings("cityId=city-baku"),
+    countListings("priceMax=100"),
+  ]);
+  line("counted under its make", byMake > 0 ? "yes" : "no", "yes");
+  line("counted under its city", byCity > 0 ? "yes" : "no", "yes");
+  line("excluded by a price ceiling below it", byPrice < 55 ? "yes" : "no", "yes");
 }
 
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);

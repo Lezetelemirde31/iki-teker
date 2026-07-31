@@ -293,5 +293,39 @@
     "confirmed": "Confirmed",
     "declined": "Declined",
     "taken": "Those dates are already taken"
+  },
+  "post": {
+    "title": "Post a listing",
+    "choose": "Select",
+    "chooseMakeFirst": "Choose a make first",
+    "chooseCityFirst": "Choose a city first",
+    "make": "Make",
+    "model": "Model",
+    "year": "Year",
+    "condition": "Condition",
+    "price": "Price",
+    "city": "City",
+    "district": "District",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the condition, paperwork and anything that has been replaced.",
+    "optional": "optional",
+    "publish": "Publish",
+    "photosLater": "Photo upload is not ready yet. The listing is published with generated artwork, and you will be able to add your own photos later.",
+    "error": {
+      "generic": "The listing could not be published. Please try again shortly.",
+      "offline": "No connection. Check your network and try again.",
+      "unknownCategory": "That category was not recognised.",
+      "unknownMake": "That make does not belong to the chosen category.",
+      "unknownModel": "That model was not recognised.",
+      "modelMismatch": "That model does not belong to the chosen make.",
+      "invalidYear": "That year is not possible for this model.",
+      "invalidPrice": "That price is not valid.",
+      "unknownCity": "That city was not recognised.",
+      "districtMismatch": "That district does not belong to the chosen city.",
+      "descriptionTooShort": "The description needs at least 20 characters.",
+      "missingAttribute": "One of the required fields is empty."
+    },
+    "created": "Listing ready",
+    "demoNotStored": "This demo has no database attached, so the listing was not stored. Once one is connected, listings will be published for real."
   }
 }
