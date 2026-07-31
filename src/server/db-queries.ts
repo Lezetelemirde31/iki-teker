@@ -41,7 +41,7 @@ import {
 /* -------------------------------------------------------------------------- */
 
 /** Fills the make and model names the row only stores as ids. */
-function withNames(item: CatalogItem): CatalogItem {
+export function withNames(item: CatalogItem): CatalogItem {
   if (item.kind !== "vehicle") return item;
   return {
     ...item,

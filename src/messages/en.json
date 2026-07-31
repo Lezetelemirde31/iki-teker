@@ -263,7 +263,8 @@
     "city": "City",
     "phoneVerified": "Phone verified",
     "demoNote": "Demo account. Sign-in, listing management and notifications are part of the full product.",
-    "noRentals": "No rentals yet"
+    "noRentals": "No rentals yet",
+    "myListings": "My listings"
   },
   "install": {
     "title": "Install the app",

@@ -263,7 +263,8 @@
     "city": "Şəhər",
     "phoneVerified": "Nömrə təsdiqlənib",
     "demoNote": "Demo hesab. Giriş, elan idarəetməsi və bildirişlər tam məhsulun bir hissəsidir.",
-    "noRentals": "Hələ icarə yoxdur"
+    "noRentals": "Hələ icarə yoxdur",
+    "myListings": "Mənim elanlarım"
   },
   "install": {
     "title": "Tətbiqi quraşdır",

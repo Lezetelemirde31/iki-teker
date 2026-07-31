@@ -1,11 +1,13 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import type { ListingStatus } from "@/types";
+import type { CatalogItem, ListingStatus } from "@/types";
 
+import { withNames } from "./db-queries";
+import { mapCatalogItem } from "./mappers";
 import { useDatabase } from "./source";
 
 /**
@@ -76,6 +78,78 @@ export async function deleteListing(listingId: string, sellerId: string): Promis
 
   await db.delete(schema.listings).where(eq(schema.listings.id, listingId));
   return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  A seller's own view of their listings                                      */
+/* -------------------------------------------------------------------------- */
+
+export type OwnListing = {
+  item: CatalogItem;
+  /** Present only when the listing was turned down. */
+  rejection?: { reason: string; note: string | null };
+};
+
+/**
+ * Everything a seller has posted, in every status.
+ *
+ * The public profile shows active listings only, which is right for a buyer and
+ * useless for the seller: after moderation was introduced, someone could publish
+ * a listing and have nowhere to see what happened to it. A listing waiting for
+ * review with no sign of it anywhere reads as lost work.
+ *
+ * Ordered with the ones needing attention first — rejected, then queued, then
+ * everything else — because that is the order a seller can act on.
+ */
+export async function ownListings(sellerId: string): Promise<OwnListing[]> {
+  if (!useDatabase) return [];
+
+  const rows = await db.query.listings.findMany({
+    where: eq(schema.listings.sellerId, sellerId),
+    orderBy: desc(schema.listings.publishedAt),
+  });
+  if (rows.length === 0) return [];
+
+  // One query for every rejection rather than one per listing.
+  const rejectedIds = rows.filter((row) => row.status === "draft").map((row) => row.id);
+  const decisions = rejectedIds.length
+    ? await db
+        .select()
+        .from(schema.moderationActions)
+        .where(
+          and(
+            inArray(schema.moderationActions.listingId, rejectedIds),
+            eq(schema.moderationActions.action, "reject"),
+          ),
+        )
+        .orderBy(desc(schema.moderationActions.createdAt))
+    : [];
+
+  const latest = new Map<string, (typeof decisions)[number]>();
+  for (const decision of decisions) {
+    if (!latest.has(decision.listingId)) latest.set(decision.listingId, decision);
+  }
+
+  const rank: Record<string, number> = {
+    draft: 0,
+    moderation: 1,
+    active: 2,
+    sold: 3,
+    archived: 4,
+  };
+
+  return rows
+    .map((row) => {
+      const decision = latest.get(row.id);
+      return {
+        item: withNames(mapCatalogItem(row)),
+        rejection:
+          row.status === "draft" && decision?.reason
+            ? { reason: decision.reason, note: decision.note }
+            : undefined,
+      };
+    })
+    .sort((a, b) => (rank[a.item.status] ?? 9) - (rank[b.item.status] ?? 9));
 }
 
 /* -------------------------------------------------------------------------- */

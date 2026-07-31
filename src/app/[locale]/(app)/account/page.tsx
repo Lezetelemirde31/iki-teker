@@ -18,9 +18,11 @@ import {
   formatPrice,
   formatRating,
 } from "@/lib/format";
+import { OwnListings } from "@/components/listing/own-listings";
 import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
 import { pendingRequestsFor } from "@/server/bookings";
+import { ownListings } from "@/server/listing-actions";
 import { pendingCount } from "@/server/moderation";
 import { getListing, getMyRentals, getUser } from "@/server/data";
 import { currentUserId } from "@/server/session";
@@ -36,11 +38,12 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests, moderator, queued] = await Promise.all([
+  const [rentals, requests, moderator, queued, mine] = await Promise.all([
     getMyRentals(userId),
     pendingRequestsFor(userId),
     canModerate(),
     pendingCount(),
+    ownListings(userId),
   ]);
 
   // One lookup per distinct vehicle, resolved before the list renders.
@@ -145,6 +148,18 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                 locale={locale}
                 messages={messages}
               />
+            </section>
+          )}
+
+          {/* The seller's own listings, whatever state they are in. Above their
+              rentals because a listing waiting for review is something they are
+              owed an answer on. */}
+          {mine.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
+                {t("account.myListings")}
+              </h2>
+              <OwnListings listings={mine} locale={locale} messages={messages} />
             </section>
           )}
 
