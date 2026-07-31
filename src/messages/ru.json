@@ -372,5 +372,38 @@
     "boots": "Ботинки",
     "protection": "Защита",
     "luggage": "Багаж"
+  },
+  "moderation": {
+    "title": "Модерация",
+    "approve": "Одобрить",
+    "reject": "Отклонить",
+    "approved": "Одобрено",
+    "rejected": "Отклонено",
+    "taken": "Решение принял другой модератор",
+    "empty": "Очередь пуста",
+    "emptyBody": "Новые объявления появятся здесь.",
+    "waiting": "Ожидают: {count}",
+    "unverified": "номер не подтверждён",
+    "pickReason": "Выберите причину",
+    "reasons": {
+      "prohibited": "Запрещено",
+      "misleading": "Вводит в заблуждение",
+      "duplicate": "Дубликат",
+      "contactInfo": "Контакты в описании",
+      "poorQuality": "Низкое качество",
+      "wrongCategory": "Не та категория",
+      "other": "Другое"
+    },
+    "flags": {
+      "contactInDescription": "Номер в описании",
+      "bannedWord": "Подозрительные слова",
+      "noPhotos": "Нет фото",
+      "unverifiedSeller": "Непроверенный продавец",
+      "priceAnomaly": "Цена вызывает вопросы",
+      "duplicatePhoto": "Дубликат фото",
+      "duplicateListing": "Дубликат объявления"
+    },
+    "pending": "На проверке",
+    "rejectedBadge": "Отклонено"
   }
 }

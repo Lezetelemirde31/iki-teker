@@ -30,6 +30,25 @@ import {
 /* -------------------------------------------------------------------------- */
 
 export const accountKind = pgEnum("account_kind", ["private", "shop", "rental"]);
+
+/**
+ * What a signed-in user is allowed to do — not who they are.
+ *
+ * Kept on the user row because a role is a fact about the account, not about a
+ * session: revoking a moderator has to survive them signing in again.
+ */
+export const userRole = pgEnum("user_role", ["user", "moderator", "admin"]);
+
+/** Why a listing was turned down. Shown to the seller, so it must be specific. */
+export const rejectionReason = pgEnum("rejection_reason", [
+  "prohibited",
+  "misleading",
+  "duplicate",
+  "contactInfo",
+  "poorQuality",
+  "wrongCategory",
+  "other",
+]);
 export const listingStatus = pgEnum("listing_status", [
   "active",
   "moderation",
@@ -141,6 +160,8 @@ export const users = pgTable(
     bio: jsonb("bio").$type<Localized>(),
     specialties: jsonb("specialties").$type<string[]>(),
     subscription: text("subscription").default("none"),
+    /** Defaults to the least privilege; moderators are promoted deliberately. */
+    role: userRole("role").notNull().default("user"),
   },
   (table) => [uniqueIndex("users_phone_idx").on(table.phone)],
 );
@@ -329,6 +350,39 @@ export const bookings = pgTable(
 /* -------------------------------------------------------------------------- */
 /*  Trust and messaging                                                        */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Every moderation decision, permanently.
+ *
+ * A moderator can take a seller's listing off the market, so each decision has
+ * to be attributable to a person with a reason attached. Without that, "why was
+ * my listing rejected" has no answer and a moderator acting badly leaves no
+ * trace. Rows are never updated or deleted — a corrected decision is a new row,
+ * because the record of what was decided is the point.
+ */
+export const moderationActions = pgTable(
+  "moderation_actions",
+  {
+    id: text("id").primaryKey(),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id, { onDelete: "cascade" }),
+    moderatorId: text("moderator_id")
+      .notNull()
+      .references(() => users.id),
+    /** "approve" or "reject" — text rather than an enum so adding a third
+     *  outcome later does not need a migration on a live database. */
+    action: text("action").notNull(),
+    reason: rejectionReason("reason"),
+    /** Free text the seller sees alongside the reason. */
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("moderation_listing_idx").on(table.listingId, table.createdAt),
+    index("moderation_moderator_idx").on(table.moderatorId),
+  ],
+);
 
 export const reviews = pgTable(
   "reviews",

@@ -229,6 +229,11 @@ async function main() {
       bio: u.bio ?? null,
       specialties: u.specialties ?? null,
       subscription: u.subscription ?? "none",
+      // Deliberately not the default demo persona. With no sign-in yet, every
+      // visitor to the deployed site is `currentUserId`, and granting that
+      // account moderation would put the queue one URL away from the public.
+      // Reaching it takes setting the iki-demo-user cookie on purpose.
+      role: u.id === "u-moderator" ? ("admin" as const) : ("user" as const),
     })),
   );
 

@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, ChevronRight, Heart, Star } from "lucide-react";
+import { BadgeCheck, CalendarCheck, ChevronRight, Heart, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -19,7 +19,9 @@ import {
   formatRating,
 } from "@/lib/format";
 import { RequestQueue } from "@/components/rental/request-queue";
+import { canModerate } from "@/server/authorization";
 import { pendingRequestsFor } from "@/server/bookings";
+import { pendingCount } from "@/server/moderation";
 import { getListing, getMyRentals, getUser } from "@/server/data";
 import { currentUserId } from "@/server/session";
 import type { Listing, User } from "@/types";
@@ -34,9 +36,11 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests] = await Promise.all([
+  const [rentals, requests, moderator, queued] = await Promise.all([
     getMyRentals(userId),
     pendingRequestsFor(userId),
+    canModerate(),
+    pendingCount(),
   ]);
 
   // One lookup per distinct vehicle, resolved before the list renders.
@@ -106,6 +110,24 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               </span>
               <ChevronRight className="text-subtle-foreground size-5" />
             </Link>
+
+            {/* Only rendered for a moderator. The page itself answers 404 to
+                everyone else, so this is convenience, not the guard. */}
+            {moderator && (
+              <Link
+                href={`/${locale}/admin`}
+                className="bg-card border-border flex items-center gap-3 rounded-xl border px-3.5 py-3 transition-transform active:scale-[0.99]"
+              >
+                <ShieldCheck className="text-muted-foreground size-5 shrink-0" strokeWidth={2} />
+                <span className="flex-1 text-sm font-semibold">{t("moderation.title")}</span>
+                {queued > 0 && (
+                  <Badge variant="warning" size="md">
+                    {formatNumber(queued, locale)}
+                  </Badge>
+                )}
+                <ChevronRight className="text-subtle-foreground size-5" />
+              </Link>
+            )}
           </section>
 
           {/* Requests waiting on this owner. Above their own rentals because

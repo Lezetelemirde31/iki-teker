@@ -202,7 +202,8 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     sellerId,
     cityId: city.id,
     districtId: district.id,
-    status: "active",
+    // Reviewed before it reaches buyers, same as a vehicle.
+    status: "moderation",
     promotion: { vip: false },
     stats: { views: 0, contacts: 0, favorites: 0 },
     publishedAt: new Date().toISOString(),

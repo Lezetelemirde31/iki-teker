@@ -372,5 +372,38 @@
     "boots": "Boots",
     "protection": "Protection",
     "luggage": "Luggage"
+  },
+  "moderation": {
+    "title": "Moderation",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "taken": "Another moderator decided",
+    "empty": "The queue is empty",
+    "emptyBody": "New listings will appear here.",
+    "waiting": "{count} listings waiting",
+    "unverified": "phone not verified",
+    "pickReason": "Pick a reason",
+    "reasons": {
+      "prohibited": "Prohibited",
+      "misleading": "Misleading",
+      "duplicate": "Duplicate",
+      "contactInfo": "Contact in description",
+      "poorQuality": "Poor quality",
+      "wrongCategory": "Wrong category",
+      "other": "Other"
+    },
+    "flags": {
+      "contactInDescription": "Number in description",
+      "bannedWord": "Suspicious wording",
+      "noPhotos": "No photos",
+      "unverifiedSeller": "Unverified seller",
+      "priceAnomaly": "Price looks wrong",
+      "duplicatePhoto": "Duplicate photo",
+      "duplicateListing": "Duplicate listing"
+    },
+    "pending": "Under review",
+    "rejectedBadge": "Rejected"
   }
 }

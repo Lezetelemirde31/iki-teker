@@ -372,5 +372,38 @@
     "boots": "Çəkmə",
     "protection": "Qoruyucu",
     "luggage": "Baqaj"
+  },
+  "moderation": {
+    "title": "Moderasiya",
+    "approve": "Təsdiqlə",
+    "reject": "İmtina",
+    "approved": "Təsdiqləndi",
+    "rejected": "İmtina edildi",
+    "taken": "Başqa moderator qərar verib",
+    "empty": "Növbə boşdur",
+    "emptyBody": "Yeni elan gələndə burada görünəcək.",
+    "waiting": "{count} elan gözləyir",
+    "unverified": "nömrə təsdiqlənməyib",
+    "pickReason": "Səbəbi seçin",
+    "reasons": {
+      "prohibited": "Qadağan olunmuş",
+      "misleading": "Yanıltıcı",
+      "duplicate": "Təkrar",
+      "contactInfo": "Təsvirdə əlaqə",
+      "poorQuality": "Keyfiyyətsiz",
+      "wrongCategory": "Səhv kateqoriya",
+      "other": "Digər"
+    },
+    "flags": {
+      "contactInDescription": "Təsvirdə nömrə",
+      "bannedWord": "Şübhəli söz",
+      "noPhotos": "Şəkil yoxdur",
+      "unverifiedSeller": "Təsdiqlənməmiş satıcı",
+      "priceAnomaly": "Qiymət şübhəli",
+      "duplicatePhoto": "Təkrar şəkil",
+      "duplicateListing": "Təkrar elan"
+    },
+    "pending": "Yoxlanılır",
+    "rejectedBadge": "İmtina edildi"
   }
 }

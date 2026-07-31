@@ -168,11 +168,10 @@ export async function createListing(
     sellerId,
     cityId: city.id,
     districtId: district.id,
-    // Published straight away. The product does call for moderation, but no
-    // admin screen exists yet — holding listings in a queue nobody can empty
-    // would be worse than publishing them. Switching this to "moderation" is a
-    // one-word change once that screen is built.
-    status: "active",
+    // Queued for review, not published. There is now a screen that empties the
+    // queue, so the alternative — a scam listing reaching buyers before anyone
+    // has looked at it — is the worse trade.
+    status: "moderation",
     promotion: { vip: false },
     stats: { views: 0, contacts: 0, favorites: 0 },
     publishedAt: new Date().toISOString(),
