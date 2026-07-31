@@ -284,5 +284,14 @@
     "benefit3": "Pages you have visited work without a connection",
     "benefit4": "Three languages: Azerbaijani, English, Russian",
     "skip": "Browse without installing"
+  },
+  "requests": {
+    "title": "Pending requests",
+    "none": "No requests waiting.",
+    "confirm": "Confirm",
+    "decline": "Decline",
+    "confirmed": "Confirmed",
+    "declined": "Declined",
+    "taken": "Those dates are already taken"
   }
 }

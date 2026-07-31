@@ -137,6 +137,33 @@ heading("those dates are now unavailable to everyone");
   line("a free range still works", clear.status, 201, clear.json?.booking?.code);
 }
 
+heading("declining a request");
+{
+  const r = await book("u-elvin", {
+    listingId: "l-vespa-bmr",
+    start: "2027-10-10",
+    end: "2027-10-13",
+  });
+  const id = r.json?.booking?.id;
+
+  let d = await post(`/api/bookings/${id}/decline`, "u-elvin");
+  line("a non-owner cannot decline", d.status, 403, d.json?.error);
+
+  d = await post(`/api/bookings/${id}/decline`, "u-baku-moto-rent");
+  line("owner declines", d.status, 200, d.json?.booking?.status);
+
+  d = await post(`/api/bookings/${id}/decline`, "u-baku-moto-rent");
+  line("declining twice is refused", d.status, 422, d.json?.error);
+
+  // A declined request never held the dates, so they must still be bookable.
+  const again = await book("u-rashad", {
+    listingId: "l-vespa-bmr",
+    start: "2027-10-10",
+    end: "2027-10-13",
+  });
+  line("declined dates are free again", again.status, 201, again.json?.booking?.code);
+}
+
 heading("two confirmations racing for the same week");
 {
   // Both are pending for overlapping dates. Whatever the timing, the database

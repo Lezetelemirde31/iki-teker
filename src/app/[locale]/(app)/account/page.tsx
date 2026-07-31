@@ -18,8 +18,11 @@ import {
   formatPrice,
   formatRating,
 } from "@/lib/format";
+import { RequestQueue } from "@/components/rental/request-queue";
+import { pendingRequestsFor } from "@/server/bookings";
 import { getListing, getMyRentals, getUser } from "@/server/data";
 import { currentUserId } from "@/server/session";
+import type { Listing, User } from "@/types";
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -31,7 +34,10 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const rentals = await getMyRentals(userId);
+  const [rentals, requests] = await Promise.all([
+    getMyRentals(userId),
+    pendingRequestsFor(userId),
+  ]);
 
   // One lookup per distinct vehicle, resolved before the list renders.
   const rentedListings = new Map(
@@ -39,6 +45,19 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
       .filter((listing) => listing !== undefined)
       .map((listing) => [listing.id, listing]),
   );
+
+  // The queue needs the vehicle and the person asking for it. Both are resolved
+  // here so the client component renders from data rather than fetching again.
+  const requestListings: Record<string, Listing> = {};
+  const requestRenters: Record<string, User> = {};
+  if (requests.length > 0) {
+    const [listings, renters] = await Promise.all([
+      Promise.all([...new Set(requests.map((r) => r.listingId))].map((id) => getListing(id))),
+      Promise.all([...new Set(requests.map((r) => r.renterId))].map((id) => getUser(id))),
+    ]);
+    for (const listing of listings) if (listing) requestListings[listing.id] = listing;
+    for (const renter of renters) if (renter) requestRenters[renter.id] = renter;
+  }
 
   return (
     <PageTransition>
@@ -88,6 +107,24 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               <ChevronRight className="text-subtle-foreground size-5" />
             </Link>
           </section>
+
+          {/* Requests waiting on this owner. Above their own rentals because
+              somebody is waiting on an answer, and hidden entirely when there
+              is nothing to decide rather than showing an empty heading. */}
+          {requests.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
+                {t("requests.title")}
+              </h2>
+              <RequestQueue
+                requests={requests}
+                listings={requestListings}
+                renters={requestRenters}
+                locale={locale}
+                messages={messages}
+              />
+            </section>
+          )}
 
           {/* Rentals the user has taken, newest first. */}
           <section className="space-y-2.5">

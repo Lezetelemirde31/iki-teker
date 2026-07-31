@@ -191,9 +191,48 @@ export async function confirmBooking(bookingId: string, ownerId: string): Promis
   return { ok: true, booking: toBooking(updated) };
 }
 
+/**
+ * The owner turns a request down.
+ *
+ * Kept separate from cancelling: a decline is the owner's decision on a request
+ * that was never accepted, and it frees the dates immediately because they were
+ * never held in the first place.
+ */
+export async function declineBooking(bookingId: string, ownerId: string): Promise<BookingResult> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+
+  const row = await db.query.bookings.findFirst({ where: eq(schema.bookings.id, bookingId) });
+  if (!row) return { ok: false, reason: "notFound" };
+  if (row.ownerId !== ownerId) return { ok: false, reason: "notOwner" };
+  if (row.status !== "pending") return { ok: false, reason: "alreadyDecided" };
+
+  await db
+    .update(schema.bookings)
+    .set({ status: "cancelled" })
+    .where(and(eq(schema.bookings.id, bookingId), eq(schema.bookings.status, "pending")));
+
+  const updated = await db.query.bookings.findFirst({ where: eq(schema.bookings.id, bookingId) });
+  return updated ? { ok: true, booking: toBooking(updated) } : { ok: false, reason: "notFound" };
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Reads                                                                      */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Requests waiting on the owner, oldest first.
+ *
+ * Oldest first because the queue is a to-do list: the request that has been
+ * waiting longest is the one costing the owner a renter.
+ */
+export async function pendingRequestsFor(ownerId: string): Promise<Booking[]> {
+  if (!useDatabase) return [];
+  const rows = await db.query.bookings.findMany({
+    where: and(eq(schema.bookings.ownerId, ownerId), eq(schema.bookings.status, "pending")),
+    orderBy: schema.bookings.createdAt,
+  });
+  return rows.map(toBooking);
+}
 
 /** A booking by its short code — how the confirmation screen finds its own. */
 export async function getBookingByCode(code: string): Promise<Booking | undefined> {

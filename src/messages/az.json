@@ -284,5 +284,14 @@
     "benefit3": "İnternetsiz də baxdığınız səhifələr açılır",
     "benefit4": "Üç dil: Azərbaycan, English, Русский",
     "skip": "Quraşdırmadan bax"
+  },
+  "requests": {
+    "title": "Gözləyən sorğular",
+    "none": "Gözləyən sorğu yoxdur.",
+    "confirm": "Təsdiqlə",
+    "decline": "İmtina",
+    "confirmed": "Təsdiqləndi",
+    "declined": "İmtina edildi",
+    "taken": "Bu tarixlər artıq tutulub"
   }
 }
