@@ -48,9 +48,36 @@ function createDatabase(): Database {
   return drizzlePglite(pglite, { schema });
 }
 
-export const db: Database = globalForDb.__ikiDb ?? createDatabase();
+function database(): Database {
+  const existing = globalForDb.__ikiDb;
+  if (existing) return existing;
 
-if (process.env.NODE_ENV !== "production") globalForDb.__ikiDb = db;
+  const created = createDatabase();
+  // Cached in every environment, not just development: a serverless instance
+  // that handles two requests should not open two connections.
+  globalForDb.__ikiDb = created;
+  return created;
+}
+
+/**
+ * Resolved on first use rather than on import.
+ *
+ * The deployed demo runs on mocks, and PGlite is a WebAssembly Postgres that
+ * boots and writes to disk the moment it is constructed. Instantiating it at
+ * import time meant every serverless cold start — and every production build —
+ * paid for a database nothing was going to query, on a filesystem it could not
+ * write to. Nothing here starts until something actually reads from it.
+ */
+export const db: Database = new Proxy({} as Database, {
+  get(_target, property, receiver) {
+    const actual = database();
+    const value = Reflect.get(actual as object, property, receiver);
+    return typeof value === "function" ? value.bind(actual) : value;
+  },
+  has(_target, property) {
+    return Reflect.has(database() as object, property);
+  },
+});
 
 /** True when running on the embedded engine, which a few admin paths care about. */
 export const isEmbedded = !process.env.DATABASE_URL;

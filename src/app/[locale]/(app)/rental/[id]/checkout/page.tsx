@@ -7,7 +7,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { getListing, getOfferForListing, getUser, isRangeAvailable, quote } from "@/server/data";
-import { currentUserId } from "@/mocks/users";
+import { currentUserId } from "@/server/session";
 
 export default async function CheckoutPage({
   params,
@@ -31,7 +31,7 @@ export default async function CheckoutPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const renter = await getUser(currentUserId);
+  const renter = await getUser(await currentUserId());
   if (!renter) notFound();
 
   return (

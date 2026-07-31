@@ -10,7 +10,7 @@ import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
 import { getCatalogItem, getThread, getUser } from "@/server/data";
-import { currentUserId } from "@/mocks/users";
+import { currentUserId } from "@/server/session";
 
 export default async function ChatThreadPage({
   params,
@@ -25,7 +25,8 @@ export default async function ChatThreadPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const otherId = thread.participantIds.find((participant) => participant !== currentUserId);
+  const userId = await currentUserId();
+  const otherId = thread.participantIds.find((participant) => participant !== userId);
   const other = otherId ? await getUser(otherId) : undefined;
   const item = thread.listingId ? await getCatalogItem(thread.listingId) : undefined;
   const cover = item?.photos[0];
@@ -80,7 +81,7 @@ export default async function ChatThreadPage({
 
       <ChatThread
         initialMessages={thread.messages}
-        currentUserId={currentUserId}
+        currentUserId={userId}
         otherName={other?.name ?? ""}
         contactRevealed={thread.contactRevealed}
         locale={locale}

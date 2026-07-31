@@ -11,6 +11,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatDate, formatDateRange, formatResponseTime } from "@/lib/format";
+import { getBookingByCode } from "@/server/bookings";
 import { getListing, getOfferForListing, getUser, quote } from "@/server/data";
 
 /**
@@ -25,7 +26,7 @@ export default async function ConfirmationPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ start?: string; end?: string }>;
+  searchParams: Promise<{ start?: string; end?: string; code?: string }>;
 }) {
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
@@ -34,13 +35,17 @@ export default async function ConfirmationPage({
   const offer = listing ? await getOfferForListing(listing.id) : undefined;
   if (!listing || !offer) notFound();
 
-  const { start, end } = await searchParams;
+  const { start, end, code } = await searchParams;
   if (!start || !end) redirect(`/${locale}/rental/${id}`);
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
   const owner = await getUser(offer.ownerId);
-  const priced = quote(offer, start, end);
+
+  // The booking exists once a database is attached; on the mock deployment the
+  // dates in the URL are all there is, so the figures are recomputed instead.
+  const booking = code ? await getBookingByCode(code) : undefined;
+  const priced = booking ?? quote(offer, start, end);
   const cover = listing.photos[0];
 
   const steps = [
@@ -98,9 +103,17 @@ export default async function ConfirmationPage({
               <p className="text-muted-foreground tabular mt-0.5 text-xs">
                 {formatDateRange(start, end, locale)} · {t("rental.days", { count: priced.days })}
               </p>
-              <Badge variant="warning" size="md" className="mt-1.5">
-                {t("confirmation.awaiting")}
-              </Badge>
+              <div className="mt-1.5 flex items-center gap-2">
+                <Badge variant="warning" size="md">
+                  {t("confirmation.awaiting")}
+                </Badge>
+                {/* The reference both sides quote at each other from here on. */}
+                {booking && (
+                  <span className="text-subtle-foreground tabular text-[0.6875rem] font-semibold">
+                    {booking.code}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

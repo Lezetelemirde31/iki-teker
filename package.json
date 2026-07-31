@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/db-seed.ts",
     "db:check": "tsx scripts/db-check.ts",
-    "icons": "tsx scripts/generate-icons.ts"
+    "icons": "tsx scripts/generate-icons.ts",
+    "check:api": "node scripts/api-check.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

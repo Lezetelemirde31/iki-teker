@@ -11,7 +11,7 @@ import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { formatRelativeTime } from "@/lib/format";
 import { getCatalogItem, getInbox, getUser } from "@/server/data";
-import { currentUserId } from "@/mocks/users";
+import { currentUserId } from "@/server/session";
 import { cn } from "@/lib/utils";
 
 export default async function ChatsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -20,14 +20,15 @@ export default async function ChatsPage({ params }: { params: Promise<{ locale: 
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const threads = await getInbox(currentUserId);
+  const userId = await currentUserId();
+  const threads = await getInbox(userId);
 
   // Both lookups are resolved before rendering: awaiting inside the list would
   // fire a query per row and run them one after another.
   const otherIds = [
     ...new Set(
       threads
-        .map((thread) => thread.participantIds.find((id) => id !== currentUserId))
+        .map((thread) => thread.participantIds.find((id) => id !== userId))
         .filter((id) => id !== undefined),
     ),
   ];
@@ -58,7 +59,7 @@ export default async function ChatsPage({ params }: { params: Promise<{ locale: 
         ) : (
           <ul className="divide-border divide-y">
             {threads.map((thread) => {
-              const otherId = thread.participantIds.find((id) => id !== currentUserId);
+              const otherId = thread.participantIds.find((id) => id !== userId);
               const other = otherId ? people.get(otherId) : undefined;
               const item = thread.listingId ? items.get(thread.listingId) : undefined;
               const last = thread.messages[thread.messages.length - 1];

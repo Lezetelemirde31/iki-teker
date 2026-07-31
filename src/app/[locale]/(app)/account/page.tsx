@@ -19,7 +19,7 @@ import {
   formatRating,
 } from "@/lib/format";
 import { getListing, getMyRentals, getUser } from "@/server/data";
-import { currentUserId } from "@/mocks/users";
+import { currentUserId } from "@/server/session";
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -27,10 +27,11 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const user = await getUser(currentUserId);
+  const userId = await currentUserId();
+  const user = await getUser(userId);
   if (!user) notFound();
 
-  const rentals = await getMyRentals(currentUserId);
+  const rentals = await getMyRentals(userId);
 
   // One lookup per distinct vehicle, resolved before the list renders.
   const rentedListings = new Map(

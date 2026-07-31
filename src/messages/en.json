@@ -194,7 +194,20 @@
     "serviceFee": "Service fee",
     "dueOnPickup": "Due on pickup",
     "agree": "I agree to the rental agreement and the platform rules.",
-    "send": "Send request"
+    "send": "Send request",
+    "error": {
+      "generic": "The request could not be sent. Please try again shortly.",
+      "offline": "No connection. Check your network and try again.",
+      "unavailable": "Those dates have just been taken. Pick another range in the calendar.",
+      "notFound": "This listing is no longer available.",
+      "invalidRange": "That date range is not valid. Choose it again in the calendar.",
+      "pastDate": "A booking cannot start in the past.",
+      "belowMinimum": "That is shorter than the minimum rental period.",
+      "aboveMaximum": "That is longer than the maximum rental period.",
+      "licenceRequired": "Upload your driving licence to continue.",
+      "agreementRequired": "Accept the terms to continue.",
+      "ownVehicle": "You cannot rent your own vehicle."
+    }
   },
   "confirmation": {
     "title": "Booking",

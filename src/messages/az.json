@@ -194,7 +194,20 @@
     "serviceFee": "Xidmət haqqı",
     "dueOnPickup": "Təhvil zamanı ödəniləcək",
     "agree": "İcarə müqaviləsi və platformanın qaydaları ilə razıyam.",
-    "send": "Sorğu göndər"
+    "send": "Sorğu göndər",
+    "error": {
+      "generic": "Sorğu göndərilmədi. Bir az sonra yenidən yoxlayın.",
+      "offline": "İnternet bağlantısı yoxdur. Bağlantını yoxlayıb yenidən cəhd edin.",
+      "unavailable": "Bu tarixlər artıq tutulub. Təqvimə qayıdıb başqa gün seçin.",
+      "notFound": "Bu elan artıq mövcud deyil.",
+      "invalidRange": "Tarix aralığı düzgün deyil. Təqvimdən yenidən seçin.",
+      "pastDate": "Keçmiş tarixə sifariş vermək olmur.",
+      "belowMinimum": "Seçdiyiniz müddət minimum icarə müddətindən azdır.",
+      "aboveMaximum": "Seçdiyiniz müddət maksimum icarə müddətini aşır.",
+      "licenceRequired": "Davam etmək üçün sürücülük vəsiqəsini yükləyin.",
+      "agreementRequired": "Davam etmək üçün şərtlərlə razılaşın.",
+      "ownVehicle": "Öz nəqliyyat vasitənizi icarəyə götürə bilməzsiniz."
+    }
   },
   "confirmation": {
     "title": "Bron",

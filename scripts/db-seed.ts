@@ -33,7 +33,43 @@ import {
 
 const DATA_DIR = process.env.PGLITE_DIR ?? "./.pglite";
 
+/**
+ * PGlite refuses to open a directory another process still holds, and reports
+ * it as a WebAssembly abort with no explanation. A dev server killed mid-run
+ * leaves the lock behind, so the usual cause is worth naming.
+ */
+async function checkLock() {
+  const { access, rm } = await import("node:fs/promises");
+  const lock = path.join(DATA_DIR, "postmaster.pid");
+  try {
+    await access(lock);
+  } catch {
+    return;
+  }
+
+  if (process.env.FORCE_UNLOCK === "1") {
+    await rm(lock);
+    console.log("removed a stale lock (FORCE_UNLOCK=1)");
+    return;
+  }
+
+  console.error(
+    [
+      `${DATA_DIR} is locked (${lock} exists).`,
+      "",
+      "Stop anything using the database first — usually a dev server started",
+      "with USE_LOCAL_DB=1. If nothing is running, the lock is stale:",
+      "",
+      "  FORCE_UNLOCK=1 npm run db:seed",
+      "",
+      "Deleting the whole directory is also safe; it is rebuilt from the mocks.",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
 async function main() {
+  await checkLock();
   const pglite = new PGlite(DATA_DIR, { extensions: { btree_gist } });
   const db = drizzle(pglite, { schema });
 

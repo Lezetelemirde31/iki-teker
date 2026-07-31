@@ -44,21 +44,51 @@ export function CheckoutScreen({
   const [licenceUploaded, setLicenceUploaded] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const licenceNeeded = offer.licenceRequired !== "none";
   const ready = agreed && (!licenceNeeded || licenceUploaded);
 
-  function submit() {
-    if (!ready) return;
+  async function submit() {
+    if (!ready || sending) return;
     setSending(true);
-    // Simulated round trip so the button's pending state is visible.
-    setTimeout(
-      () =>
-        router.push(
-          `/${locale}/rental/${listing.id}/confirmation?start=${range.start}&end=${range.end}`,
-        ),
-      650,
-    );
+    setError(null);
+
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          start: range.start,
+          end: range.end,
+          licenceUploaded,
+          agreementAccepted: agreed,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        // The server names the reason; the dictionary turns it into a sentence,
+        // falling back to the generic line for anything not worth its own copy.
+        const key = `checkout.error.${data?.error}` as Parameters<typeof t>[0];
+        const message = t(key);
+        setError(message === key ? t("checkout.error.generic") : message);
+        setSending(false);
+        return;
+      }
+
+      // The code is the renter's reference for this booking; carrying it means
+      // the confirmation screen shows the booking that was made rather than
+      // re-deriving one from the dates in the URL.
+      const code = data?.booking?.code ? `&code=${encodeURIComponent(data.booking.code)}` : "";
+      router.push(
+        `/${locale}/rental/${listing.id}/confirmation?start=${range.start}&end=${range.end}${code}`,
+      );
+    } catch {
+      setError(t("checkout.error.offline"));
+      setSending(false);
+    }
   }
 
   const cover = listing.photos[0];
@@ -172,6 +202,14 @@ export function CheckoutScreen({
       </main>
 
       <div className="border-border bg-card safe-bottom shrink-0 border-t px-4 pt-3 pb-3">
+        {error && (
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive mb-2.5 rounded-lg px-3 py-2 text-xs leading-relaxed"
+          >
+            {error}
+          </p>
+        )}
         <Button
           size="lg"
           block
