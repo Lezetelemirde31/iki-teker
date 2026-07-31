@@ -35,6 +35,23 @@ export function ContactActions({
   const router = useRouter();
   const [revealed, setRevealed] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [total, setTotal] = useState(contacts + 1);
+
+  function reveal() {
+    if (revealed) return;
+    setRevealed(true);
+
+    // Recorded, not just displayed. This is the number a seller's promotion is
+    // sold against, so it has to survive the page being closed.
+    fetch(`/api/listings/${listingId}/contact`, { method: "POST" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { contacts?: number | null } | null) => {
+        if (typeof data?.contacts === "number") setTotal(data.contacts);
+      })
+      .catch(() => {
+        // The number stays optimistic; the reveal itself already happened.
+      });
+  }
 
   async function openConversation() {
     if (opening) return;
@@ -74,7 +91,7 @@ export function ContactActions({
         <Button
           size="lg"
           className="flex-[1.35] font-semibold"
-          onClick={() => setRevealed(true)}
+          onClick={reveal}
           aria-live="polite"
         >
           <Phone />
@@ -86,7 +103,7 @@ export function ContactActions({
 
       {revealed && (
         <p className="text-subtle-foreground mt-2 text-center text-[0.6875rem]">
-          {t("listing.contactRevealed")} · {contacts + 1}
+          {t("listing.contactRevealed")} · {total}
         </p>
       )}
     </div>

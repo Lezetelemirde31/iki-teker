@@ -329,5 +329,16 @@
     },
     "created": "Elan hazırdır",
     "demoNotStored": "Bu nümayiş versiyasında baza qoşulmayıb, ona görə elan saxlanılmadı. Baza qoşulan kimi elanlar həqiqətən dərc olunacaq."
+  },
+  "owner": {
+    "stats": "{views} baxış · {contacts} əlaqə",
+    "markSold": "Satıldı",
+    "archive": "Arxivə at",
+    "republish": "Yenidən dərc et",
+    "delete": "Elanı sil",
+    "deleteConfirm": "Elan həmişəlik silinəcək. Əminsiniz?",
+    "deleteYes": "Bəli, sil",
+    "soldBadge": "Satılıb",
+    "archivedBadge": "Arxivdə"
   }
 }

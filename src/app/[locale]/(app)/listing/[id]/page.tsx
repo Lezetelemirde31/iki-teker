@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Rail } from "@/components/common/rail";
 import { AppHeader } from "@/components/layout/app-header";
 import { ContactActions } from "@/components/listing/contact-actions";
+import { OwnerActions } from "@/components/listing/owner-actions";
 import { FavoriteButton } from "@/components/listing/favorite-button";
 import { ListingGallery } from "@/components/listing/listing-gallery";
 import { RailCard } from "@/components/listing/listing-cards";
@@ -32,6 +33,8 @@ import {
   similarListings,
 } from "@/server/data";
 import { conditionLabels } from "@/mocks/taxonomy";
+import { recordView } from "@/server/listing-actions";
+import { currentUserId } from "@/server/session";
 
 export default async function ListingPage({
   params,
@@ -46,6 +49,15 @@ export default async function ListingPage({
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
+  const viewerId = await currentUserId();
+  const isOwner = item.sellerId === viewerId;
+
+  // Counted here rather than from the browser: a view is the page being served,
+  // and a client call would miss anyone who leaves before the script runs.
+  // Deliberately not awaited — a slow write should not delay the page, and a
+  // failed counter is not worth a failed render.
+  void recordView(item.id, viewerId);
+
   const seller = await getUser(item.sellerId);
   const place = locationOf(item);
   const offer = item.kind === "vehicle" ? await getOfferForListing(item.id) : undefined;

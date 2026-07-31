@@ -329,5 +329,16 @@
     },
     "created": "Listing ready",
     "demoNotStored": "This demo has no database attached, so the listing was not stored. Once one is connected, listings will be published for real."
+  },
+  "owner": {
+    "stats": "{views} views · {contacts} contacts",
+    "markSold": "Mark sold",
+    "archive": "Archive",
+    "republish": "Publish again",
+    "delete": "Delete listing",
+    "deleteConfirm": "This listing will be deleted permanently. Are you sure?",
+    "deleteYes": "Yes, delete",
+    "soldBadge": "Sold",
+    "archivedBadge": "Archived"
   }
 }
