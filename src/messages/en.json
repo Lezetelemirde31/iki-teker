@@ -243,7 +243,9 @@
     "online": "online",
     "contactLocked": "Contact details unlock once the booking is confirmed.",
     "today": "Today",
-    "attachment": "Attachment"
+    "attachment": "Attachment",
+    "sendFailed": "The message was not sent. Try again.",
+    "messageSeller": "Message seller"
   },
   "favorites": {
     "title": "Favorites",

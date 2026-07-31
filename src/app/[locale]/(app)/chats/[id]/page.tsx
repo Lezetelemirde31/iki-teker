@@ -80,6 +80,7 @@ export default async function ChatThreadPage({
       )}
 
       <ChatThread
+        threadId={thread.id}
         initialMessages={thread.messages}
         currentUserId={userId}
         otherName={other?.name ?? ""}

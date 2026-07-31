@@ -2,6 +2,7 @@
 
 import { MessageCircle, Phone } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -13,28 +14,61 @@ import { useLocale, useT } from "@/i18n/provider";
  * Revealing the number is a discrete event, not a passive display: the seller
  * is shown how many times their listing produced a contact, which is what they
  * are actually paying promotion for. The count increments locally here.
+ *
+ * "Message" opens the conversation about this listing — the same one every
+ * time, so a negotiation that pauses and resumes is one thread rather than a
+ * pile of empty ones.
  */
 export function ContactActions({
+  listingId,
   phone,
   contacts,
   threadHref,
 }: {
+  listingId: string;
   phone: string;
   contacts: number;
   threadHref: string;
 }) {
   const t = useT();
   const locale = useLocale();
+  const router = useRouter();
   const [revealed, setRevealed] = useState(false);
+  const [opening, setOpening] = useState(false);
+
+  async function openConversation() {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const response = await fetch("/api/threads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ listingId }),
+      });
+      if (response.ok) {
+        const { threadId } = await response.json();
+        router.push(`/${locale}/chats/${threadId}`);
+        return;
+      }
+    } catch {
+      // Fall through to the inbox.
+    }
+    // No database, or the seller is you: the inbox is the honest destination.
+    router.push(`/${locale}${threadHref}`);
+  }
 
   return (
     <div className="border-border bg-card safe-bottom shrink-0 border-t px-4 pt-3 pb-3">
       <div className="flex gap-2">
-        <Button variant="outline" size="lg" className="flex-1" asChild>
-          <Link href={`/${locale}${threadHref}`}>
-            <MessageCircle />
-            {t("listing.message")}
-          </Link>
+        <Button
+          variant="outline"
+          size="lg"
+          className="flex-1"
+          disabled={opening}
+          onClick={openConversation}
+        >
+          <MessageCircle />
+          {t("listing.message")}
         </Button>
 
         <Button

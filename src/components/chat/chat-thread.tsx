@@ -18,6 +18,7 @@ import type { Message } from "@/types";
  * reply after a beat so the flow can be demonstrated end to end.
  */
 export function ChatThread({
+  threadId,
   initialMessages,
   currentUserId,
   otherName,
@@ -25,6 +26,7 @@ export function ChatThread({
   locale,
   messages: dict,
 }: {
+  threadId: string;
   initialMessages: Message[];
   currentUserId: string;
   otherName: string;
@@ -36,48 +38,80 @@ export function ChatThread({
   const [thread, setThread] = useState(initialMessages);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
+  const [failed, setFailed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [thread, typing]);
 
-  function send(event: React.FormEvent) {
+  async function send(event: React.FormEvent) {
     event.preventDefault();
     const body = draft.trim();
     if (!body) return;
 
-    const now = new Date().toISOString();
+    // Shown immediately and reconciled with the server's copy when it lands.
+    // Waiting for a round trip before the message appears makes a chat feel
+    // broken even when it is working.
+    const pendingId = `pending-${Date.now()}`;
     setThread((current) => [
       ...current,
       {
-        id: `local-${current.length}`,
-        threadId: "local",
+        id: pendingId,
+        threadId,
         authorId: currentUserId,
         kind: "text",
         body,
-        createdAt: now,
+        createdAt: new Date().toISOString(),
         readByRecipient: false,
       },
     ]);
     setDraft("");
+    setFailed(false);
 
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      setThread((current) => [
-        ...current,
-        {
-          id: `reply-${current.length}`,
-          threadId: "local",
-          authorId: "other",
-          kind: "text",
-          body: "Salam! Bir dəqiqə, yoxlayıb yazıram 👍",
-          createdAt: new Date().toISOString(),
-          readByRecipient: true,
-        },
-      ]);
-    }, 1400);
+    try {
+      const response = await fetch(`/api/threads/${threadId}/messages`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+
+      if (response.ok) {
+        const { message } = await response.json();
+        setThread((current) => current.map((m) => (m.id === pendingId ? message : m)));
+        return;
+      }
+
+      // No database on the demo deployment, so there is nowhere to put it. The
+      // scripted reply keeps the flow demonstrable; it is not pretending the
+      // message was delivered to anyone.
+      if (response.status === 404) {
+        setTyping(true);
+        setTimeout(() => {
+          setTyping(false);
+          setThread((current) => [
+            ...current,
+            {
+              id: `reply-${current.length}`,
+              threadId,
+              authorId: "other",
+              kind: "text",
+              body: "Salam! Bir dəqiqə, yoxlayıb yazıram 👍",
+              createdAt: new Date().toISOString(),
+              readByRecipient: true,
+            },
+          ]);
+        }, 1400);
+        return;
+      }
+
+      throw new Error(String(response.status));
+    } catch {
+      // Take the message back out rather than leave it looking sent.
+      setThread((current) => current.filter((m) => m.id !== pendingId));
+      setDraft(body);
+      setFailed(true);
+    }
   }
 
   return (
@@ -159,6 +193,14 @@ export function ChatThread({
         onSubmit={send}
         className="border-border bg-card safe-bottom shrink-0 border-t px-3 pt-2.5 pb-2.5"
       >
+        {failed && (
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive mb-2 rounded-lg px-3 py-1.5 text-[0.6875rem]"
+          >
+            {t("chat.sendFailed")}
+          </p>
+        )}
         <div className="flex items-end gap-2">
           <input
             value={draft}

@@ -243,7 +243,9 @@
     "online": "onlayn",
     "contactLocked": "Kontaktlar bron təsdiqləndikdən sonra açılır.",
     "today": "Bu gün",
-    "attachment": "Sənəd"
+    "attachment": "Sənəd",
+    "sendFailed": "Mesaj göndərilmədi. Yenidən cəhd edin.",
+    "messageSeller": "Satıcıya yaz"
   },
   "favorites": {
     "title": "Seçilmişlər",

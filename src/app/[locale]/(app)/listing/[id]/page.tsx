@@ -223,6 +223,7 @@ export default async function ListingPage({
 
       {seller && (
         <ContactActions
+          listingId={item.id}
           phone={seller.phone}
           contacts={item.stats.contacts}
           threadHref={`/chats?listing=${item.id}`}
