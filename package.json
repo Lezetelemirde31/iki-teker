@@ -16,7 +16,8 @@
     "icons": "tsx scripts/generate-icons.ts",
     "check:api": "node scripts/api-check.mjs",
     "db:migrate": "tsx scripts/db-migrate.ts",
-    "db:reference": "tsx scripts/db-reference.ts"
+    "db:reference": "tsx scripts/db-reference.ts",
+    "check:auth": "node scripts/auth-check.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

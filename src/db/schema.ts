@@ -162,6 +162,9 @@ export const users = pgTable(
     subscription: text("subscription").default("none"),
     /** Defaults to the least privilege; moderators are promoted deliberately. */
     role: userRole("role").notNull().default("user"),
+    /** Optional contact, never an identity. Sign-in is by phone; this exists so
+     *  receipts and rental agreements have somewhere to go later. */
+    email: text("email"),
   },
   (table) => [uniqueIndex("users_phone_idx").on(table.phone)],
 );
@@ -350,6 +353,52 @@ export const bookings = pgTable(
 /* -------------------------------------------------------------------------- */
 /*  Trust and messaging                                                        */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * One-time codes for phone sign-in.
+ *
+ * The code itself is never stored — only a hash — so a leaked database does not
+ * hand over live credentials. Each row carries its own expiry and attempt
+ * counter rather than relying on a cleanup job: an expired or exhausted code is
+ * refused by the check, whether or not anything has swept it away yet.
+ */
+export const authCodes = pgTable(
+  "auth_codes",
+  {
+    id: text("id").primaryKey(),
+    phone: text("phone").notNull(),
+    codeHash: text("code_hash").notNull(),
+    /** Present when this code is for a phone that has no account yet. */
+    pendingName: text("pending_name"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("auth_codes_phone_idx").on(table.phone, table.createdAt)],
+);
+
+/**
+ * Signed-in sessions.
+ *
+ * Server-side rather than a self-contained token, because signing out — or
+ * being signed out — has to take effect immediately. A stateless token stays
+ * valid until it expires no matter what the server thinks of it.
+ */
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    /** Rough device label, so a user can tell their own sessions apart. */
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("sessions_user_idx").on(table.userId)],
+);
 
 /**
  * Every moderation decision, permanently.

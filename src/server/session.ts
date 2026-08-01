@@ -4,40 +4,55 @@ import { cookies } from "next/headers";
 
 import { currentUserId as demoUserId } from "@/mocks/users";
 
+import { readSession } from "./auth/session-store";
+import { useDatabase } from "./source";
+
 /**
  * Who the request is from.
  *
- * Real authentication is blocked on a legal entity and an SMS provider, so this
- * resolves to a demo persona for now. It is a function rather than the constant
- * the screens used to import directly, because that is the shape the rest of
- * the code has to be written against either way: asynchronous, per-request, and
- * capable of saying "nobody". When phone sign-in arrives, only the body of
- * `currentUser` changes — no caller does.
+ * Three sources, in order of authority:
  *
- * The cookie exists so a demo can be given a second identity (owner vs renter)
- * without a rebuild. It is not a credential and grants nothing; the value is
- * only ever used to look a user up.
+ *   1. A real signed-in session. This is the answer whenever there is one.
+ *   2. The demo-identity cookie, which lets one browser act as an owner and
+ *      another as a renter without two accounts. It is not a credential and
+ *      grants nothing beyond looking a user up.
+ *   3. The seeded persona, so every screen still renders with no database and
+ *      nobody signed in — which is what the deployed prototype does.
+ *
+ * `authenticated` is the honest bit: false means "we are showing you something,
+ * but nobody proved who they are". Anything that must not be done by a stranger
+ * checks it rather than assuming an id implies a person.
  */
 
-const COOKIE = "iki-demo-user";
+const DEMO_COOKIE = "iki-demo-user";
 
 export type Session = {
   userId: string;
-  /** False once real auth exists and the visitor has not signed in. */
+  /** True only when a real session backs this request. */
   authenticated: boolean;
 };
 
 export async function currentUser(): Promise<Session> {
+  if (useDatabase) {
+    const session = await readSession();
+    if (session) return { userId: session.userId, authenticated: true };
+  }
+
   const jar = await cookies();
-  const impersonated = jar.get(COOKIE)?.value;
+  const impersonated = jar.get(DEMO_COOKIE)?.value;
 
   return {
     userId: impersonated && /^u-[a-z0-9-]+$/.test(impersonated) ? impersonated : demoUserId,
-    authenticated: true,
+    authenticated: false,
   };
 }
 
 /** The id alone, for the many callers that need nothing else. */
 export async function currentUserId(): Promise<string> {
   return (await currentUser()).userId;
+}
+
+/** True when a real session backs this request. */
+export async function isSignedIn(): Promise<boolean> {
+  return (await currentUser()).authenticated;
 }

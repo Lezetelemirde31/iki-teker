@@ -18,6 +18,7 @@ import path from "node:path";
 import postgres from "postgres";
 
 import { applyConstraints, hasOverlapGuard } from "../src/db/bootstrap";
+import { normalisePhone } from "../src/lib/phone";
 import * as schema from "../src/db/schema";
 import {
   bookings as mockBookings,
@@ -212,7 +213,12 @@ async function main() {
       initials: u.initials,
       avatarTone: u.avatarTone,
       kind: u.kind,
-      phone: u.phone,
+      // Stored canonically. The mocks write numbers the way a person types
+      // them — "+994 50 447 18 92" — and sign-in looks them up normalised, so
+      // storing the pretty form would make every seeded account unreachable.
+      // Landlines have no canonical mobile form and are kept as written; they
+      // cannot receive an SMS anyway.
+      phone: normalisePhone(u.phone) ?? u.phone,
       phoneVerified: u.phoneVerified,
       verifiedBadge: u.verifiedBadge,
       rating: String(u.rating),

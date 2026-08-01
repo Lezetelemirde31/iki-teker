@@ -1,0 +1,35 @@
+import { notFound } from "next/navigation";
+
+import { AuthForm } from "@/components/auth/auth-form";
+import { AppHeader } from "@/components/layout/app-header";
+import { isLocale } from "@/i18n/config";
+import { getMessages } from "@/i18n/dictionaries";
+import { createTranslator } from "@/i18n/translate";
+
+export default async function LoginPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const messages = await getMessages(locale);
+  const t = createTranslator(messages);
+
+  // Only same-site paths are followed. An open redirect on a login page is how
+  // a phishing link borrows a real domain's credibility.
+  const { next } = await searchParams;
+  const destination = next && next.startsWith("/") && !next.startsWith("//")
+    ? next
+    : `/${locale}/account`;
+
+  return (
+    <>
+      <AppHeader back title={t("auth.login")} />
+      <AuthForm mode="login" locale={locale} messages={messages} redirectTo={destination} />
+    </>
+  );
+}

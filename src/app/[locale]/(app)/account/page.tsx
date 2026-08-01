@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, ChevronRight, Heart, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, CalendarCheck, ChevronRight, Heart, LogIn, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -8,6 +8,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { PageTransition } from "@/components/motion/page-transition";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
@@ -18,6 +19,7 @@ import {
   formatPrice,
   formatRating,
 } from "@/lib/format";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { OwnListings } from "@/components/listing/own-listings";
 import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
@@ -25,7 +27,7 @@ import { pendingRequestsFor } from "@/server/bookings";
 import { ownListings } from "@/server/listing-actions";
 import { pendingCount } from "@/server/moderation";
 import { getListing, getMyRentals, getUser } from "@/server/data";
-import { currentUserId } from "@/server/session";
+import { currentUserId, isSignedIn } from "@/server/session";
 import type { Listing, User } from "@/types";
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -38,12 +40,13 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests, moderator, queued, mine] = await Promise.all([
+  const [rentals, requests, moderator, queued, mine, signedIn] = await Promise.all([
     getMyRentals(userId),
     pendingRequestsFor(userId),
     canModerate(),
     pendingCount(),
     ownListings(userId),
+    isSignedIn(),
   ]);
 
   // One lookup per distinct vehicle, resolved before the list renders.
@@ -225,6 +228,21 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             </h2>
             <ThemeToggle />
           </section>
+
+          {/* Sign in or out, depending. Shown last because it is a settings
+              action, not something anyone comes to this screen to do. */}
+          <div className="pt-1">
+            {signedIn ? (
+              <SignOutButton />
+            ) : (
+              <Button size="lg" block className="font-display uppercase" asChild>
+                <Link href={`/${locale}/login`}>
+                  <LogIn />
+                  {t("auth.login")}
+                </Link>
+              </Button>
+            )}
+          </div>
 
           <p className="text-subtle-foreground pb-2 text-[0.6875rem] leading-relaxed">
             {t("account.demoNote")}

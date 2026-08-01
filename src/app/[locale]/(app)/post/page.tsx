@@ -8,6 +8,7 @@ import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { categorySchemas } from "@/mocks/taxonomy";
+import { requireUser } from "@/server/auth/guard";
 import type { VehicleCategorySlug } from "@/types";
 
 export default async function PostPage({
@@ -26,6 +27,10 @@ export default async function PostPage({
   if (!category || !(category in categorySchemas)) {
     redirect(`/${locale}/home`);
   }
+
+  // Posting attaches a listing to a person, so it needs one. They come back
+  // here afterwards rather than landing on a generic account page.
+  await requireUser(locale, `/${locale}/post?category=${category}`);
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
