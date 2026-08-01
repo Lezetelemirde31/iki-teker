@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { isLocale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
+import { demoAuthAllowed } from "@/server/auth/sms";
 
 export default async function RegisterPage({
   params,
@@ -33,6 +34,7 @@ export default async function RegisterPage({
         messages={messages}
         redirectTo={destination}
         initialPhone={phone}
+        smsAvailable={demoAuthAllowed()}
       />
     </>
   );

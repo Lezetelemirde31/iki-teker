@@ -165,6 +165,9 @@ export const users = pgTable(
     /** Optional contact, never an identity. Sign-in is by phone; this exists so
      *  receipts and rental agreements have somewhere to go later. */
     email: text("email"),
+    /** scrypt, with its parameters embedded. Null for accounts created before
+     *  passwords existed, and for anyone who only ever signs in by SMS. */
+    passwordHash: text("password_hash"),
   },
   (table) => [uniqueIndex("users_phone_idx").on(table.phone)],
 );

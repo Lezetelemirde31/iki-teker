@@ -411,9 +411,9 @@
     "login": "Daxil ol",
     "register": "Qeydiyyat",
     "loginTitle": "Xoş gəldiniz",
-    "loginBody": "Nömrənizi yazın, SMS ilə birdəfəlik kod göndərək. Parol lazım deyil.",
+    "loginBody": "Nömrənizi və parolunuzu yazın.",
     "registerTitle": "Hesab yaradın",
-    "registerBody": "Adınızı və nömrənizi yazın. Nömrə SMS ilə təsdiqlənəcək.",
+    "registerBody": "Ad, nömrə və parol. Nömrəni sonra SMS ilə təsdiqləyə bilərsiniz.",
     "name": "Ad və soyad",
     "namePlaceholder": "Rəşad Məmmədov",
     "phone": "Telefon nömrəsi",
@@ -459,7 +459,26 @@
       "tooManyAttempts": "Çox səhv cəhd. Yeni kod istəyin.",
       "wrongCode": "Kod səhvdir. Yenidən yoxlayın.",
       "unavailable": "Giriş hazırda əlçatan deyil.",
-      "noDatabase": "Giriş hazırda əlçatan deyil."
-    }
+      "noDatabase": "Giriş hazırda əlçatan deyil.",
+      "tooShort": "Parol ən azı 8 simvol olmalıdır.",
+      "tooLong": "Parol çox uzundur.",
+      "tooCommon": "Bu parol çox sadədir. Başqasını seçin.",
+      "wrongCredentials": "Nömrə və ya parol səhvdir.",
+      "noPassword": "Bu hesabda parol yoxdur. SMS ilə daxil olub parol təyin edin.",
+      "locked": "Çox səhv cəhd. 15 dəqiqə sonra yenidən yoxlayın.",
+      "alreadyRegistered": "Bu nömrə artıq qeydiyyatdadır.",
+      "notSignedIn": "Əvvəlcə hesaba daxil olun."
+    },
+    "password": "Parol",
+    "newPassword": "Yeni parol",
+    "passwordHint": "ən azı 8 simvol",
+    "createAccount": "Hesab yarat",
+    "forgotPassword": "Parolu unutmusunuz?",
+    "newPasswordTitle": "Yeni parol təyin edin",
+    "newPasswordBody": "Nömrəniz təsdiqləndi. İndi yeni parol yazın.",
+    "savePassword": "Parolu yadda saxla",
+    "back": "Geri",
+    "verifyPhone": "Nömrəni təsdiqlə",
+    "verifyPhoneBody": "Nömrəniz hələ təsdiqlənməyib. Təsdiqlənmiş nömrə alıcılarda daha çox etibar yaradır."
   }
 }

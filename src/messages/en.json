@@ -411,9 +411,9 @@
     "login": "Sign in",
     "register": "Create account",
     "loginTitle": "Welcome back",
-    "loginBody": "Enter your number and we will text you a one-time code. No password needed.",
+    "loginBody": "Your number and your password.",
     "registerTitle": "Create an account",
-    "registerBody": "Your name and number. We will confirm the number by SMS.",
+    "registerBody": "Name, number and a password. You can confirm the number by SMS afterwards.",
     "name": "Full name",
     "namePlaceholder": "Rashad Mammadov",
     "phone": "Phone number",
@@ -459,7 +459,26 @@
       "tooManyAttempts": "Too many wrong attempts. Request a new code.",
       "wrongCode": "That code is not right. Check and try again.",
       "unavailable": "Sign-in is not available right now.",
-      "noDatabase": "Sign-in is not available right now."
-    }
+      "noDatabase": "Sign-in is not available right now.",
+      "tooShort": "The password needs at least 8 characters.",
+      "tooLong": "That password is too long.",
+      "tooCommon": "That password is too common. Pick another.",
+      "wrongCredentials": "That number or password is not right.",
+      "noPassword": "This account has no password. Sign in by SMS and set one.",
+      "locked": "Too many wrong attempts. Try again in 15 minutes.",
+      "alreadyRegistered": "That number is already registered.",
+      "notSignedIn": "Sign in first."
+    },
+    "password": "Password",
+    "newPassword": "New password",
+    "passwordHint": "at least 8 characters",
+    "createAccount": "Create account",
+    "forgotPassword": "Forgotten your password?",
+    "newPasswordTitle": "Set a new password",
+    "newPasswordBody": "Your number is confirmed. Choose a new password.",
+    "savePassword": "Save password",
+    "back": "Back",
+    "verifyPhone": "Verify your number",
+    "verifyPhoneBody": "Your number is not verified yet. A verified number earns more trust from buyers."
   }
 }

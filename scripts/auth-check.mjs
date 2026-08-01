@@ -172,5 +172,69 @@ heading("protected routes");
   line("and remembers where they were going", /next=/.test(location) ? "yes" : "no", "yes");
 }
 
+/* ========================================================================== *
+ *  Passwords                                                                  *
+ * ========================================================================== */
+
+heading("registering with a password");
+let pwPhone, pwCookie;
+{
+  pwPhone = fresh();
+  const good = "korrekt-at-batareya-7";
+
+  for (const [label, password, want] of [
+    ["shorter than eight", "abc123", "tooShort"],
+    ["one of the usual suspects", "password", "tooCommon"],
+    ["digits everyone tries", "12345678", "tooCommon"],
+  ]) {
+    const r = await call("/api/auth/register", { phone: fresh(), name: "Test", password });
+    line(label, r.json?.error, want, r.status);
+  }
+
+  let r = await call("/api/auth/register", { phone: pwPhone, name: "P", password: good });
+  line("a one-letter name", r.json?.error, "nameRequired", r.status);
+
+  r = await call("/api/auth/register", { phone: pwPhone, name: "Parol İstifadəçi", password: good });
+  line("accepted", r.status, 201, r.json?.user?.id);
+  pwCookie = (r.setCookie ?? "").split(";")[0];
+  line("signed in straight away", /^iki-session=/.test(pwCookie) ? "yes" : "no", "yes");
+
+  // No SMS was involved, so the number is not proved and must not be claimed.
+  const me = await (await fetch(`${API}/api/auth/me`, { headers: { cookie: pwCookie } })).json();
+  line("account exists", me.user ? "yes" : "no", "yes");
+
+  r = await call("/api/auth/register", { phone: pwPhone, name: "Someone Else", password: good });
+  line("the same number twice", r.status, 409, r.json?.error);
+}
+
+heading("signing in with a password");
+{
+  const good = "korrekt-at-batareya-7";
+
+  let r = await call("/api/auth/password", { phone: pwPhone, password: "wrong-password-here" });
+  line("a wrong password", r.status, 401, r.json?.error);
+
+  r = await call("/api/auth/password", { phone: fresh(), password: good });
+  line("a number with no account answers the same", r.json?.error, "wrongCredentials", r.status);
+
+  r = await call("/api/auth/password", { phone: pwPhone, password: good });
+  line("the right password", r.status, 200, r.json?.user?.name);
+
+  const cookie = (r.setCookie ?? "").split(";")[0];
+  const me = await (await fetch(`${API}/api/auth/me`, { headers: { cookie } })).json();
+  line("and it is a working session", me.user ? "yes" : "no", "yes");
+
+  // A seeded account has no password, and that is a different answer from a
+  // wrong one — otherwise nobody would know to sign in by SMS instead.
+  r = await call("/api/auth/password", { phone: "050 447 18 92", password: good });
+  line("an account with no password says so", r.json?.error, "noPassword", r.status);
+}
+
+heading("a password cannot be set by a stranger");
+{
+  const r = await call("/api/auth/reset", { password: "another-good-password-9" });
+  line("no session, no reset", r.status, 401, r.json?.error);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

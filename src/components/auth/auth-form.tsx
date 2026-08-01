@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -13,20 +13,21 @@ import { isValidPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 /**
- * Phone sign-in, both steps.
+ * Signing in and registering.
  *
- * Login and register are the same component because they are the same act: you
- * type your number and prove it is yours. Whether that ends in a new account or
- * an old one is the server's business, not something the user should have to
- * choose correctly before they start. The only difference is that the register
- * route also asks for a name up front.
+ * Password first, SMS second. A password works with no provider contract, no
+ * network wait and no roaming charge, so it is the everyday path; the code is
+ * kept for the three things that genuinely need proof the phone is yours —
+ * verifying a number, resetting a forgotten password, and signing in when the
+ * password is gone.
  *
- * Validation runs on every change once a field has been touched, so the button
- * being disabled always has a visible reason next to it — a disabled button
- * with no explanation is the most common way a form dead-ends.
+ * Registering does not require a code either. The account is created with the
+ * number unverified and the badge appears once it has been proved, which is
+ * honest about what is known and lets the product work before an SMS contract
+ * exists.
  */
 
-type Step = "phone" | "code" | "done";
+type Step = "form" | "code" | "newPassword" | "done";
 
 export function AuthForm({
   mode,
@@ -34,19 +35,24 @@ export function AuthForm({
   messages,
   redirectTo,
   initialPhone,
+  smsAvailable,
 }: {
   mode: "login" | "register";
   locale: Locale;
   messages: Messages;
   redirectTo: string;
   initialPhone?: string;
+  /** False when no provider is configured and demo codes are switched off. */
+  smsAvailable: boolean;
 }) {
   const t = createTranslator(messages);
   const router = useRouter();
 
-  const [step, setStep] = useState<Step>("phone");
+  const [step, setStep] = useState<Step>("form");
   const [phone, setPhone] = useState(initialPhone ?? "");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [code, setCode] = useState("");
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -58,7 +64,6 @@ export function AuthForm({
 
   const codeRef = useRef<HTMLInputElement>(null);
 
-  // A countdown that is only ever decremented from one place.
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
@@ -71,12 +76,14 @@ export function AuthForm({
 
   const phoneValid = isValidPhone(phone);
   const nameValid = mode === "login" || name.trim().length >= 2;
+  const passwordValid = password.length >= 8;
   const codeValid = /^\d{6}$/.test(code);
 
   const phoneError = touched.phone && phone && !phoneValid ? t("auth.error.invalidPhone") : null;
   const nameError = touched.name && !nameValid ? t("auth.error.nameRequired") : null;
+  const passwordError =
+    touched.password && password && !passwordValid ? t("auth.error.tooShort") : null;
 
-  /** Maps a server reason onto copy, falling back rather than showing a code. */
   function explain(reason: unknown, retryAfter?: number): string {
     if (reason === "tooSoon" && retryAfter) {
       return t("auth.error.tooSoon", { seconds: String(retryAfter) });
@@ -86,8 +93,55 @@ export function AuthForm({
     return message === key ? t("auth.error.generic") : message;
   }
 
+  function finish() {
+    setStep("done");
+    // Identity lives in Server Components, so the tree has to rebuild before
+    // the destination knows who arrived.
+    router.refresh();
+    setTimeout(() => router.replace(redirectTo), 900);
+  }
+
+  /* ---- password paths --------------------------------------------------- */
+
+  async function submitPassword() {
+    if (busy || !phoneValid || !passwordValid || (mode === "register" && !nameValid)) return;
+    setBusy(true);
+    setError(null);
+
+    try {
+      const endpoint = mode === "register" ? "/api/auth/register" : "/api/auth/password";
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(
+          mode === "register" ? { phone, name, password } : { phone, password },
+        ),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Someone trying to register a number that already has an account is
+        // not making a mistake, they are on the wrong screen.
+        if (data?.error === "alreadyRegistered") {
+          router.push(`/${locale}/login?phone=${encodeURIComponent(phone)}`);
+          return;
+        }
+        setError(explain(data?.error));
+        return;
+      }
+
+      finish();
+    } catch {
+      setError(t("auth.error.offline"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* ---- code paths ------------------------------------------------------- */
+
   async function requestCode(resend = false) {
-    if (busy || !phoneValid || !nameValid) return;
+    if (busy || !phoneValid) return;
     setBusy(true);
     setError(null);
 
@@ -95,19 +149,11 @@ export function AuthForm({
       const response = await fetch("/api/auth/start", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone, name: mode === "register" ? name : undefined }),
+        body: JSON.stringify({ phone, name: name || "İstifadəçi" }),
       });
       const data = await response.json();
 
       if (!response.ok) {
-        // An unknown number on the sign-in screen is not an error, it is a
-        // person who has not registered yet. Sending them to the right screen
-        // with the number already filled in beats telling them a name is
-        // required on a screen with no name field.
-        if (data?.error === "nameRequired" && mode === "login") {
-          router.push(`/${locale}/register?phone=${encodeURIComponent(phone)}`);
-          return;
-        }
         setError(explain(data?.error, data?.retryAfterSeconds));
         if (data?.retryAfterSeconds) setCooldown(data.retryAfterSeconds);
         return;
@@ -140,20 +186,40 @@ export function AuthForm({
 
       if (!response.ok) {
         setError(explain(data?.error));
-        // A dead code cannot be retried, so send them back for a fresh one
-        // rather than leaving them typing into something that will never work.
         if (data?.error === "expired" || data?.error === "tooManyAttempts") {
-          setStep("phone");
+          setStep("form");
           setCode("");
         }
         return;
       }
 
-      setStep("done");
-      // Server Components hold the identity, so the whole tree has to re-render
-      // before the destination will know who arrived.
-      router.refresh();
-      setTimeout(() => router.replace(redirectTo), 900);
+      // The code proved the phone, which is exactly the proof a password reset
+      // needs — so offer it rather than making them find the setting later.
+      setPassword("");
+      setStep("newPassword");
+    } catch {
+      setError(t("auth.error.offline"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitNewPassword() {
+    if (busy || !passwordValid) return;
+    setBusy(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!response.ok) {
+        setError(explain((await response.json())?.error));
+        return;
+      }
+      finish();
     } catch {
       setError(t("auth.error.offline"));
     } finally {
@@ -174,6 +240,52 @@ export function AuthForm({
     );
   }
 
+  /* ---- a new password after proving the phone --------------------------- */
+  if (step === "newPassword") {
+    return (
+      <>
+        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+          <div className="space-y-5 px-6 py-8">
+            <div>
+              <h1 className="font-display text-2xl font-extrabold">{t("auth.newPasswordTitle")}</h1>
+              <p className="text-muted-foreground mt-1.5 text-sm">{t("auth.newPasswordBody")}</p>
+            </div>
+
+            <PasswordField
+              value={password}
+              onChange={setPassword}
+              show={showPassword}
+              onToggle={() => setShowPassword((s) => !s)}
+              label={t("auth.newPassword")}
+              hint={t("auth.passwordHint")}
+              error={passwordError}
+              onBlur={() => setTouched((s) => ({ ...s, password: true }))}
+            />
+
+            {error && (
+              <p role="alert" className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+                {error}
+              </p>
+            )}
+          </div>
+        </main>
+
+        <div className="border-border bg-card safe-bottom shrink-0 border-t px-6 pt-3 pb-3">
+          <Button
+            size="lg"
+            block
+            className="font-display uppercase"
+            disabled={!passwordValid || busy}
+            onClick={submitNewPassword}
+          >
+            {busy ? <Loader2 className="animate-spin" /> : null}
+            {busy ? t("common.loading") : t("auth.savePassword")}
+          </Button>
+        </div>
+      </>
+    );
+  }
+
   /* ---- code ------------------------------------------------------------- */
   if (step === "code") {
     return (
@@ -183,13 +295,13 @@ export function AuthForm({
             <button
               type="button"
               onClick={() => {
-                setStep("phone");
+                setStep("form");
                 setError(null);
               }}
               className="text-muted-foreground flex items-center gap-1.5 text-sm"
             >
               <ArrowLeft className="size-4" />
-              {t("auth.changeNumber")}
+              {t("auth.back")}
             </button>
 
             <div>
@@ -232,9 +344,7 @@ export function AuthForm({
               onClick={() => requestCode(true)}
               className="text-muted-foreground disabled:text-subtle-foreground text-sm underline-offset-4 hover:underline disabled:no-underline"
             >
-              {cooldown > 0
-                ? t("auth.resendIn", { seconds: String(cooldown) })
-                : t("auth.resend")}
+              {cooldown > 0 ? t("auth.resendIn", { seconds: String(cooldown) }) : t("auth.resend")}
             </button>
           </div>
         </main>
@@ -255,7 +365,9 @@ export function AuthForm({
     );
   }
 
-  /* ---- phone ------------------------------------------------------------ */
+  /* ---- phone and password ----------------------------------------------- */
+  const ready = phoneValid && passwordValid && nameValid;
+
   return (
     <>
       <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
@@ -300,6 +412,18 @@ export function AuthForm({
             />
           </Field>
 
+          <PasswordField
+            value={password}
+            onChange={setPassword}
+            show={showPassword}
+            onToggle={() => setShowPassword((s) => !s)}
+            label={t("auth.password")}
+            hint={mode === "register" ? t("auth.passwordHint") : undefined}
+            error={passwordError}
+            autoComplete={mode === "register" ? "new-password" : "current-password"}
+            onBlur={() => setTouched((s) => ({ ...s, password: true }))}
+          />
+
           {error && (
             <p
               role="alert"
@@ -307,6 +431,19 @@ export function AuthForm({
             >
               {error}
             </p>
+          )}
+
+          {/* The way back in when the password is gone. Needs a working SMS
+              path, so it is hidden rather than offered and then refused. */}
+          {mode === "login" && smsAvailable && (
+            <button
+              type="button"
+              disabled={!phoneValid || busy}
+              onClick={() => requestCode()}
+              className="text-muted-foreground disabled:text-subtle-foreground text-sm underline-offset-4 hover:underline disabled:no-underline"
+            >
+              {t("auth.forgotPassword")}
+            </button>
           )}
 
           <p className="text-subtle-foreground text-[0.6875rem] leading-relaxed">
@@ -317,14 +454,20 @@ export function AuthForm({
             {mode === "register" ? (
               <>
                 {t("auth.haveAccount")}{" "}
-                <Link href={`/${locale}/login`} className="text-foreground font-semibold underline-offset-4 hover:underline">
+                <Link
+                  href={`/${locale}/login`}
+                  className="text-foreground font-semibold underline-offset-4 hover:underline"
+                >
                   {t("auth.login")}
                 </Link>
               </>
             ) : (
               <>
                 {t("auth.noAccount")}{" "}
-                <Link href={`/${locale}/register`} className="text-foreground font-semibold underline-offset-4 hover:underline">
+                <Link
+                  href={`/${locale}/register`}
+                  className="text-foreground font-semibold underline-offset-4 hover:underline"
+                >
                   {t("auth.register")}
                 </Link>
               </>
@@ -338,33 +481,40 @@ export function AuthForm({
           size="lg"
           block
           className="font-display uppercase"
-          disabled={!phoneValid || !nameValid || busy || cooldown > 0}
-          onClick={() => requestCode()}
+          disabled={!ready || busy}
+          onClick={submitPassword}
         >
           {busy ? <Loader2 className="animate-spin" /> : null}
           {busy
             ? t("common.loading")
-            : cooldown > 0
-              ? t("auth.resendIn", { seconds: String(cooldown) })
-              : t("auth.sendCode")}
+            : mode === "register"
+              ? t("auth.createAccount")
+              : t("auth.login")}
         </Button>
       </div>
     </>
   );
 }
 
+/* -------------------------------------------------------------------------- */
+
 function Field({
   label,
   error,
+  hint,
   children,
 }: {
   label: string;
-  error: string | null;
+  error?: string | null;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold">{label}</span>
+      <span className="mb-1.5 flex items-baseline justify-between gap-2">
+        <span className="text-sm font-semibold">{label}</span>
+        {hint && <span className="text-subtle-foreground text-[0.6875rem]">{hint}</span>}
+      </span>
       {children}
       {error && (
         <span role="alert" className="text-destructive mt-1.5 block text-xs">
@@ -372,5 +522,60 @@ function Field({
         </span>
       )}
     </label>
+  );
+}
+
+/**
+ * A password field with a reveal toggle.
+ *
+ * Typing a password blind on a phone keyboard is how people end up locked out
+ * of accounts they know the password to.
+ */
+function PasswordField({
+  value,
+  onChange,
+  show,
+  onToggle,
+  label,
+  hint,
+  error,
+  autoComplete = "new-password",
+  onBlur,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  label: string;
+  hint?: string;
+  error?: string | null;
+  autoComplete?: string;
+  onBlur?: () => void;
+}) {
+  return (
+    <Field label={label} hint={hint} error={error}>
+      <span className="relative block">
+        <input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
+          autoComplete={autoComplete}
+          placeholder="••••••••"
+          className={cn(
+            "bg-card border-border focus:border-primary h-12 w-full rounded-xl border px-3.5 pr-11 text-sm outline-none transition-colors",
+            error && "border-destructive",
+          )}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={label}
+          className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2"
+        >
+          {show ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+        </button>
+      </span>
+    </Field>
   );
 }
