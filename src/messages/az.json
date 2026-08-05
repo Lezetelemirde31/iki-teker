@@ -480,5 +480,30 @@
     "back": "Geri",
     "verifyPhone": "Nömrəni təsdiqlə",
     "verifyPhoneBody": "Nömrəniz hələ təsdiqlənməyib. Təsdiqlənmiş nömrə alıcılarda daha çox etibar yaradır."
+  },
+  "profile": {
+    "title": "Profili redaktə et",
+    "save": "Yadda saxla",
+    "saved": "Yadda saxlanıldı",
+    "email": "E-poçt",
+    "emailNote": "Girişdə istifadə olunmur. Sonradan qəbz və müqavilələr üçün lazım olacaq.",
+    "bio": "Haqqınızda",
+    "bioPlaceholder": "Alıcılar sizin haqqınızda nə bilməlidir?",
+    "phoneFixed": "Nömrə hesabın kimliyidir və buradan dəyişdirilmir.",
+    "changePassword": "Parolu dəyiş",
+    "savePassword": "Parolu yenilə",
+    "passwordSaved": "Parol yeniləndi",
+    "edit": "Profili redaktə et",
+    "error": {
+      "generic": "Yadda saxlanılmadı. Bir az sonra yenidən yoxlayın.",
+      "offline": "İnternet bağlantısı yoxdur.",
+      "nameRequired": "Ad ən azı 2 simvol olmalıdır.",
+      "nameTooLong": "Ad çox uzundur.",
+      "unknownCity": "Şəhər seçilməyib.",
+      "districtMismatch": "Bu rayon seçilmiş şəhərə aid deyil.",
+      "invalidEmail": "E-poçt düzgün deyil.",
+      "bioTooLong": "Mətn çox uzundur.",
+      "notFound": "Hesab tapılmadı."
+    }
   }
 }
