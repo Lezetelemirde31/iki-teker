@@ -5,6 +5,7 @@
   "description": "IKI-TEKER — premium two-wheeler marketplace for Azerbaijan. Mobile-first frontend prototype.",
   "scripts": {
     "dev": "next dev",
+    "dev:local": "node scripts/dev-local.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

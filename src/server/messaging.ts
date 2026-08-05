@@ -75,7 +75,6 @@ export async function openThread(listingId: string, userId: string): Promise<Thr
     id: threadId,
     listingId,
     contactRevealed: false,
-    archived: false,
     updatedAt: new Date(),
   });
   await db
@@ -135,6 +134,14 @@ export async function sendMessage(
     .set({ updatedAt: message.createdAt })
     .where(eq(schema.chatThreads.id, threadId));
 
+  // Un-archived for everyone in it: someone who put a conversation away and
+  // then gets written to has not stopped being in it, and a message landing in
+  // a hidden thread is a message nobody answers.
+  await db
+    .update(schema.chatParticipants)
+    .set({ archived: false })
+    .where(eq(schema.chatParticipants.threadId, threadId));
+
   // Everyone in the thread except the person who just typed it.
   const others = await db
     .select({ userId: schema.chatParticipants.userId })
@@ -169,6 +176,50 @@ export async function sendMessage(
       createdAt: message.createdAt.toISOString(),
     },
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Archiving                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Puts a finished conversation out of the way.
+ *
+ * Not a delete. The other person keeps their copy, and for a rental this
+ * history is the only evidence either side has if something is disputed later —
+ * so archiving hides a thread from one inbox and destroys nothing.
+ *
+ * A new message brings it back. Someone who archived a conversation and then
+ * gets written to has not stopped being in that conversation, and a message
+ * that lands in a hidden thread is a message nobody answers.
+ */
+export async function setArchived(
+  threadId: string,
+  userId: string,
+  archived: boolean,
+): Promise<{ ok: true } | { ok: false; reason: MessageFailure }> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+
+  const participant = await db.query.chatParticipants.findFirst({
+    where: and(
+      eq(schema.chatParticipants.threadId, threadId),
+      eq(schema.chatParticipants.userId, userId),
+    ),
+  });
+  if (!participant) return { ok: false, reason: "notParticipant" };
+
+  // Only this person's row. The other side's inbox is not theirs to tidy.
+  await db
+    .update(schema.chatParticipants)
+    .set({ archived })
+    .where(
+      and(
+        eq(schema.chatParticipants.threadId, threadId),
+        eq(schema.chatParticipants.userId, userId),
+      ),
+    );
+
+  return { ok: true };
 }
 
 /* -------------------------------------------------------------------------- */

@@ -496,7 +496,6 @@ export const chatThreads = pgTable(
     /** Contact details unlock once a booking is confirmed — if deals move to
      *  messengers the platform earns nothing. */
     contactRevealed: boolean("contact_revealed").notNull().default(false),
-    archived: boolean("archived").notNull().default(false),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("chat_threads_updated_idx").on(table.updatedAt)],
@@ -511,6 +510,15 @@ export const chatParticipants = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /**
+     * Archived by *this* person.
+     *
+     * Filing a conversation away is a decision about your own inbox. The flag
+     * used to live on the thread, which meant one side tidying up made the
+     * conversation vanish for the other — who never asked for that and would
+     * simply lose it.
+     */
+    archived: boolean("archived").notNull().default(false),
   },
   (table) => [primaryKey({ columns: [table.threadId, table.userId] })],
 );

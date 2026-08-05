@@ -415,5 +415,49 @@ heading("gear is not a part");
   line("a part type on gear", r.status, 422, r.json?.error);
 }
 
+heading("archiving a conversation");
+{
+  const THREAD = "th-cb650r-rashad-elvin";
+
+  const patch = async (user, body) => {
+    const res = await fetch(`${API}/api/threads/${THREAD}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", cookie: `iki-demo-user=${user}` },
+      body,
+    });
+    return res.status;
+  };
+  const archive = (user, archived) => patch(user, JSON.stringify({ archived }));
+
+  /** How many conversations that person's inbox lists. */
+  const inbox = async (user) => {
+    const res = await fetch(`${API}/az/chats`, { headers: { cookie: `iki-demo-user=${user}` } });
+    const html = await res.text();
+    const found = [...html.matchAll(/\/az\/chats\/(th-[a-z0-9-]+)/g)].map((match) => match[1]);
+    return new Set(found).size;
+  };
+
+  const elvin = await inbox("u-elvin");
+  const rashad = await inbox("u-rashad");
+
+  line("a stranger cannot archive it", await archive("u-aysel", true), 403);
+  line("a bad body is refused", await patch("u-elvin", '{"archived":"yes"}'), 400);
+
+  line("a participant archives it", await archive("u-elvin", true), 200);
+  line("it leaves their inbox", await inbox("u-elvin"), elvin - 1);
+  // The bug this section exists for: the flag used to live on the thread, so
+  // one side filing a conversation away took it from the other as well.
+  line("the other side still has it", await inbox("u-rashad"), rashad);
+
+  const wrote = await post(`/api/threads/${THREAD}/messages`, "u-rashad", {
+    body: "Hələ də maraqlanırsınız?",
+  });
+  line("the other side writes to it", wrote.status, 201);
+  line("that brings it back", await inbox("u-elvin"), elvin);
+
+  line("unarchiving works too", await archive("u-elvin", false), 200);
+  line("still there", await inbox("u-elvin"), elvin);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

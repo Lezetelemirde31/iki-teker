@@ -400,13 +400,17 @@ async function main() {
       listingId: t.listingId ?? null,
       bookingId: t.bookingId ?? null,
       contactRevealed: t.contactRevealed,
-      archived: t.archived,
       updatedAt: new Date(t.updatedAt),
     })),
   );
 
+  // The mock thread carries one `archived` flag because the column used to live
+  // on the thread. It is per-person now, so a mock marked archived seeds as
+  // archived for both sides — which is what it used to mean.
   await db.insert(schema.chatParticipants).values(
-    mockThreads.flatMap((t) => t.participantIds.map((userId) => ({ threadId: t.id, userId }))),
+    mockThreads.flatMap((t) =>
+      t.participantIds.map((userId) => ({ threadId: t.id, userId, archived: t.archived })),
+    ),
   );
 
   await db.insert(schema.messages).values(

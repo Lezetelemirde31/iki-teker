@@ -245,7 +245,9 @@
     "today": "Bu gün",
     "attachment": "Sənəd",
     "sendFailed": "Mesaj göndərilmədi. Yenidən cəhd edin.",
-    "messageSeller": "Satıcıya yaz"
+    "messageSeller": "Satıcıya yaz",
+    "archive": "Arxivə at",
+    "unarchive": "Arxivdən çıxar"
   },
   "favorites": {
     "title": "Seçilmişlər",

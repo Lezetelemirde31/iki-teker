@@ -218,8 +218,9 @@ export function mapThread(
   row: ThreadRow,
   participantIds: string[],
   messages: Message[],
-  /** Whose inbox this is. Unread means unread *by them*. */
+  /** Whose inbox this is. Unread and archived both mean *for them*. */
   viewerId?: string,
+  archivedByViewer = false,
 ): ChatThread {
   return {
     id: row.id,
@@ -235,6 +236,6 @@ export function mapThread(
     ).length,
     updatedAt: toISOTime(row.updatedAt),
     contactRevealed: row.contactRevealed,
-    archived: row.archived,
+    archived: archivedByViewer,
   };
 }

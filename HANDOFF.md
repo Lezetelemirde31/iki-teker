@@ -171,9 +171,11 @@ Both branches return **identical domain types**. A screen cannot tell which is b
 `src/server/source.ts`:
 
 ```ts
-export const useDatabase =
-  Boolean(process.env.DATABASE_URL) || process.env.USE_LOCAL_DB === "1";
+export const useLocalDatabase = process.env.USE_LOCAL_DB === "1";
+export const useDatabase = useLocalDatabase || Boolean(process.env.DATABASE_URL);
 ```
+
+**The order matters.** Next loads `.env.local` itself, so `DATABASE_URL` is set even when you asked for the embedded database. If `DATABASE_URL` were checked first, `USE_LOCAL_DB=1` would silently write to production — which is how test data once reached the live database.
 
 Every read goes through `src/server/data.ts`. Every write module (`bookings.ts`, `listings.ts`, `listing-actions.ts`, `messaging.ts`) branches on `useDatabase` and returns a sensible result in both cases.
 
@@ -412,7 +414,7 @@ makes ──< models
 | `rental_blackouts` | Owner-set unavailable days. Distinct from booked days, which are derived from `bookings` |
 | `bookings` | Carries the **frozen price** (`dayPrice`, `subtotal`, `serviceFee`, `deposit`, `total`, `commission`) so a later rate change cannot rewrite history. **Holds the `bookings_no_overlap` constraint** |
 | `reviews` | Author, target, rating, context, `verifiedTransaction` |
-| `chat_threads`, `chat_participants`, `messages` | Threads may be anchored to a listing and/or a booking. Participants is a join table |
+| `chat_threads`, `chat_participants`, `messages` | Threads may be anchored to a listing and/or a booking. Participants is a join table, and it owns `archived` — filing a conversation away is a decision about *your* inbox, so the flag is per person, not per thread |
 | `moderation_actions` | Every approve/reject with its author and reason. Never updated or deleted |
 | `favorites` | **Exists and is unused** — favourites are localStorage today |
 
@@ -730,9 +732,11 @@ Small, dense and deliberate. About 118 TypeScript files, no dead code, no scaffo
 ```bash
 npm install
 npm run dev                                   # mocks, no database, everything works
-USE_LOCAL_DB=1 npm run db:seed && \
-  USE_LOCAL_DB=1 npx next dev -p 3100         # embedded Postgres, writes persist
+USE_LOCAL_DB=1 npm run db:seed
+npm run dev:local                             # embedded Postgres, writes persist
 ```
+
+`dev:local` sets `USE_LOCAL_DB=1` in Node rather than in the shell, because this project is developed on Windows and deployed from Linux and inline environment variables are not portable between them.
 
 Against the hosted database, put `DATABASE_URL` in `.env.local` (gitignored) and run `npm run dev`.
 

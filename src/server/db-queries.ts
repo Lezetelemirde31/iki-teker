@@ -434,25 +434,33 @@ async function hydrateThreads(
       participants.filter((p) => p.threadId === row.id).map((p) => p.userId),
       messages.filter((m) => m.threadId === row.id).map(mapMessage),
       viewerId,
+      participants.some(
+        (p) => p.threadId === row.id && p.userId === viewerId && p.archived,
+      ),
     ),
   );
 }
 
 export async function getInbox(userId: string): Promise<ChatThread[]> {
+  // Archived is per person, so the filter belongs on the membership row rather
+  // than the thread — one side filing a conversation away must not remove it
+  // from the other side's inbox.
   const memberships = await db
     .select({ threadId: schema.chatParticipants.threadId })
     .from(schema.chatParticipants)
-    .where(eq(schema.chatParticipants.userId, userId));
+    .where(
+      and(
+        eq(schema.chatParticipants.userId, userId),
+        eq(schema.chatParticipants.archived, false),
+      ),
+    );
 
   if (memberships.length === 0) return [];
 
   const rows = await db.query.chatThreads.findMany({
-    where: and(
-      inArray(
-        schema.chatThreads.id,
-        memberships.map((m) => m.threadId),
-      ),
-      eq(schema.chatThreads.archived, false),
+    where: inArray(
+      schema.chatThreads.id,
+      memberships.map((m) => m.threadId),
     ),
     orderBy: desc(schema.chatThreads.updatedAt),
   });

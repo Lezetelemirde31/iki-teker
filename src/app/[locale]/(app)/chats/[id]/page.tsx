@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ArchiveButton } from "@/components/chat/archive-button";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { VehicleArt } from "@/components/common/vehicle-art";
 import { AppHeader } from "@/components/layout/app-header";
@@ -54,6 +55,7 @@ export default async function ChatThreadPage({
             </span>
           </span>
         }
+        action={<ArchiveButton threadId={thread.id} archived={thread.archived} />}
       />
 
       {/* The listing stays pinned so both sides always know what is being discussed. */}
