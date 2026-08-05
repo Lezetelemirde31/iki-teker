@@ -20,12 +20,11 @@ export default async function LoginPage({
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
 
-  // Only same-site paths are followed. An open redirect on a login page is how
-  // a phishing link borrows a real domain's credibility.
+  // Only same-site paths are followed. An open redirect on a sign-in page is
+  // how a phishing link borrows a real domain's credibility.
   const { next, phone } = await searchParams;
-  const destination = next && next.startsWith("/") && !next.startsWith("//")
-    ? next
-    : `/${locale}/account`;
+  const destination =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : `/${locale}/home`;
 
   return (
     <>

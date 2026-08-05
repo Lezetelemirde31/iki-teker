@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { Locale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/translate";
 import type { Messages } from "@/i18n/types";
+import { PhoneField } from "@/components/auth/phone-field";
 import { isValidPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,9 @@ export function AuthForm({
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("form");
-  const [phone, setPhone] = useState(initialPhone ?? "");
+  // Nine digits, no country code — the field prints +994 itself.
+  const [national, setNational] = useState((initialPhone ?? "").replace(/D/g, "").replace(/^994/, "").slice(-9));
+  const phone = national ? `+994${national}` : "";
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -80,6 +83,8 @@ export function AuthForm({
   const codeValid = /^\d{6}$/.test(code);
 
   const phoneError = touched.phone && phone && !phoneValid ? t("auth.error.invalidPhone") : null;
+  // Shown once the field has been visited or the form submitted, never while
+  // someone is still halfway through typing their first character.
   const nameError = touched.name && !nameValid ? t("auth.error.nameRequired") : null;
   const passwordError =
     touched.password && password && !passwordValid ? t("auth.error.tooShort") : null;
@@ -104,7 +109,24 @@ export function AuthForm({
   /* ---- password paths --------------------------------------------------- */
 
   async function submitPassword() {
-    if (busy || !phoneValid || !passwordValid || (mode === "register" && !nameValid)) return;
+    if (busy) return;
+
+    // The button stays pressable even when the form is incomplete. A disabled
+    // button explains nothing — you press it, nothing happens, and there is no
+    // way to find out why. Pressing an enabled one reveals every problem at
+    // once, which is the only version where the user learns something.
+    if (!phoneValid || !passwordValid || (mode === "register" && !nameValid)) {
+      setTouched({ name: true, phone: true, password: true });
+      setError(
+        !phoneValid
+          ? t("auth.error.invalidPhone")
+          : mode === "register" && !nameValid
+            ? t("auth.error.nameRequired")
+            : t("auth.error.tooShort"),
+      );
+      return;
+    }
+
     setBusy(true);
     setError(null);
 
@@ -366,7 +388,6 @@ export function AuthForm({
   }
 
   /* ---- phone and password ----------------------------------------------- */
-  const ready = phoneValid && passwordValid && nameValid;
 
   return (
     <>
@@ -398,17 +419,12 @@ export function AuthForm({
           )}
 
           <Field label={t("auth.phone")} error={phoneError}>
-            <input
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
+            <PhoneField
+              value={national}
+              onChange={setNational}
               onBlur={() => setTouched((s) => ({ ...s, phone: true }))}
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+994 50 123 45 67"
-              className={cn(
-                "bg-card border-border focus:border-primary tabular h-12 w-full rounded-xl border px-3.5 text-sm outline-none transition-colors",
-                phoneError && "border-destructive",
-              )}
+              invalid={Boolean(phoneError)}
+              label={t("auth.phone")}
             />
           </Field>
 
@@ -481,7 +497,7 @@ export function AuthForm({
           size="lg"
           block
           className="font-display uppercase"
-          disabled={!ready || busy}
+          disabled={busy}
           onClick={submitPassword}
         >
           {busy ? <Loader2 className="animate-spin" /> : null}
