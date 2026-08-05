@@ -109,6 +109,13 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             </div>
           </section>
 
+          {/* Near the top, not buried under the settings. Turning notifications
+              on is the single thing on this screen that changes whether a
+              rental request gets answered, and nobody scrolls past their own
+              listings to find a toggle they did not know existed. It quietens
+              itself down to one line once it is on. */}
+          {signedIn && pushKey && <NotificationToggle publicKey={pushKey} />}
+
           <section className="space-y-2">
             {/* Only for a real account. There is nothing to edit on the shared
                 demo persona, and offering it would suggest otherwise. */}
@@ -254,14 +261,6 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             </h2>
             <ThemeToggle />
           </section>
-
-          {/* Only for a signed-in account: there is nobody to notify otherwise,
-              and the key is only present once push is configured. */}
-          {signedIn && pushKey && (
-            <section className="border-border border-t pt-5">
-              <NotificationToggle publicKey={pushKey} />
-            </section>
-          )}
 
           {/* Sign in or out, depending. Shown last because it is a settings
               action, not something anyone comes to this screen to do. */}
