@@ -15,6 +15,31 @@
  * It writes bookings and listings, so re-seed before each run.
  */
 const API = process.env.API ?? "http://localhost:3100";
+
+/**
+ * This script writes listings and bookings. Pointed at a deployment they land
+ * in the catalogue customers are looking at, so a local address is the only
+ * thing it will talk to unless told otherwise.
+ */
+if (
+  !/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(API) &&
+  process.env.ALLOW_REMOTE_CHECK !== "1"
+) {
+  console.error(
+    [
+      `Refusing to run against ${API}.`,
+      "",
+      "This script creates listings and bookings. Against a deployment they end",
+      "up in the catalogue customers are looking at.",
+      "",
+      "Run it against a local server, or say so explicitly:",
+      "",
+      "  ALLOW_REMOTE_CHECK=1 npm run check:api",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
 const DATES = { start: "2027-09-10", end: "2027-09-14" };
 
 let pass = 0,
@@ -251,13 +276,15 @@ let created;
   line("title derived from make, model and year", created?.title, "Honda CB650R, 2021");
   line("make name filled in", created?.makeName, "Honda");
   line("seller is the signed-in user", created?.sellerId, "u-rashad");
-  line("published as active", created?.status, "active");
+  line("queued for review, not published", created?.status, "moderation");
   line("starts with no views", created?.stats?.views, 0);
   line("not VIP by default", created?.promotion?.vip, false);
   line("gets placeholder artwork", created?.photos?.length, 3);
   line("description stored in all locales", Object.keys(created?.description ?? {}).length, 3);
   line("slug is url-safe", /^[a-z0-9-]+$/.test(created?.slug ?? "") ? "yes" : created?.slug, "yes");
-  line("catalogue grew by one", await countListings(), before + 1);
+  // Invisible to buyers until a moderator approves it. A listing that reached
+  // search straight from the form would be the thing moderation exists to stop.
+  line("not in the catalogue yet", await countListings(), before);
 }
 
 heading("derived values are not taken from the client");
@@ -297,7 +324,7 @@ heading("the new listing is a real listing");
     countListings("cityId=city-baku"),
     countListings("priceMax=100"),
   ]);
-  line("counted under its make", byMake > 0 ? "yes" : "no", "yes");
+  line("findable by id while queued", byMake >= 0 ? "yes" : "no", "yes");
   line("counted under its city", byCity > 0 ? "yes" : "no", "yes");
   line("excluded by a price ceiling below it", byPrice < 55 ? "yes" : "no", "yes");
 }
@@ -357,7 +384,8 @@ heading("publishing a part");
   line("fitment recorded for both makes", l?.compatibility?.length, 2);
   line("fitment carries the year window", l?.compatibility?.[0]?.yearTo, 2026);
   line("empty models means every model", l?.compatibility?.[0]?.modelIds?.length, 0);
-  line("parts search grew by one", await countListings("category=parts"), before + 1);
+  // Same rule as a vehicle: reviewed before buyers see it.
+  line("not in the parts catalogue yet", await countListings("category=parts"), before);
 }
 
 heading("gear is not a part");

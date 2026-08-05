@@ -467,7 +467,8 @@
       "noPassword": "This account has no password. Sign in by SMS and set one.",
       "locked": "Too many wrong attempts. Try again in 15 minutes.",
       "alreadyRegistered": "That number is already registered.",
-      "notSignedIn": "Sign in first."
+      "notSignedIn": "Sign in first.",
+      "noAccount": "That number is not registered."
     },
     "password": "Password",
     "newPassword": "New password",
@@ -480,5 +481,30 @@
     "back": "Back",
     "verifyPhone": "Verify your number",
     "verifyPhoneBody": "Your number is not verified yet. A verified number earns more trust from buyers."
+  },
+  "profile": {
+    "title": "Edit profile",
+    "save": "Save",
+    "saved": "Saved",
+    "email": "Email",
+    "emailNote": "Not used for signing in. It will carry receipts and agreements later.",
+    "bio": "About you",
+    "bioPlaceholder": "What should buyers know about you?",
+    "phoneFixed": "Your number is the account identity and is not changed here.",
+    "changePassword": "Change password",
+    "savePassword": "Update password",
+    "passwordSaved": "Password updated",
+    "edit": "Edit profile",
+    "error": {
+      "generic": "That did not save. Please try again shortly.",
+      "offline": "No connection.",
+      "nameRequired": "Your name needs at least 2 characters.",
+      "nameTooLong": "That name is too long.",
+      "unknownCity": "Choose a city.",
+      "districtMismatch": "That district is not in the chosen city.",
+      "invalidEmail": "That email address is not valid.",
+      "bioTooLong": "That text is too long.",
+      "notFound": "Account not found."
+    }
   }
 }

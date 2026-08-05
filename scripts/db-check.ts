@@ -40,7 +40,9 @@ function describe(error: unknown): string {
  * the one customers will actually book against.
  */
 async function open() {
-  const url = process.env.DATABASE_URL;
+  // USE_LOCAL_DB=1 wins, matching src/server/source.ts — otherwise a
+  // "local" seed silently truncates the hosted database.
+  const url = process.env.USE_LOCAL_DB === "1" ? undefined : process.env.DATABASE_URL;
   if (url) {
     const client = postgres(url, { max: 1, prepare: false });
     return {

@@ -12,6 +12,30 @@
  */
 const API = process.env.API ?? "http://localhost:3100";
 
+/**
+ * This script registers accounts. Pointed at a server backed by the production
+ * database, it leaves real-looking users behind — and once they are mixed in
+ * with genuine sign-ups there is no safe way to tell them apart, which is how
+ * two real accounts were deleted on 3 August 2026.
+ *
+ * A local address is the only thing it will talk to unless told otherwise.
+ */
+if (!/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(API) && process.env.ALLOW_REMOTE_CHECK !== "1") {
+  console.error(
+    [
+      `Refusing to run against ${API}.`,
+      "",
+      "This script creates accounts. Against a deployment they land in the same",
+      "table as real sign-ups and cannot be told apart afterwards.",
+      "",
+      "Run it against a local server, or say so explicitly:",
+      "",
+      "  ALLOW_REMOTE_CHECK=1 npm run check:auth",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
 let pass = 0,
   fail = 0;
 const line = (label, got, want, extra = "") => {
@@ -215,7 +239,7 @@ heading("signing in with a password");
   line("a wrong password", r.status, 401, r.json?.error);
 
   r = await call("/api/auth/password", { phone: fresh(), password: good });
-  line("a number with no account answers the same", r.json?.error, "wrongCredentials", r.status);
+  line("a number with no account is told so", r.json?.error, "noAccount", r.status);
 
   r = await call("/api/auth/password", { phone: pwPhone, password: good });
   line("the right password", r.status, 200, r.json?.user?.name);

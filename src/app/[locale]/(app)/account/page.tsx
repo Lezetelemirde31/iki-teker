@@ -1,4 +1,13 @@
-import { BadgeCheck, CalendarCheck, ChevronRight, Heart, LogIn, ShieldCheck, Star } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarCheck,
+  ChevronRight,
+  Heart,
+  LogIn,
+  ShieldCheck,
+  Star,
+  UserPen,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -97,6 +106,19 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           </section>
 
           <section className="space-y-2">
+            {/* Only for a real account. There is nothing to edit on the shared
+                demo persona, and offering it would suggest otherwise. */}
+            {signedIn && (
+              <Link
+                href={`/${locale}/account/edit`}
+                className="bg-card border-border flex items-center gap-3 rounded-xl border px-3.5 py-3 transition-transform active:scale-[0.99]"
+              >
+                <UserPen className="text-muted-foreground size-5 shrink-0" strokeWidth={2} />
+                <span className="flex-1 text-sm font-semibold">{t("profile.edit")}</span>
+                <ChevronRight className="text-subtle-foreground size-5" />
+              </Link>
+            )}
+
             <Link
               href={`/${locale}/favorites`}
               className="bg-card border-border flex items-center gap-3 rounded-xl border px-3.5 py-3 transition-transform active:scale-[0.99]"
