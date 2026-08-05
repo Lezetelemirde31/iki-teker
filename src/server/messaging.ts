@@ -172,6 +172,56 @@ export async function sendMessage(
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Unlocking contact details                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Opens the phone number once a booking is confirmed.
+ *
+ * The rule is that contact stays hidden until there is a real transaction —
+ * otherwise the two of them swap numbers on first contact and the deal leaves
+ * the platform. A confirmed booking *is* that transaction, and at that point
+ * hiding the number is no longer protecting the business, it is stopping the
+ * renter finding the person handing them a motorcycle tomorrow.
+ *
+ * The thread is found by listing and renter rather than stored on the booking,
+ * because the conversation usually starts before the booking exists.
+ */
+export async function revealContactForBooking(
+  listingId: string,
+  renterId: string,
+  bookingId: string,
+): Promise<void> {
+  if (!useDatabase) return;
+
+  const threads = await db
+    .select({ id: schema.chatThreads.id })
+    .from(schema.chatThreads)
+    .innerJoin(
+      schema.chatParticipants,
+      eq(schema.chatParticipants.threadId, schema.chatThreads.id),
+    )
+    .where(
+      and(
+        eq(schema.chatThreads.listingId, listingId),
+        eq(schema.chatParticipants.userId, renterId),
+      ),
+    );
+
+  if (threads.length === 0) return;
+
+  await db
+    .update(schema.chatThreads)
+    .set({ contactRevealed: true, bookingId })
+    .where(
+      inArray(
+        schema.chatThreads.id,
+        threads.map((thread) => thread.id),
+      ),
+    );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Reading                                                                    */
 /* -------------------------------------------------------------------------- */
 

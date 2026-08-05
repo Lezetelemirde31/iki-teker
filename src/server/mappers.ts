@@ -218,6 +218,8 @@ export function mapThread(
   row: ThreadRow,
   participantIds: string[],
   messages: Message[],
+  /** Whose inbox this is. Unread means unread *by them*. */
+  viewerId?: string,
 ): ChatThread {
   return {
     id: row.id,
@@ -225,7 +227,12 @@ export function mapThread(
     listingId: row.listingId ?? undefined,
     bookingId: row.bookingId ?? undefined,
     messages,
-    unreadCount: messages.filter((message) => !message.readByRecipient).length,
+    // Only the other person's messages count. `readByRecipient` is false on
+    // everything you have just sent — it means "they have not read it yet" —
+    // so counting it here made your own inbox show a badge for your own words.
+    unreadCount: messages.filter(
+      (message) => !message.readByRecipient && message.authorId !== viewerId,
+    ).length,
     updatedAt: toISOTime(row.updatedAt),
     contactRevealed: row.contactRevealed,
     archived: row.archived,

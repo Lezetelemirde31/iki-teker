@@ -410,7 +410,10 @@ export async function getSellerProfile(sellerId: string) {
 /*  Messaging and bookings                                                     */
 /* -------------------------------------------------------------------------- */
 
-async function hydrateThreads(rows: (typeof schema.chatThreads.$inferSelect)[]) {
+async function hydrateThreads(
+  rows: (typeof schema.chatThreads.$inferSelect)[],
+  viewerId?: string,
+) {
   if (rows.length === 0) return [] as ChatThread[];
   const ids = rows.map((row) => row.id);
 
@@ -430,6 +433,7 @@ async function hydrateThreads(rows: (typeof schema.chatThreads.$inferSelect)[]) 
       row,
       participants.filter((p) => p.threadId === row.id).map((p) => p.userId),
       messages.filter((m) => m.threadId === row.id).map(mapMessage),
+      viewerId,
     ),
   );
 }
@@ -453,13 +457,16 @@ export async function getInbox(userId: string): Promise<ChatThread[]> {
     orderBy: desc(schema.chatThreads.updatedAt),
   });
 
-  return hydrateThreads(rows);
+  return hydrateThreads(rows, userId);
 }
 
-export async function getThread(threadId: string): Promise<ChatThread | undefined> {
+export async function getThread(
+  threadId: string,
+  viewerId?: string,
+): Promise<ChatThread | undefined> {
   const row = await db.query.chatThreads.findFirst({ where: eq(schema.chatThreads.id, threadId) });
   if (!row) return undefined;
-  const [thread] = await hydrateThreads([row]);
+  const [thread] = await hydrateThreads([row], viewerId);
   return thread;
 }
 

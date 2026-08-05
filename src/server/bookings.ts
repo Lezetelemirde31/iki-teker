@@ -8,6 +8,7 @@ import { datesBetween, daysBetween, demoISODate } from "@/lib/demo-clock";
 import type { Booking } from "@/types";
 
 import { getListing, getOfferForListing, getUser, isRangeAvailable, quote } from "./data";
+import { revealContactForBooking } from "./messaging";
 import { notify } from "./notifications";
 import { useDatabase } from "./source";
 
@@ -198,6 +199,9 @@ export async function confirmBooking(bookingId: string, ownerId: string): Promis
 
   const updated = await db.query.bookings.findFirst({ where: eq(schema.bookings.id, bookingId) });
   if (!updated) return { ok: false, reason: "notFound" };
+
+  // A confirmed booking is the transaction the contact rule was waiting for.
+  await revealContactForBooking(updated.listingId, updated.renterId, updated.id);
 
   const listing = await getListing(updated.listingId);
   void notify(updated.renterId, "bookingConfirmed", {

@@ -20,12 +20,12 @@ export default async function ChatThreadPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const thread = await getThread(id);
+  const userId = await currentUserId();
+  const thread = await getThread(id, userId);
   if (!thread) notFound();
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const userId = await currentUserId();
   const otherId = thread.participantIds.find((participant) => participant !== userId);
   const other = otherId ? await getUser(otherId) : undefined;
   const item = thread.listingId ? await getCatalogItem(thread.listingId) : undefined;

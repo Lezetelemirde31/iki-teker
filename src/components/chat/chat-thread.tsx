@@ -39,11 +39,61 @@ export function ChatThread({
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Starts from the server's answer and can flip mid-conversation, the moment
+  // the owner confirms a booking.
+  const [unlocked, setUnlocked] = useState(contactRevealed);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [thread, typing]);
+
+  /**
+   * Watches for the other side while this thread is open.
+   *
+   * Every four seconds, asking only for what arrived after the newest message
+   * already on screen. Stops entirely when the tab is hidden — a phone in a
+   * pocket should not be polling, and the push notification covers that case
+   * anyway.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function pull() {
+      if (document.visibilityState !== "visible") return;
+
+      const newest = thread[thread.length - 1]?.createdAt;
+      try {
+        const response = await fetch(
+          `/api/threads/${threadId}/messages/poll${newest ? `?since=${encodeURIComponent(newest)}` : ""}`,
+        );
+        if (!response.ok || cancelled) return;
+
+        const data: { messages?: Message[]; contactRevealed?: boolean } = await response.json();
+        if (data.contactRevealed) setUnlocked(true);
+        if (!data.messages?.length) return;
+
+        setThread((current) => {
+          // A reply can arrive while one of ours is still in flight, so merge
+          // by id rather than appending and showing anything twice.
+          const seen = new Set(current.map((message) => message.id));
+          const additions = data.messages!.filter((message) => !seen.has(message.id));
+          return additions.length ? [...current, ...additions] : current;
+        });
+      } catch {
+        // Offline or a slow network: the next tick tries again.
+      }
+    }
+
+    const timer = setInterval(pull, 4000);
+    document.addEventListener("visibilitychange", pull);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", pull);
+    };
+  }, [threadId, thread]);
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
@@ -117,7 +167,7 @@ export function ChatThread({
   return (
     <>
       <div className="no-scrollbar flex-1 overflow-y-auto overscroll-contain px-4 py-3">
-        {!contactRevealed && (
+        {!unlocked && (
           <p className="bg-muted text-muted-foreground mx-auto mb-3 flex max-w-[17rem] items-start gap-2 rounded-lg px-3 py-2 text-[0.6875rem] leading-relaxed">
             <Lock className="mt-px size-3.5 shrink-0" strokeWidth={2.2} />
             {t("chat.contactLocked")}

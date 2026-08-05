@@ -93,9 +93,13 @@ export async function getInbox(userId: string): Promise<ChatThread[]> {
   return database.getInbox(userId);
 }
 
-export async function getThread(threadId: string): Promise<ChatThread | undefined> {
+/** `viewerId` decides what counts as unread — see `mapThread`. */
+export async function getThread(
+  threadId: string,
+  viewerId?: string,
+): Promise<ChatThread | undefined> {
   if (!useDatabase) return mocks.getThread(threadId);
-  return database.getThread(threadId);
+  return database.getThread(threadId, viewerId);
 }
 
 export async function getMyRentals(userId: string): Promise<Booking[]> {
