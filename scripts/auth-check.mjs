@@ -215,7 +215,7 @@ heading("signing in with a password");
   line("a wrong password", r.status, 401, r.json?.error);
 
   r = await call("/api/auth/password", { phone: fresh(), password: good });
-  line("a number with no account answers the same", r.json?.error, "wrongCredentials", r.status);
+  line("a number with no account is told so", r.json?.error, "noAccount", r.status);
 
   r = await call("/api/auth/password", { phone: pwPhone, password: good });
   line("the right password", r.status, 200, r.json?.user?.name);

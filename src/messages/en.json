@@ -467,7 +467,8 @@
       "noPassword": "This account has no password. Sign in by SMS and set one.",
       "locked": "Too many wrong attempts. Try again in 15 minutes.",
       "alreadyRegistered": "That number is already registered.",
-      "notSignedIn": "Sign in first."
+      "notSignedIn": "Sign in first.",
+      "noAccount": "That number is not registered."
     },
     "password": "Password",
     "newPassword": "New password",

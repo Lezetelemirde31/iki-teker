@@ -142,10 +142,15 @@ export function AuthForm({
       const data = await response.json();
 
       if (!response.ok) {
-        // Someone trying to register a number that already has an account is
-        // not making a mistake, they are on the wrong screen.
+        // Neither of these is a mistake — the person is on the wrong screen.
+        // Carrying the number across means they do not retype it, and pressing
+        // the button did something, which is the whole point.
         if (data?.error === "alreadyRegistered") {
           router.push(`/${locale}/login?phone=${encodeURIComponent(phone)}`);
+          return;
+        }
+        if (data?.error === "noAccount") {
+          router.push(`/${locale}/register?phone=${encodeURIComponent(phone)}`);
           return;
         }
         setError(explain(data?.error));
@@ -466,29 +471,26 @@ export function AuthForm({
             {t("auth.terms")}
           </p>
 
-          <p className="text-muted-foreground text-sm">
-            {mode === "register" ? (
-              <>
-                {t("auth.haveAccount")}{" "}
-                <Link
-                  href={`/${locale}/login`}
-                  className="text-foreground font-semibold underline-offset-4 hover:underline"
-                >
-                  {t("auth.login")}
-                </Link>
-              </>
-            ) : (
-              <>
-                {t("auth.noAccount")}{" "}
-                <Link
-                  href={`/${locale}/register`}
-                  className="text-foreground font-semibold underline-offset-4 hover:underline"
-                >
-                  {t("auth.register")}
-                </Link>
-              </>
-            )}
-          </p>
+          {/* A real target, not a word inside a sentence. Half the people who
+              land on sign-in do not have an account yet, so the way to make one
+              has to be as pressable as the way in — and it carries the number
+              across so nothing is retyped. */}
+          <div className="border-border space-y-2 border-t pt-4">
+            <p className="text-muted-foreground text-center text-sm">
+              {mode === "register" ? t("auth.haveAccount") : t("auth.noAccount")}
+            </p>
+            <Button variant="outline" size="lg" block asChild>
+              <Link
+                href={
+                  mode === "register"
+                    ? `/${locale}/login${phone ? `?phone=${encodeURIComponent(phone)}` : ""}`
+                    : `/${locale}/register${phone ? `?phone=${encodeURIComponent(phone)}` : ""}`
+                }
+              >
+                {mode === "register" ? t("auth.login") : t("auth.register")}
+              </Link>
+            </Button>
+          </div>
         </div>
       </main>
 

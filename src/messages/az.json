@@ -467,7 +467,8 @@
       "noPassword": "Bu hesabda parol yoxdur. SMS ilə daxil olub parol təyin edin.",
       "locked": "Çox səhv cəhd. 15 dəqiqə sonra yenidən yoxlayın.",
       "alreadyRegistered": "Bu nömrə artıq qeydiyyatdadır.",
-      "notSignedIn": "Əvvəlcə hesaba daxil olun."
+      "notSignedIn": "Əvvəlcə hesaba daxil olun.",
+      "noAccount": "Bu nömrə qeydiyyatda deyil."
     },
     "password": "Parol",
     "newPassword": "Yeni parol",

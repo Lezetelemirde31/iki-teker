@@ -224,7 +224,10 @@ export async function registerWithPassword(
 
 export type PasswordSignInResult =
   | { ok: true; user: { id: string; name: string } }
-  | { ok: false; reason: "invalidPhone" | "wrongCredentials" | "noPassword" | "locked" };
+  | {
+      ok: false;
+      reason: "invalidPhone" | "noAccount" | "wrongCredentials" | "noPassword" | "locked";
+    };
 
 /**
  * Signing in with a password.
@@ -235,9 +238,16 @@ export type PasswordSignInResult =
  * password — the three things that genuinely require proving the phone is
  * yours.
  *
- * A wrong password and an unknown number answer identically. Distinguishing
- * them turns the form into a way to test which numbers have accounts, and the
- * work is done either way so the timing does not give it away.
+ * An unknown number is told so, rather than being handed "wrong password" for a
+ * password it never had. Hiding the difference is the textbook advice and it is
+ * wrong here: it leaves someone who has never registered staring at an error
+ * that says they typed something incorrectly, with no way forward. The client
+ * turns this into "you have not registered yet" and takes them there.
+ *
+ * The enumeration this gives up was already gone — registration answers
+ * `alreadyRegistered`, and sellers publish their numbers on their own listings.
+ * A wrong password on a real account still says only that, and still costs the
+ * same time as a right one.
  */
 export async function signInWithPassword(
   rawPhone: string,
@@ -249,10 +259,10 @@ export async function signInWithPassword(
   const user = await db.query.users.findFirst({ where: eq(schema.users.phone, phone) });
 
   if (!user?.passwordHash) {
-    // Still spend the time. An instant "no" for an unknown number and a slow
-    // "no" for a wrong password is a difference anyone can measure.
+    // Still spend the time, so the shape of the answer is the only thing that
+    // differs — not how long it took to produce.
     await verifyPassword(password, DUMMY_HASH);
-    return { ok: false, reason: user ? "noPassword" : "wrongCredentials" };
+    return { ok: false, reason: user ? "noPassword" : "noAccount" };
   }
 
   if (recordAttempt(user.id) === "locked") return { ok: false, reason: "locked" };
