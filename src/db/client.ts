@@ -32,7 +32,11 @@ const globalForDb = globalThis as unknown as {
 };
 
 function createDatabase(): Database {
-  const url = process.env.DATABASE_URL;
+  // Matches `useDatabase`'s precedence: an explicit USE_LOCAL_DB=1 means the
+  // embedded engine even when a connection string is sitting in .env.local.
+  // Disagreeing here would connect to one database while the rest of the app
+  // believed it was talking to the other.
+  const url = process.env.USE_LOCAL_DB === "1" ? undefined : process.env.DATABASE_URL;
 
   if (url) {
     const client = postgres(url, { prepare: false });

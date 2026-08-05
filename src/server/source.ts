@@ -14,12 +14,21 @@ import "server-only";
  * untouched while the database path is built and tested behind it, and
  * attaching a real database later is a single environment variable.
  */
-export const useDatabase =
-  Boolean(process.env.DATABASE_URL) || process.env.USE_LOCAL_DB === "1";
+/**
+ * `USE_LOCAL_DB=1` wins over `DATABASE_URL`, deliberately.
+ *
+ * Next loads `.env.local` on its own, and that is where a developer's hosted
+ * connection string lives. Without this precedence, asking for the embedded
+ * database gets you the production one — silently, because both answers look
+ * identical until something is written. Every test run I made against a
+ * "local" server on 3 August 2026 went to the live database that way, and the
+ * writes it left behind are what made a later run look like a regression.
+ *
+ * The explicit flag is the one someone typed on purpose, so it decides.
+ */
+export const useLocalDatabase = process.env.USE_LOCAL_DB === "1";
+
+export const useDatabase = useLocalDatabase || Boolean(process.env.DATABASE_URL);
 
 /** Reported in the admin/debug surfaces so the active source is never a guess. */
-export const dataSource = useDatabase
-  ? process.env.DATABASE_URL
-    ? "postgres"
-    : "pglite"
-  : "mocks";
+export const dataSource = !useDatabase ? "mocks" : useLocalDatabase ? "pglite" : "postgres";
