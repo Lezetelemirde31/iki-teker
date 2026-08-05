@@ -18,6 +18,7 @@ import type { MessageKey } from "@/i18n/types";
 import { demoISODate } from "@/lib/demo-clock";
 import { formatRating, localized } from "@/lib/format";
 import { getHomeFeed } from "@/server/data";
+import { isSignedIn } from "@/server/session";
 import { cn } from "@/lib/utils";
 import { categories, cities } from "@/mocks";
 
@@ -27,7 +28,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
-  const feed = await getHomeFeed();
+  const [feed, signedIn] = await Promise.all([getHomeFeed(), isSignedIn()]);
   const today = demoISODate(0);
 
   return (
@@ -38,6 +39,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="flex shrink-0 items-center gap-1.5">
             <CityPicker cities={cities} />
             <LocalePicker />
+            {/* Top right, on the first screen anyone lands on. Nothing else in
+                the app tells a visitor that signing in is a thing they can do —
+                the account tab looks like a settings screen until you open it. */}
+            {!signedIn && (
+              <Link
+                href={`/${locale}/login`}
+                className="border-border text-foreground hover:bg-muted ml-0.5 shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors active:scale-95"
+              >
+                {t("auth.login")}
+              </Link>
+            )}
           </div>
         </div>
         <HazardDivider />

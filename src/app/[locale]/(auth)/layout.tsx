@@ -21,7 +21,7 @@ export default async function AuthLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  if (await isSignedIn()) redirect(`/${locale}/account`);
+  if (await isSignedIn()) redirect(`/${locale}/home`);
 
   return <PageTransition>{children}</PageTransition>;
 }

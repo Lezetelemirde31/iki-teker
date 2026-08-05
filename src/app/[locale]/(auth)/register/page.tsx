@@ -21,9 +21,8 @@ export default async function RegisterPage({
   const t = createTranslator(messages);
 
   const { next, phone } = await searchParams;
-  const destination = next && next.startsWith("/") && !next.startsWith("//")
-    ? next
-    : `/${locale}/account`;
+  const destination =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : `/${locale}/home`;
 
   return (
     <>
