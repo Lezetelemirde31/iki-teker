@@ -506,5 +506,37 @@
       "bioTooLong": "Mətn çox uzundur.",
       "notFound": "Hesab tapılmadı."
     }
+  },
+  "push": {
+    "enable": "Bildirişləri aç",
+    "enabled": "Bildirişlər açıqdır",
+    "disable": "Bildirişləri bağla",
+    "why": "İcarə sorğusu və yeni mesaj gələndə xəbər verək. Telefonu açıq saxlamağa ehtiyac qalmaz.",
+    "blocked": "Brauzer bildirişləri bloklayıb. Ünvan sətrindəki kilid işarəsindən icazə verin.",
+    "unsupported": "Bu brauzer bildirişləri dəstəkləmir.",
+    "bookingRequested": {
+      "title": "Yeni icarə sorğusu",
+      "body": "{renter} — {vehicle}, {days} gün"
+    },
+    "bookingConfirmed": {
+      "title": "Sifarişiniz təsdiqləndi",
+      "body": "{vehicle} · {code}"
+    },
+    "bookingDeclined": {
+      "title": "Sifariş qəbul olunmadı",
+      "body": "{vehicle} · başqa tarix seçin"
+    },
+    "messageReceived": {
+      "title": "{sender}",
+      "body": "{preview}"
+    },
+    "listingApproved": {
+      "title": "Elanınız dərc olundu",
+      "body": "{title}"
+    },
+    "listingRejected": {
+      "title": "Elanınız qaytarıldı",
+      "body": "{title} — səbəbi hesabınızda"
+    }
   }
 }

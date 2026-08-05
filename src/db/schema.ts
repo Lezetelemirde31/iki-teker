@@ -382,6 +382,34 @@ export const authCodes = pgTable(
 );
 
 /**
+ * Where to send a push notification.
+ *
+ * One row per browser, not per user — the same person on a phone and a laptop
+ * is two subscriptions and both should ring. The endpoint is issued by the
+ * browser's own push service and is what identifies it, so it is the key.
+ *
+ * Subscriptions expire and get revoked without telling us. A send that comes
+ * back 404 or 410 means this row is dead, and it is deleted rather than
+ * retried — a table of dead endpoints slows every future send.
+ */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    endpoint: text("endpoint").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Keys the browser generates; the payload is encrypted to them. */
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    locale: text("locale").notNull().default("az"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("push_user_idx").on(table.userId)],
+);
+
+/**
  * Signed-in sessions.
  *
  * Server-side rather than a self-contained token, because signing out — or

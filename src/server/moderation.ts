@@ -8,6 +8,7 @@ import type { CatalogItem, ModerationFlag } from "@/types";
 
 import { canModerate } from "./authorization";
 import { mapCatalogItem } from "./mappers";
+import { notify } from "./notifications";
 import { currentUserId } from "./session";
 import { useDatabase } from "./source";
 
@@ -148,6 +149,20 @@ async function decide(
     note: note?.trim().slice(0, 500) || null,
     createdAt: new Date(),
   });
+
+  // The seller is waiting on this. Without it they refresh the account screen
+  // hoping, which is the experience moderation is most often blamed for.
+  const listing = await db.query.listings.findFirst({
+    where: eq(schema.listings.id, listingId),
+    columns: { sellerId: true, title: true },
+  });
+  if (listing) {
+    void notify(
+      listing.sellerId,
+      action === "approve" ? "listingApproved" : "listingRejected",
+      { title: listing.title, listingId },
+    );
+  }
 
   return { ok: true };
 }

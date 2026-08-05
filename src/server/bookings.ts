@@ -7,7 +7,8 @@ import * as schema from "@/db/schema";
 import { datesBetween, daysBetween, demoISODate } from "@/lib/demo-clock";
 import type { Booking } from "@/types";
 
-import { getListing, getOfferForListing, isRangeAvailable, quote } from "./data";
+import { getListing, getOfferForListing, getUser, isRangeAvailable, quote } from "./data";
+import { notify } from "./notifications";
 import { useDatabase } from "./source";
 
 /**
@@ -152,6 +153,16 @@ export async function requestBooking(
     createdAt: new Date(booking.createdAt),
   });
 
+  // The owner is not sitting on the account screen waiting. Not awaited: the
+  // booking is made either way, and a push service having a bad minute must not
+  // turn a successful request into a failed one.
+  const renter = await getUser(renterId);
+  void notify(offer.ownerId, "bookingRequested", {
+    renter: renter?.name ?? "",
+    vehicle: listing.title,
+    days: String(priced.days),
+  });
+
   return { ok: true, booking };
 }
 
@@ -188,6 +199,12 @@ export async function confirmBooking(bookingId: string, ownerId: string): Promis
   const updated = await db.query.bookings.findFirst({ where: eq(schema.bookings.id, bookingId) });
   if (!updated) return { ok: false, reason: "notFound" };
 
+  const listing = await getListing(updated.listingId);
+  void notify(updated.renterId, "bookingConfirmed", {
+    vehicle: listing?.title ?? "",
+    code: updated.code,
+  });
+
   return { ok: true, booking: toBooking(updated) };
 }
 
@@ -212,7 +229,12 @@ export async function declineBooking(bookingId: string, ownerId: string): Promis
     .where(and(eq(schema.bookings.id, bookingId), eq(schema.bookings.status, "pending")));
 
   const updated = await db.query.bookings.findFirst({ where: eq(schema.bookings.id, bookingId) });
-  return updated ? { ok: true, booking: toBooking(updated) } : { ok: false, reason: "notFound" };
+  if (!updated) return { ok: false, reason: "notFound" };
+
+  const declined = await getListing(updated.listingId);
+  void notify(updated.renterId, "bookingDeclined", { vehicle: declined?.title ?? "" });
+
+  return { ok: true, booking: toBooking(updated) };
 }
 
 /* -------------------------------------------------------------------------- */

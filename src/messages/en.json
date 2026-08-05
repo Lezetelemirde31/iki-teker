@@ -506,5 +506,37 @@
       "bioTooLong": "That text is too long.",
       "notFound": "Account not found."
     }
+  },
+  "push": {
+    "enable": "Turn on notifications",
+    "enabled": "Notifications are on",
+    "disable": "Turn off notifications",
+    "why": "We will tell you when a rental request or a message arrives, so you do not have to keep the app open.",
+    "blocked": "Your browser has blocked notifications. Allow them from the padlock in the address bar.",
+    "unsupported": "This browser does not support notifications.",
+    "bookingRequested": {
+      "title": "New rental request",
+      "body": "{renter} — {vehicle}, {days} days"
+    },
+    "bookingConfirmed": {
+      "title": "Your booking is confirmed",
+      "body": "{vehicle} · {code}"
+    },
+    "bookingDeclined": {
+      "title": "Booking not accepted",
+      "body": "{vehicle} · try other dates"
+    },
+    "messageReceived": {
+      "title": "{sender}",
+      "body": "{preview}"
+    },
+    "listingApproved": {
+      "title": "Your listing is live",
+      "body": "{title}"
+    },
+    "listingRejected": {
+      "title": "Your listing came back",
+      "body": "{title} — the reason is in your account"
+    }
   }
 }

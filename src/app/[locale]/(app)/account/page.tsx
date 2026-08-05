@@ -29,6 +29,7 @@ import {
   formatRating,
 } from "@/lib/format";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { NotificationToggle } from "@/components/pwa/notification-toggle";
 import { OwnListings } from "@/components/listing/own-listings";
 import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
@@ -45,6 +46,9 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
+  // Only reaches the browser when push is configured; absent means the
+  // toggle is not rendered at all.
+  const pushKey = process.env.VAPID_PUBLIC_KEY ?? "";
   const userId = await currentUserId();
   const user = await getUser(userId);
   if (!user) notFound();
@@ -250,6 +254,14 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             </h2>
             <ThemeToggle />
           </section>
+
+          {/* Only for a signed-in account: there is nobody to notify otherwise,
+              and the key is only present once push is configured. */}
+          {signedIn && pushKey && (
+            <section className="border-border border-t pt-5">
+              <NotificationToggle publicKey={pushKey} />
+            </section>
+          )}
 
           {/* Sign in or out, depending. Shown last because it is a settings
               action, not something anyone comes to this screen to do. */}

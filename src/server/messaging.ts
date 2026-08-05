@@ -6,7 +6,8 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import type { Message } from "@/types";
 
-import { getListing } from "./data";
+import { getListing, getUser } from "./data";
+import { notify } from "./notifications";
 import { useDatabase } from "./source";
 
 /**
@@ -133,6 +134,28 @@ export async function sendMessage(
     .update(schema.chatThreads)
     .set({ updatedAt: message.createdAt })
     .where(eq(schema.chatThreads.id, threadId));
+
+  // Everyone in the thread except the person who just typed it.
+  const others = await db
+    .select({ userId: schema.chatParticipants.userId })
+    .from(schema.chatParticipants)
+    .where(
+      and(
+        eq(schema.chatParticipants.threadId, threadId),
+        sql`${schema.chatParticipants.userId} <> ${authorId}`,
+      ),
+    );
+
+  const author = await getUser(authorId);
+  for (const other of others) {
+    void notify(other.userId, "messageReceived", {
+      sender: author?.name ?? "",
+      // Enough to decide whether to open it, not the whole message on a lock
+      // screen someone else might be looking at.
+      preview: text.length > 80 ? `${text.slice(0, 80)}…` : text,
+      threadId,
+    });
+  }
 
   return {
     ok: true,

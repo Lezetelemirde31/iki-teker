@@ -43,6 +43,63 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/*
+ * Push.
+ *
+ * The payload is composed and translated on the server, so this end only has to
+ * display it. Doing the wording here would mean shipping three dictionaries
+ * into the worker and keeping them in step with the app's.
+ */
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    return;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      // Same tag replaces the previous one rather than stacking five
+      // notifications for a single conversation.
+      tag: payload.tag,
+      data: { url: payload.url },
+      // A rental request is worth a buzz; the phone decides how.
+      vibrate: [80, 40, 80],
+    }),
+  );
+});
+
+/*
+ * Tapping a notification.
+ *
+ * If a tab for this site is already open it is focused and navigated, rather
+ * than opening a second one — someone with the app open and a notification
+ * arriving should end up in one place, not two.
+ */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url;
+  if (!target) return;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
