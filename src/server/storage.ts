@@ -22,9 +22,24 @@ import { AwsClient } from "aws4fetch";
  * paying for the same data twice.
  */
 
-const bucket = process.env.R2_BUCKET;
-const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+/**
+ * A credential as pasted, cleaned up.
+ *
+ * The dashboard presents these as a labelled table, and copying a row brings
+ * the label with it — `ID=94e1…` instead of `94e1…`. The failure that causes
+ * arrives much later, from the storage service, as a signature complaint that
+ * says nothing about a stray prefix. Trailing whitespace does the same.
+ *
+ * Only a leading run of letters and spaces followed by `=` is removed, so a
+ * credential that legitimately contains `=` is left alone.
+ */
+function credential(value: string | undefined): string | undefined {
+  return value?.trim().replace(/^[A-Za-z ]+=/, "");
+}
+
+const bucket = process.env.R2_BUCKET?.trim();
+const accessKeyId = credential(process.env.R2_ACCESS_KEY_ID);
+const secretAccessKey = credential(process.env.R2_SECRET_ACCESS_KEY);
 
 /**
  * The S3 endpoint, copied verbatim from the dashboard rather than assembled
@@ -34,10 +49,10 @@ const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
  * the difference is one silent segment. Taking the whole address as given means
  * there is nothing to derive and nothing to get subtly wrong.
  */
-const endpointBase = process.env.R2_ENDPOINT?.replace(/\/$/, "");
+const endpointBase = process.env.R2_ENDPOINT?.trim().replace(/\/$/, "");
 
 /** The domain the files are read from — a custom domain bound to the bucket. */
-const publicBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
+const publicBase = process.env.R2_PUBLIC_URL?.trim().replace(/\/$/, "");
 
 export const useR2 = Boolean(bucket && endpointBase && accessKeyId && secretAccessKey && publicBase);
 
