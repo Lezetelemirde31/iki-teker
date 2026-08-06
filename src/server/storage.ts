@@ -23,14 +23,23 @@ import { AwsClient } from "aws4fetch";
  */
 
 const bucket = process.env.R2_BUCKET;
-const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+/**
+ * The S3 endpoint, copied verbatim from the dashboard rather than assembled
+ * from an account id.
+ *
+ * A bucket created under a jurisdiction is addressed at a different host, and
+ * the difference is one silent segment. Taking the whole address as given means
+ * there is nothing to derive and nothing to get subtly wrong.
+ */
+const endpointBase = process.env.R2_ENDPOINT?.replace(/\/$/, "");
 
 /** The domain the files are read from — a custom domain bound to the bucket. */
 const publicBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
 
-export const useR2 = Boolean(bucket && accountId && accessKeyId && secretAccessKey && publicBase);
+export const useR2 = Boolean(bucket && endpointBase && accessKeyId && secretAccessKey && publicBase);
 
 export const storageBackend = useR2 ? "r2" : "local";
 
@@ -79,7 +88,7 @@ export async function createUpload(key: string, contentType: string): Promise<Up
     region: "auto",
   });
 
-  const endpoint = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`;
+  const endpoint = `${endpointBase}/${bucket}/${key}`;
 
   // Signed into the query string rather than a header: the browser PUTs the
   // file directly and never sees the account's credentials.
