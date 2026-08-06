@@ -103,6 +103,43 @@ export async function createUpload(key: string, contentType: string): Promise<Up
   return { uploadUrl: signed.url, headers: { "content-type": contentType }, key };
 }
 
+/**
+ * Is the object actually there?
+ *
+ * Asked before a photo message is written, because the two halves of sending a
+ * photo can come apart: the upload is a separate request to a separate service,
+ * and if it fails while the message still lands, the conversation keeps a
+ * broken picture that nothing will ever repair. A message is cheap to refuse
+ * and impossible to fix afterwards.
+ */
+export async function objectExists(key: string): Promise<boolean> {
+  if (!useR2) {
+    const { stat } = await import("node:fs/promises");
+    const path = await import("node:path");
+    try {
+      await stat(path.join(process.cwd(), LOCAL_ROOT, key));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const client = new AwsClient({
+    accessKeyId: accessKeyId!,
+    secretAccessKey: secretAccessKey!,
+    service: "s3",
+    region: "auto",
+  });
+
+  try {
+    const response = await client.fetch(`${endpointBase}/${bucket}/${key}`, { method: "HEAD" });
+    return response.ok;
+  } catch {
+    // A storage outage should not silently turn into "your photo vanished".
+    return false;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*  The local backend                                                          */
 /* -------------------------------------------------------------------------- */

@@ -499,6 +499,15 @@ heading("sending a photo");
   line("the bytes upload", put.status, 200);
 
   const image = { key, fileName: "zencir.png", fileSize: "1 KB", width: 1, height: 1 };
+
+  // The upload is a separate request to a separate service. If it failed and
+  // the message landed anyway, the conversation would keep a broken picture
+  // that nothing afterwards can repair.
+  r = await post(`/api/threads/${THREAD}/messages`, "u-elvin", {
+    image: { ...image, key: key.replace(/[^/]+\.png$/, "nothingwasuploadedhere.png") },
+  });
+  line("a photo that was never uploaded", r.status, 404, r.json?.error);
+
   r = await post(`/api/threads/${THREAD}/messages`, "u-elvin", { image });
   line("the photo is sent", r.status, 201, r.json?.message?.kind);
   line("it carries a url", Boolean(r.json?.message?.url), true, r.json?.message?.url);

@@ -9,7 +9,7 @@ import type { Message } from "@/types";
 import { getListing, getUser } from "./data";
 import { notify } from "./notifications";
 import { useDatabase } from "./source";
-import { isSafeKey, publicUrl, uploadPrefix } from "./storage";
+import { isSafeKey, objectExists, publicUrl, uploadPrefix } from "./storage";
 
 /**
  * Sending messages, and opening the thread a message belongs to.
@@ -200,6 +200,11 @@ export async function sendImage(
     ),
   });
   if (!participant) return { ok: false, reason: "notParticipant" };
+
+  // The upload is a separate request to a separate service, so it can fail
+  // while this one succeeds. Writing the message anyway would leave a broken
+  // picture in the conversation that nothing afterwards can repair.
+  if (!(await objectExists(image.key))) return { ok: false, reason: "notFound" };
 
   const row = {
     id: `m-${crypto.randomUUID().slice(0, 8)}`,
