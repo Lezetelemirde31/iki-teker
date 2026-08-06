@@ -584,5 +584,50 @@ heading("photos on a listing");
   line("and still shows three frames", r.json?.listing?.photos?.length, 3);
 }
 
+heading("a review needs a rental that finished");
+{
+  // bk-2402 is seeded returned: u-elvin rented Rəşad's Vespa in July.
+  const finished = "bk-2402";
+  // bk-2477 is confirmed but not yet returned — Nərmin picks it up tomorrow.
+  const ongoing = "bk-2477";
+
+  const review = (user, body) => post("/api/reviews", user, body);
+  const words = "Motosikl təmiz və vaxtında təhvil verildi, hər şey razılaşdığımız kimi.";
+
+  const profileOf = async (id) => (await fetch(`${API}/api/profile?id=${id}`)).json().catch(() => null);
+
+  let r = await review("u-kamran", { bookingId: finished, rating: 5, text: words });
+  line("someone outside it cannot", r.status, 403, r.json?.error);
+
+  r = await review("u-elvin", { bookingId: "does-not-exist", rating: 5, text: words });
+  line("an unknown booking", r.status, 404, r.json?.error);
+
+  r = await review("u-elvin", { bookingId: finished, rating: 9, text: words });
+  line("nine stars out of five", r.status, 422, r.json?.error);
+
+  r = await review("u-elvin", { bookingId: finished, rating: 5, text: "ok" });
+  line("one word is not a review", r.status, 422, r.json?.error);
+
+  r = await review("u-elvin", { bookingId: finished, rating: 5 });
+  line("text is required", r.status, 400);
+
+  // The whole guarantee: no completed transaction, no review.
+  r = await review("u-nermin", { bookingId: ongoing, rating: 5, text: words });
+  line("a rental still running", r.status, 422, r.json?.error);
+
+  r = await review("u-elvin", { bookingId: finished, rating: 5, text: words });
+  line("the renter reviews the owner", r.status, 201, r.json?.review?.id);
+  line("aimed at the owner, not chosen", r.json?.review?.targetId, "u-rashad");
+  line("marked as a verified deal", r.json?.review?.verifiedTransaction, true);
+
+  r = await review("u-elvin", { bookingId: finished, rating: 4, text: words });
+  line("but only once", r.status, 422, r.json?.error);
+
+  // The other direction: the person who handed over the motorcycle.
+  r = await review("u-rashad", { bookingId: finished, rating: 5, text: words });
+  line("the owner reviews the renter", r.status, 201, r.json?.review?.id);
+  line("aimed back at the renter", r.json?.review?.targetId, "u-elvin");
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

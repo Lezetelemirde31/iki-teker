@@ -546,6 +546,28 @@
     "listingRejected": {
       "title": "Your listing came back",
       "body": "{title} — the reason is in your account"
+    },
+    "reviewReceived": {
+      "title": "New review",
+      "body": "Someone rated you {stars} out of 5."
+    }
+  },
+  "review": {
+    "title": "Rate this rental",
+    "ratePrompt": "How did it go?",
+    "placeholder": "What went well, what did not. Other people read this before they deal with the same person.",
+    "submit": "Publish review",
+    "done": "Thank you — your review is published.",
+    "stars": "{n} out of 5",
+    "leave": "Leave a review",
+    "error": {
+      "notFinished": "You can review a rental once it has been returned.",
+      "alreadyReviewed": "You have already reviewed this rental.",
+      "notYours": "This rental is not yours.",
+      "invalidRating": "Choose between one and five stars.",
+      "tooShort": "Write a little more — at least a sentence.",
+      "tooLong": "That is too long.",
+      "generic": "The review could not be published."
     }
   }
 }

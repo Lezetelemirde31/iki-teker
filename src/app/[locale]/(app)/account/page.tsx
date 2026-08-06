@@ -33,7 +33,9 @@ import { NotificationToggle } from "@/components/pwa/notification-toggle";
 import { OwnListings } from "@/components/listing/own-listings";
 import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
+import { ReviewForm } from "@/components/rental/review-form";
 import { pendingRequestsFor } from "@/server/bookings";
+import { reviewableBookings } from "@/server/reviews";
 import { ownListings } from "@/server/listing-actions";
 import { pendingCount } from "@/server/moderation";
 import { getListing, getMyRentals, getUser } from "@/server/data";
@@ -53,14 +55,33 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests, moderator, queued, mine, signedIn] = await Promise.all([
+  const [rentals, requests, moderator, queued, mine, signedIn, reviewable] = await Promise.all([
     getMyRentals(userId),
     pendingRequestsFor(userId),
     canModerate(),
     pendingCount(),
     ownListings(userId),
     isSignedIn(),
+    reviewableBookings(userId),
   ]);
+
+  // Finished rentals this person has not written about yet.
+  const awaitingReview = new Set(reviewable);
+
+  // Only the owners of those, so a long rental history costs no extra queries.
+  const rentalOwners = new Map(
+    (
+      await Promise.all(
+        [
+          ...new Set(
+            rentals.filter((b) => awaitingReview.has(b.id)).map((booking) => booking.ownerId),
+          ),
+        ].map((id) => getUser(id)),
+      )
+    )
+      .filter((owner) => owner !== undefined)
+      .map((owner) => [owner.id, owner]),
+  );
 
   // One lookup per distinct vehicle, resolved before the list renders.
   const rentedListings = new Map(
@@ -214,9 +235,11 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                   const cover = listing?.photos[0];
                   const settled = booking.status === "returned";
 
+                  const rate = settled && awaitingReview.has(booking.id);
+
                   return (
+                    <div key={booking.id} className="space-y-2">
                     <Link
-                      key={booking.id}
                       href={`/${locale}/listing/${booking.listingId}`}
                       className="bg-card border-border flex items-center gap-3 rounded-xl border p-3 transition-transform active:scale-[0.99]"
                     >
@@ -245,6 +268,17 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                         </Badge>
                       </div>
                     </Link>
+
+                    {/* Offered where the rental already is. The moment someone
+                        is most willing to write a review is while they are
+                        looking at the thing they would be reviewing. */}
+                    {rate && (
+                      <ReviewForm
+                        bookingId={booking.id}
+                        otherName={rentalOwners.get(booking.ownerId)?.name ?? ""}
+                      />
+                    )}
+                    </div>
                   );
                 })}
               </div>

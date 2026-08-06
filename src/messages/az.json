@@ -546,6 +546,28 @@
     "listingRejected": {
       "title": "Elanınız qaytarıldı",
       "body": "{title} — səbəbi hesabınızda"
+    },
+    "reviewReceived": {
+      "title": "Yeni rəy",
+      "body": "Sizə 5 ulduzdan {stars} verildi."
+    }
+  },
+  "review": {
+    "title": "İcarəni qiymətləndir",
+    "ratePrompt": "Necə keçdi?",
+    "placeholder": "Nə yaxşı oldu, nə olmadı. Bunu eyni adamla iş görəcək başqaları oxuyur.",
+    "submit": "Rəyi yerləşdir",
+    "done": "Təşəkkür — rəyiniz yerləşdirildi.",
+    "stars": "5 ulduzdan {n}",
+    "leave": "Rəy yaz",
+    "error": {
+      "notFinished": "İcarə qaytarıldıqdan sonra qiymətləndirə bilərsiniz.",
+      "alreadyReviewed": "Bu icarəyə artıq rəy yazmısınız.",
+      "notYours": "Bu icarə sizin deyil.",
+      "invalidRating": "Bir ilə beş ulduz arasında seçin.",
+      "tooShort": "Bir az daha yazın — ən azı bir cümlə.",
+      "tooLong": "Çox uzundur.",
+      "generic": "Rəy yerləşdirilə bilmədi."
     }
   }
 }

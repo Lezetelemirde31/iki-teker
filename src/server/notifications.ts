@@ -35,7 +35,8 @@ export type NotificationKind =
   | "bookingDeclined"
   | "messageReceived"
   | "listingApproved"
-  | "listingRejected";
+  | "listingRejected"
+  | "reviewReceived";
 
 type Payload = {
   title: string;
@@ -158,6 +159,8 @@ async function compose(
       ? `/${locale}/listing/${values.listingId}`
       : `/${locale}/account`,
     listingRejected: `/${locale}/account`,
+    // Straight to the profile the rating is now on.
+    reviewReceived: values.userId ? `/${locale}/seller/${values.userId}` : `/${locale}/account`,
   };
 
   return {
