@@ -16,6 +16,11 @@ export type Message = {
   body?: string;
   fileName?: string;
   fileSize?: string;
+  /** Where an image or file can be fetched from. Absent on text messages. */
+  url?: string;
+  /** Known before the image loads, so its bubble can reserve the right space. */
+  width?: number;
+  height?: number;
   createdAt: ISODateTime;
   readByRecipient: boolean;
 };

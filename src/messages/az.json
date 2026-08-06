@@ -247,7 +247,9 @@
     "sendFailed": "Mesaj göndərilmədi. Yenidən cəhd edin.",
     "messageSeller": "Satıcıya yaz",
     "archive": "Arxivə at",
-    "unarchive": "Arxivdən çıxar"
+    "unarchive": "Arxivdən çıxar",
+    "attachPhoto": "Şəkil göndər",
+    "photoTooLarge": "Şəkil çox böyükdür — ən çox 10 MB."
   },
   "favorites": {
     "title": "Seçilmişlər",

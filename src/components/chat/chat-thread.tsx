@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Lock, SendHorizontal } from "lucide-react";
+import { FileText, ImagePlus, Loader2, Lock, SendHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
@@ -9,6 +9,29 @@ import type { Messages } from "@/i18n/types";
 import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types";
+
+/** Bytes as something a person reads, in the unit they would have said. */
+function formatSize(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/**
+ * The photo's dimensions, read before it is sent.
+ *
+ * Stored with the message so every later reader can reserve the right space
+ * before the image loads. Without it a conversation jumps as each photo lands,
+ * usually just as somebody is reaching for a button.
+ */
+function measure(url: string): Promise<{ width?: number; height?: number }> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+    image.onerror = () => resolve({});
+    image.src = url;
+  });
+}
 
 /**
  * Chat thread.
@@ -39,6 +62,8 @@ export function ChatThread({
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   // Starts from the server's answer and can flip mid-conversation, the moment
   // the owner confirms a booking.
   const [unlocked, setUnlocked] = useState(contactRevealed);
@@ -94,6 +119,72 @@ export function ChatThread({
       document.removeEventListener("visibilitychange", pull);
     };
   }, [threadId, thread]);
+
+  /**
+   * Sending a photo.
+   *
+   * Three steps, and the middle one does not touch this app: ask where to put
+   * it, PUT the bytes straight to storage, then send a message naming the
+   * object. The photo appears immediately from a local object URL, because a
+   * five-megabyte upload over a Baku mobile connection is long enough that a
+   * chat with nothing in it looks broken.
+   */
+  async function attach(file: File) {
+    setFailed(false);
+
+    const preview = URL.createObjectURL(file);
+    const pendingId = `pending-${Date.now()}`;
+    const size = await measure(preview);
+
+    setThread((current) => [
+      ...current,
+      {
+        id: pendingId,
+        threadId,
+        authorId: currentUserId,
+        kind: "image",
+        url: preview,
+        fileName: file.name,
+        fileSize: formatSize(file.size),
+        ...size,
+        createdAt: new Date().toISOString(),
+        readByRecipient: false,
+      },
+    ]);
+    setUploading(true);
+
+    try {
+      const asked = await fetch("/api/uploads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ threadId, contentType: file.type, size: file.size }),
+      });
+      if (!asked.ok) throw new Error(String(asked.status));
+      const { uploadUrl, headers, key } = await asked.json();
+
+      const put = await fetch(uploadUrl, { method: "PUT", headers, body: file });
+      if (!put.ok) throw new Error(`upload ${put.status}`);
+
+      const sent = await fetch(`/api/threads/${threadId}/messages`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          image: { key, fileName: file.name, fileSize: formatSize(file.size), ...size },
+        }),
+      });
+      if (!sent.ok) throw new Error(String(sent.status));
+
+      const { message } = await sent.json();
+      setThread((current) => current.map((m) => (m.id === pendingId ? message : m)));
+    } catch {
+      // Take it back out rather than leave a photo looking delivered.
+      setThread((current) => current.filter((m) => m.id !== pendingId));
+      setFailed(true);
+    } finally {
+      setUploading(false);
+      URL.revokeObjectURL(preview);
+    }
+  }
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
@@ -191,7 +282,33 @@ export function ChatThread({
                     grouped && (mine ? "rounded-tr-md" : "rounded-tl-md"),
                   )}
                 >
-                  {message.kind === "file" ? (
+                  {message.kind === "image" && message.url ? (
+                    <a
+                      href={message.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="-mx-1 -mt-1 block"
+                    >
+                      {/* Plain <img>: the source is a bucket the image
+                          optimiser is not configured for, and these are already
+                          phone-sized. The aspect ratio comes from the message so
+                          the bubble is the right shape before anything loads. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={message.url}
+                        alt={message.fileName ?? ""}
+                        width={message.width}
+                        height={message.height}
+                        loading="lazy"
+                        className="max-h-72 w-full rounded-xl object-cover"
+                        style={
+                          message.width && message.height
+                            ? { aspectRatio: `${message.width} / ${message.height}` }
+                            : undefined
+                        }
+                      />
+                    </a>
+                  ) : message.kind === "file" ? (
                     <span className="flex items-center gap-2">
                       <FileText className="size-5 shrink-0" strokeWidth={1.8} />
                       <span className="min-w-0">
@@ -252,6 +369,33 @@ export function ChatThread({
           </p>
         )}
         <div className="flex items-end gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            // The phone offers its camera as well as the gallery for this list,
+            // which is what people reach for when asked to show the chain.
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              // Cleared so choosing the same photo twice fires again.
+              event.target.value = "";
+              if (file) void attach(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            aria-label={t("chat.attachPhoto")}
+            className="text-muted-foreground hover:bg-muted hover:text-foreground grid size-11 shrink-0 place-items-center rounded-full transition-colors active:scale-90 disabled:opacity-40"
+          >
+            {uploading ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <ImagePlus className="size-5" strokeWidth={2} />
+            )}
+          </button>
           <input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}

@@ -3,6 +3,7 @@ import "server-only";
 import type { InferSelectModel } from "drizzle-orm";
 
 import type * as schema from "@/db/schema";
+import { publicUrl } from "@/server/storage";
 import type {
   ArtTone,
   CatalogItem,
@@ -209,6 +210,11 @@ export function mapMessage(row: MessageRow): Message {
     body: row.body ?? undefined,
     fileName: row.fileName ?? undefined,
     fileSize: row.fileSize ?? undefined,
+    // The row stores the key; the address is worked out on read, so moving
+    // where files are served from does not mean rewriting old messages.
+    url: row.storageKey ? publicUrl(row.storageKey) : undefined,
+    width: row.imageWidth ?? undefined,
+    height: row.imageHeight ?? undefined,
     createdAt: toISOTime(row.createdAt),
     readByRecipient: row.readByRecipient,
   };

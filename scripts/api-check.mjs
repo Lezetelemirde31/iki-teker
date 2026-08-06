@@ -459,5 +459,70 @@ heading("archiving a conversation");
   line("still there", await inbox("u-elvin"), elvin);
 }
 
+heading("sending a photo");
+{
+  const THREAD = "th-cb650r-rashad-elvin";
+  const OTHER_THREAD = "th-iron883-aysel";
+
+  // A one-pixel PNG. The point is a real image with a real byte length, not a
+  // picture — nothing in the path looks at the contents.
+  const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  const ask = (user, body) => post("/api/uploads", user, body);
+  const valid = { threadId: THREAD, contentType: "image/jpeg", size: 240_000 };
+
+  let r = await ask("u-elvin", { ...valid, contentType: "application/pdf" });
+  line("a pdf is not a photo", r.status, 422, r.json?.error);
+  r = await ask("u-elvin", { ...valid, contentType: "video/mp4" });
+  line("nor is a video", r.status, 422, r.json?.error);
+  r = await ask("u-elvin", { ...valid, size: 40 * 1024 * 1024 });
+  line("40 MB is refused", r.status, 422, r.json?.error);
+  r = await ask("u-elvin", { ...valid, size: 0 });
+  line("so is nothing at all", r.status, 422, r.json?.error);
+  r = await ask("u-kamran", valid);
+  line("a stranger gets no url", r.status, 403, r.json?.error);
+  r = await ask("u-elvin", { threadId: THREAD });
+  line("an incomplete request", r.status, 400);
+
+  r = await ask("u-elvin", { ...valid, contentType: "image/png", size: PNG.length });
+  line("a participant gets a url", r.status, 200);
+  const key = r.json?.key;
+  line("the key is inside the thread", String(key ?? "").startsWith(`chat/${THREAD}/`), true, key);
+
+  const put = await fetch(
+    r.json.uploadUrl.startsWith("http") ? r.json.uploadUrl : API + r.json.uploadUrl,
+    { method: "PUT", headers: r.json.headers, body: PNG },
+  );
+  line("the bytes upload", put.status, 200);
+
+  const image = { key, fileName: "zencir.png", fileSize: "1 KB", width: 1, height: 1 };
+  r = await post(`/api/threads/${THREAD}/messages`, "u-elvin", { image });
+  line("the photo is sent", r.status, 201, r.json?.message?.kind);
+  line("it carries a url", Boolean(r.json?.message?.url), true, r.json?.message?.url);
+  line("and its dimensions", r.json?.message?.width, 1);
+
+  // The key names the thread it was uploaded into, which is what stops an
+  // attachment being replayed into a different conversation.
+  r = await post(`/api/threads/${OTHER_THREAD}/messages`, "u-rashad", { image });
+  line("it cannot move threads", r.status, 422, r.json?.error);
+  r = await post(`/api/threads/${THREAD}/messages`, "u-elvin", {
+    image: { ...image, key: `chat/${THREAD}/../../etc/passwd` },
+  });
+  line("nor climb out of the bucket", r.status, 422, r.json?.error);
+
+  const fetched = await fetch(`${API}/api/threads/${THREAD}/messages/poll`, {
+    headers: { cookie: "iki-demo-user=u-rashad" },
+  });
+  const polled = await fetched.json();
+  line(
+    "the other side receives it",
+    polled.messages?.some((message) => message.kind === "image" && message.url),
+    true,
+  );
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

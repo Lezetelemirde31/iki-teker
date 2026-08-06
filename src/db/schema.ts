@@ -537,6 +537,14 @@ export const messages = pgTable(
     body: text("body"),
     fileName: text("file_name"),
     fileSize: text("file_size"),
+    /** The object's name in the bucket. The URL is derived from it at read
+     *  time, so changing where files are served from is configuration rather
+     *  than a migration over every message ever sent. */
+    storageKey: text("storage_key"),
+    /** Known before the image loads, so the bubble reserves the right space and
+     *  the conversation does not jump under the reader's thumb. */
+    imageWidth: integer("image_width"),
+    imageHeight: integer("image_height"),
     readByRecipient: boolean("read_by_recipient").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

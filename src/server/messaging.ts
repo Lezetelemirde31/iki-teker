@@ -9,6 +9,7 @@ import type { Message } from "@/types";
 import { getListing, getUser } from "./data";
 import { notify } from "./notifications";
 import { useDatabase } from "./source";
+import { isSafeKey, publicUrl, uploadPrefix } from "./storage";
 
 /**
  * Sending messages, and opening the thread a message belongs to.
@@ -127,34 +128,10 @@ export async function sendMessage(
   };
 
   await db.insert(schema.messages).values(message);
-
-  // The inbox is ordered by this, so a thread with a new message has to rise.
-  await db
-    .update(schema.chatThreads)
-    .set({ updatedAt: message.createdAt })
-    .where(eq(schema.chatThreads.id, threadId));
-
-  // Un-archived for everyone in it: someone who put a conversation away and
-  // then gets written to has not stopped being in it, and a message landing in
-  // a hidden thread is a message nobody answers.
-  await db
-    .update(schema.chatParticipants)
-    .set({ archived: false })
-    .where(eq(schema.chatParticipants.threadId, threadId));
-
-  // Everyone in the thread except the person who just typed it.
-  const others = await db
-    .select({ userId: schema.chatParticipants.userId })
-    .from(schema.chatParticipants)
-    .where(
-      and(
-        eq(schema.chatParticipants.threadId, threadId),
-        sql`${schema.chatParticipants.userId} <> ${authorId}`,
-      ),
-    );
+  await touchThread(threadId, message.createdAt);
 
   const author = await getUser(authorId);
-  for (const other of others) {
+  for (const other of await othersIn(threadId, authorId)) {
     void notify(other.userId, "messageReceived", {
       sender: author?.name ?? "",
       // Enough to decide whether to open it, not the whole message on a lock
@@ -176,6 +153,130 @@ export async function sendMessage(
       createdAt: message.createdAt.toISOString(),
     },
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sending a photo                                                            */
+/* -------------------------------------------------------------------------- */
+
+export type ImageMessage = {
+  key: string;
+  fileName: string;
+  fileSize: string;
+  width?: number;
+  height?: number;
+};
+
+/**
+ * A photo in the conversation.
+ *
+ * Half of what gets asked in a used-motorcycle chat is "send a picture of the
+ * chain", "show me the service book", "what does the scratch look like". Before
+ * this the answer was a WhatsApp number — which is the platform losing the deal
+ * it was built to hold.
+ *
+ * The bytes never pass through here. The browser uploads them straight to
+ * storage and then sends this message naming the object, so a five-megabyte
+ * photo does not have to fit through a serverless request body.
+ */
+export async function sendImage(
+  threadId: string,
+  authorId: string,
+  image: ImageMessage,
+): Promise<SendResult> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+
+  // The key is claimed by the client, so it is checked rather than trusted: a
+  // participant may only attach an object that was uploaded into this thread's
+  // own prefix, which is the shape `/api/uploads` hands out.
+  if (!isSafeKey(image.key) || !image.key.startsWith(`${uploadPrefix(threadId)}/`)) {
+    return { ok: false, reason: "empty" };
+  }
+
+  const participant = await db.query.chatParticipants.findFirst({
+    where: and(
+      eq(schema.chatParticipants.threadId, threadId),
+      eq(schema.chatParticipants.userId, authorId),
+    ),
+  });
+  if (!participant) return { ok: false, reason: "notParticipant" };
+
+  const row = {
+    id: `m-${crypto.randomUUID().slice(0, 8)}`,
+    threadId,
+    authorId,
+    kind: "image" as const,
+    fileName: image.fileName.slice(0, 120),
+    fileSize: image.fileSize,
+    storageKey: image.key,
+    imageWidth: image.width ?? null,
+    imageHeight: image.height ?? null,
+    readByRecipient: false,
+    createdAt: new Date(),
+  };
+
+  await db.insert(schema.messages).values(row);
+  await touchThread(threadId, row.createdAt);
+
+  const author = await getUser(authorId);
+  for (const other of await othersIn(threadId, authorId)) {
+    void notify(other.userId, "messageReceived", {
+      sender: author?.name ?? "",
+      preview: "📷",
+      threadId,
+    });
+  }
+
+  return {
+    ok: true,
+    message: {
+      id: row.id,
+      threadId,
+      authorId,
+      kind: "image",
+      fileName: row.fileName,
+      fileSize: row.fileSize,
+      url: publicUrl(image.key),
+      width: image.width,
+      height: image.height,
+      readByRecipient: false,
+      createdAt: row.createdAt.toISOString(),
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Shared by both kinds of send                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The inbox is ordered by `updatedAt`, so anything new has to lift the thread;
+ * and a conversation somebody is being written to does not belong in an
+ * archive, because a message in a hidden thread is a message nobody answers.
+ */
+async function touchThread(threadId: string, at: Date) {
+  await db
+    .update(schema.chatThreads)
+    .set({ updatedAt: at })
+    .where(eq(schema.chatThreads.id, threadId));
+
+  await db
+    .update(schema.chatParticipants)
+    .set({ archived: false })
+    .where(eq(schema.chatParticipants.threadId, threadId));
+}
+
+/** Everyone in the thread except the person who just sent something. */
+async function othersIn(threadId: string, authorId: string) {
+  return db
+    .select({ userId: schema.chatParticipants.userId })
+    .from(schema.chatParticipants)
+    .where(
+      and(
+        eq(schema.chatParticipants.threadId, threadId),
+        sql`${schema.chatParticipants.userId} <> ${authorId}`,
+      ),
+    );
 }
 
 /* -------------------------------------------------------------------------- */

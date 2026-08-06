@@ -247,7 +247,9 @@
     "sendFailed": "The message was not sent. Try again.",
     "messageSeller": "Message seller",
     "archive": "Archive",
-    "unarchive": "Unarchive"
+    "unarchive": "Unarchive",
+    "attachPhoto": "Send a photo",
+    "photoTooLarge": "That photo is too large — 10 MB is the limit."
   },
   "favorites": {
     "title": "Favorites",
