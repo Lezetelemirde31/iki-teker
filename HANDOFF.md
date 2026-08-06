@@ -141,7 +141,9 @@ Two backends behind one interface. With the five `R2_*` variables set, `/api/upl
 
 Rows store the object's **key**, never its URL — moving domains is configuration, not a migration over every message. `R2_ENDPOINT` is copied whole from the dashboard rather than assembled from an account id, because a jurisdiction-bound bucket lives on a different host.
 
-**Chat photos only so far.** Listings still render generated artwork (`components/common/vehicle-art.tsx`) from a deterministic seed + tone; pointing the post form at the same adapter is the remaining step.
+Carries chat photos and listing photos. Chat objects live under `chat/{threadId}/`, listing objects under `listings/{sellerId}/` — filed by seller because the pictures are chosen before the listing has an id. Publishing accepts only keys under the publisher own prefix that are actually present in storage.
+
+`VehicleArt` takes an optional `src`, so the generated silhouette is the **fallback**, not the plan: a listing with no photographs still renders as a listing rather than a hole.
 
 ### Deployment
 
@@ -292,7 +294,6 @@ Nothing is half-written in the working tree. The following are **specified and m
 - [ ] **Phone authentication (OTP).** Blocked on a legal entity and an SMS provider. Replace the body of `currentUser()` in `src/server/session.ts`; no caller changes. Add session storage, sign-in/up screens, and route protection for `/post`, `/account`, `/chats`.
 
 ### P1 — the product is not credible without these
-- [ ] **Photos on listings.** The storage adapter, signed uploads and R2 bucket already exist and carry chat photos — this is pointing the post form at `/api/uploads` and storing the keys in `listings.photos`. Keep `VehicleArt` as the fallback for photoless listings. Only `src/server/listings.ts` and the post form change.
 - [ ] **Complaints and disputes.** The moderation queue exists; reporting a listing or opening a dispute does not.
 
 ### P2 — trust and retention
@@ -705,15 +706,15 @@ Each of these was a deliberate decision with a cost paid for it.
 
 In this order.
 
-**1. Photos on listings.** Highest value per unit of work and no longer blocked by anything: R2, the adapter and signed uploads all exist and are carrying chat photos. Half a listing's value is its pictures. Store the keys in `listings.photos` and keep `VehicleArt` for photoless listings. Touches `src/server/listings.ts` and the post form only.
+**1. Real SMS.** Sign-in, sessions and passwords are built and tested; the one-time code is the only part still simulated. This is the last thing standing between the product and real accounts, and it is blocked on a registered legal entity rather than on code — `src/server/auth/sms.ts` is already the seam it plugs into.
 
-**2. Authentication** — as soon as the SMS provider and legal entity exist. Everything above works without it; everything below needs it. Replace `currentUser()`; add sign-in screens and route protection.
+**2. Reviews.** After a returned booking or a confirmed sale. The data model is there; nothing writes to it.
 
-**3. Notifications.** Web Push first — the service worker exists. A booking request nobody sees is a lost rental.
+**3. Complaints and disputes.** The moderation queue exists and empties; reporting a listing or opening a dispute does not exist at all.
 
-**4. Reviews.** After a returned booking or a confirmed sale.
+**4. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly. The PRD puts cash at launch by design, so this is about VIP placement, not checkout.
 
-**5. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly.
+**5. Service directory.** Workshops are modelled and seeded, with no screen. The smallest remaining feature that adds a whole audience.
 
 **6. Play Store (TWA).** Android only. iOS needs a different approach.
 
