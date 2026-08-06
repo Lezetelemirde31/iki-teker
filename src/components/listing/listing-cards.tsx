@@ -55,6 +55,7 @@ export function RailCard({
       <div className="relative">
         {cover && (
           <VehicleArt
+            src={cover.url}
             seed={cover.seed}
             tone={cover.tone}
             shape={shapeOf(item)}
@@ -118,6 +119,7 @@ export function RentalRailCard({
       <div className="relative">
         {cover && (
           <VehicleArt
+            src={cover.url}
             seed={cover.seed}
             tone={cover.tone}
             shape={listing.category}
@@ -182,6 +184,7 @@ export function ListingRow({
       <div className="relative shrink-0">
         {cover && (
           <VehicleArt
+            src={cover.url}
             seed={cover.seed}
             tone={cover.tone}
             shape={shapeOf(item)}
@@ -264,6 +267,7 @@ export function ListingTile({
       <div className="relative">
         {cover && (
           <VehicleArt
+            src={cover.url}
             seed={cover.seed}
             tone={cover.tone}
             shape={shapeOf(item)}

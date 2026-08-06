@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, ImageOff } from "lucide-react";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { PhotoPicker, type PickedPhoto } from "@/components/post/photo-picker";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import type { Locale } from "@/i18n/config";
@@ -41,6 +42,7 @@ export function PostPartScreen({
   const t = createTranslator(messages);
 
   const [partType, setPartType] = useState("");
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [brand, setBrand] = useState("");
   const [title, setTitle] = useState("");
   const [partNumber, setPartNumber] = useState("");
@@ -97,6 +99,7 @@ export function PostPartScreen({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          photoKeys: photos.filter((photo) => photo.key).map((photo) => photo.key),
           category,
           partType,
           brand,
@@ -164,10 +167,9 @@ export function PostPartScreen({
     <>
       <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-5 px-4 py-4">
-          <div className="border-border text-muted-foreground flex items-center gap-3 rounded-xl border border-dashed px-3.5 py-3">
-            <ImageOff className="size-5 shrink-0" strokeWidth={1.8} />
-            <p className="text-xs leading-relaxed">{t("post.photosLater")}</p>
-          </div>
+          {/* A part is bought on the picture of the part number and the wear.
+              Text alone does not settle either. */}
+          <PhotoPicker photos={photos} onChange={setPhotos} />
 
           <Field label={t("post.partType")}>
             <div className="flex flex-wrap gap-1.5">

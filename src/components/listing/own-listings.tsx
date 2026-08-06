@@ -51,6 +51,7 @@ export function OwnListings({
             <div className="flex items-center gap-3">
               {cover && (
                 <VehicleArt
+                  src={cover.url}
                   seed={cover.seed}
                   tone={cover.tone}
                   shape={item.category}

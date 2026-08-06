@@ -16,6 +16,7 @@ import type {
 } from "@/types";
 
 import { useDatabase } from "./source";
+import { photosFor } from "./photos";
 
 /**
  * Publishing a spare part or a piece of gear.
@@ -53,6 +54,8 @@ export type PartDraft = {
   fitsYearFrom?: number;
   fitsYearTo?: number;
   locale: Locale;
+  /** Objects already uploaded by this seller, in the order they should show. */
+  photoKeys?: string[];
 };
 
 export type PartFailure =
@@ -197,7 +200,7 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     condition: draft.condition === "new" ? "new" : "used",
     delivery: draft.delivery,
     description: localised(description.slice(0, MAX_DESCRIPTION)),
-    photos: generatedPhotos(id, tone, title),
+    photos: await photosFor(id, tone, title, sellerId, draft.photoKeys),
     attributes,
     sellerId,
     cityId: city.id,
@@ -286,15 +289,6 @@ function buildCompatibility(
   }
 
   return entries;
-}
-
-function generatedPhotos(id: string, tone: ArtTone, alt: string): Photo[] {
-  return Array.from({ length: 3 }, (_, index) => ({
-    id: `${id}-p${index + 1}`,
-    seed: `${id}-${index + 1}`,
-    tone,
-    alt: `${alt} — ${index + 1}`,
-  }));
 }
 
 function slugify(value: string) {

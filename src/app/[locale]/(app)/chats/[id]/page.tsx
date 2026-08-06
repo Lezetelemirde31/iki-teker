@@ -66,6 +66,7 @@ export default async function ChatThreadPage({
         >
           {cover && (
             <VehicleArt
+              src={cover.url}
               seed={cover.seed}
               tone={cover.tone}
               shape={item.category}

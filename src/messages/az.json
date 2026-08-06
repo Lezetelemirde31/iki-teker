@@ -317,7 +317,6 @@
     "descriptionPlaceholder": "Nəqliyyat vasitəsinin vəziyyəti, sənədləri və dəyişdirilmiş hissələri barədə yazın.",
     "optional": "istəyə bağlı",
     "publish": "Dərc et",
-    "photosLater": "Şəkil yükləmə hələ hazır deyil. Elan avtomatik yaradılan qrafika ilə dərc olunacaq, sonra şəkillərinizi əlavə edə biləcəksiniz.",
     "error": {
       "generic": "Elan dərc olunmadı. Bir az sonra yenidən yoxlayın.",
       "offline": "İnternet bağlantısı yoxdur. Bağlantını yoxlayıb yenidən cəhd edin.",
@@ -348,7 +347,13 @@
     "fits": "Hansı motosikletlərə uyğundur",
     "fitsHint": "seçməsəniz — universal",
     "yearFrom": "ildən",
-    "yearTo": "ilədək"
+    "yearTo": "ilədək",
+    "addPhotos": "Şəkil əlavə et",
+    "removePhoto": "Şəkli sil",
+    "coverPhoto": "Əsas",
+    "photosHelp": "Ən çox 8 şəkil. Birincisi axtarışda görünür.",
+    "photosCount": "{max} şəkildən {n}. Birincisi əsas şəkildir.",
+    "photoFailed": "Şəkil yüklənmədi. Yenidən əlavə et."
   },
   "owner": {
     "stats": "{views} baxış · {contacts} əlaqə",

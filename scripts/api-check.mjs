@@ -12,7 +12,8 @@
  *   USE_LOCAL_DB=1 npx next dev -p 3100
  *   npm run check:api
  *
- * It writes bookings and listings, so re-seed before each run.
+ * It writes bookings and listings, so re-seed before each run. With R2
+ * configured it also leaves a few small objects in the bucket each time.
  */
 const API = process.env.API ?? "http://localhost:3100";
 
@@ -531,6 +532,56 @@ heading("sending a photo");
     polled.messages?.some((message) => message.kind === "image" && message.url),
     true,
   );
+}
+
+heading("photos on a listing");
+{
+  const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  /** Uploads one picture the way the post form does, and returns its key. */
+  async function upload(user) {
+    const asked = await post("/api/uploads", user, {
+      scope: "listing",
+      contentType: "image/png",
+      size: PNG.length,
+    });
+    const put = await fetch(
+      asked.json.uploadUrl.startsWith("http") ? asked.json.uploadUrl : API + asked.json.uploadUrl,
+      { method: "PUT", headers: asked.json.headers, body: PNG },
+    );
+    return { key: asked.json.key, status: asked.status, uploaded: put.status };
+  }
+
+  const mine = await upload("u-rashad");
+  line("a listing upload is allowed", mine.status, 200);
+  line("filed under the seller", mine.key.startsWith("listings/u-rashad/"), true, mine.key);
+  line("the bytes upload", mine.uploaded, 200);
+
+  let r = await post("/api/uploads", "u-rashad", { contentType: "image/png", size: PNG.length });
+  line("a scope is required", r.status, 400);
+
+  r = await post("/api/listings", "u-rashad", { ...valid, photoKeys: [mine.key] });
+  line("published with a photo", r.status, 201);
+  const photos = r.json?.listing?.photos ?? [];
+  line("the photo is on the listing", photos[0]?.key, mine.key);
+  line("and has an address", Boolean(photos[0]?.url), true, photos[0]?.url);
+
+  // Someone else's prefix, an object that was never uploaded, and a path trying
+  // to climb out — none of them may end up on a listing buyers are looking at.
+  r = await post("/api/listings", "u-rashad", {
+    ...valid,
+    photoKeys: [
+      "listings/u-elvin/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png",
+      `listings/u-rashad/${"b".repeat(32)}.png`,
+      "listings/u-rashad/../../etc/passwd",
+    ],
+  });
+  line("nothing claimable is kept", r.status, 201);
+  line("it falls back to artwork", r.json?.listing?.photos?.[0]?.key, undefined);
+  line("and still shows three frames", r.json?.listing?.photos?.length, 3);
 }
 
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);

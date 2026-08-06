@@ -74,6 +74,7 @@ export default async function ChatsPage({ params }: { params: Promise<{ locale: 
                     <span className="relative shrink-0">
                       {cover ? (
                         <VehicleArt
+                          src={cover.url}
                           seed={cover.seed}
                           tone={cover.tone}
                           shape={item!.category}

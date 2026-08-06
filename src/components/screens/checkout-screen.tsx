@@ -101,6 +101,7 @@ export function CheckoutScreen({
           <div className="bg-card border-border flex items-center gap-3 rounded-xl border p-3">
             {cover && (
               <VehicleArt
+                src={cover.url}
                 seed={cover.seed}
                 tone={cover.tone}
                 shape={listing.category}

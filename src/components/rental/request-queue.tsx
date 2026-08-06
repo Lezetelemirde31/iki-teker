@@ -82,6 +82,7 @@ export function RequestQueue({
             <div className="flex items-center gap-3">
               {cover && listing && (
                 <VehicleArt
+                  src={cover.url}
                   seed={cover.seed}
                   tone={cover.tone}
                   shape={listing.category}

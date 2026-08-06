@@ -37,6 +37,16 @@ export type Photo = {
   seed: string;
   tone: ArtTone;
   alt: string;
+  /**
+   * A real picture, when the seller uploaded one.
+   *
+   * The row stores `key`; `url` is worked out on read from wherever files are
+   * currently served. Both absent means the generated artwork *is* the photo —
+   * which is what every seeded listing still is, and what a listing published
+   * without pictures falls back to rather than showing a hole.
+   */
+  key?: string;
+  url?: string;
 };
 
 export type Paginated<T> = {

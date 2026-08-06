@@ -118,6 +118,7 @@ export function ModerationScreen({
               <div className="flex items-start gap-3">
                 {cover && (
                   <VehicleArt
+                    src={cover.url}
                     seed={cover.seed}
                     tone={cover.tone}
                     shape={item.category}

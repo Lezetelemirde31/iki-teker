@@ -105,13 +105,35 @@ export function VehicleArt({
   shape,
   className,
   rounded = "rounded-md",
+  src,
+  alt,
 }: {
   seed: string;
   tone: ArtTone;
   shape: ArtShape;
   className?: string;
   rounded?: string;
+  /** A real photograph. Without one, the generated artwork *is* the picture. */
+  src?: string;
+  alt?: string;
 }) {
+  /**
+   * Taking `src` here rather than in a second component means every place that
+   * already draws a listing shows a real photo the moment one exists, and any
+   * call site not yet passing it degrades to the artwork instead of a hole.
+   */
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt ?? ""}
+        loading="lazy"
+        className={cn("bg-muted object-cover", rounded, className)}
+      />
+    );
+  }
+
   // Deterministic per-listing highlight placement.
   const drift = seededRandom(seed);
   const highlightX = 20 + drift * 60;

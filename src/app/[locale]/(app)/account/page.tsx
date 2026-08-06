@@ -222,6 +222,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                     >
                       {cover && listing && (
                         <VehicleArt
+                          src={cover.url}
                           seed={cover.seed}
                           tone={cover.tone}
                           shape={listing.category}

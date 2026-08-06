@@ -6,7 +6,7 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
 import { useDatabase } from "./source";
-import { uploadPrefix } from "./storage";
+import { listingPrefix, uploadPrefix } from "./storage";
 
 /**
  * What may be uploaded, and where it is allowed to land.
@@ -14,7 +14,7 @@ import { uploadPrefix } from "./storage";
  * Separate from both the route and the storage adapter because it is the part
  * that is actually a decision: the route only unpacks JSON, and the adapter
  * only knows how to sign a URL. Deciding whether this person may put this file
- * into this conversation is the rule worth keeping in one readable place.
+ * there is the rule worth keeping in one readable place.
  */
 
 /** Photos from a phone, and the formats a phone actually produces. */
@@ -38,12 +38,22 @@ const EXTENSION: Record<string, string> = {
   "image/heif": "heif",
 };
 
+/**
+ * Where a file is going, which is what decides who may put one there.
+ *
+ * A chat photo belongs to a conversation and only its members may add to it. A
+ * listing photo is chosen *before* the listing exists — there is no id to check
+ * against yet — so it belongs to the person uploading it, and the listing later
+ * claims only the objects filed under that person.
+ */
+export type UploadTarget = { kind: "chat"; threadId: string } | { kind: "listing" };
+
 export type UploadDecision =
   | { ok: true; key: string }
   | { ok: false; reason: "notParticipant" | "unsupportedType" | "tooLarge" | "notFound" };
 
-export async function canUploadTo(
-  threadId: string,
+export async function canUpload(
+  target: UploadTarget,
   userId: string,
   contentType: string,
   size: number,
@@ -53,23 +63,25 @@ export async function canUploadTo(
     return { ok: false, reason: "tooLarge" };
   }
 
-  if (!useDatabase) return { ok: false, reason: "notFound" };
+  if (target.kind === "chat") {
+    if (!useDatabase) return { ok: false, reason: "notFound" };
 
-  // Membership, not existence: a thread id is guessable, and the point of the
-  // check is that strangers cannot drop files into someone's conversation.
-  const participant = await db.query.chatParticipants.findFirst({
-    where: and(
-      eq(schema.chatParticipants.threadId, threadId),
-      eq(schema.chatParticipants.userId, userId),
-    ),
-  });
-  if (!participant) return { ok: false, reason: "notParticipant" };
+    // Membership, not existence: a thread id is guessable, and the point of the
+    // check is that strangers cannot drop files into someone's conversation.
+    const participant = await db.query.chatParticipants.findFirst({
+      where: and(
+        eq(schema.chatParticipants.threadId, target.threadId),
+        eq(schema.chatParticipants.userId, userId),
+      ),
+    });
+    if (!participant) return { ok: false, reason: "notParticipant" };
+  }
 
   // Named here rather than by the caller. A random name means one upload cannot
-  // overwrite another, and the thread prefix is what lets the send path verify
-  // that an attached object really belongs to the conversation it is claimed in.
-  const name = crypto.randomUUID().replace(/-/g, "");
-  return { ok: true, key: `${uploadPrefix(threadId)}/${name}.${EXTENSION[contentType]}` };
+  // overwrite another, and the prefix is what lets the claiming path verify an
+  // object really belongs where it is being attached.
+  const prefix = target.kind === "chat" ? uploadPrefix(target.threadId) : listingPrefix(userId);
+  return { ok: true, key: `${prefix}/${crypto.randomUUID().replace(/-/g, "")}.${EXTENSION[contentType]}` };
 }
 
 export const uploadLimits = { maxBytes: MAX_BYTES, allowed: [...ALLOWED] };

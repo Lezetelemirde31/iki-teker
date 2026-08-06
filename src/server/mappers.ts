@@ -98,7 +98,11 @@ export function mapCatalogItem(row: ListingRow): CatalogItem {
     negotiable: row.negotiable,
     condition: row.condition,
     description: row.description,
-    photos: row.photos as CatalogItem["photos"],
+    // The address is worked out on read from the key the row stores, so moving
+    // where files are served from does not mean rewriting every listing.
+    photos: (row.photos as CatalogItem["photos"]).map((photo) =>
+      photo.key ? { ...photo, url: publicUrl(photo.key) } : photo,
+    ),
     attributes: row.attributes,
     sellerId: row.sellerId,
     cityId: row.cityId,

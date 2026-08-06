@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { createUpload } from "@/server/storage";
-import { canUploadTo } from "@/server/uploads";
 import { currentUserId } from "@/server/session";
+import { createUpload } from "@/server/storage";
+import { canUpload, type UploadTarget } from "@/server/uploads";
 
 /**
  * Asking for somewhere to put a photo.
@@ -16,19 +16,30 @@ import { currentUserId } from "@/server/session";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  let payload: { threadId?: unknown; contentType?: unknown; size?: unknown };
+  let payload: { threadId?: unknown; scope?: unknown; contentType?: unknown; size?: unknown };
   try {
     payload = await request.json();
   } catch {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const { threadId, contentType, size } = payload;
-  if (typeof threadId !== "string" || typeof contentType !== "string" || typeof size !== "number") {
-    return NextResponse.json({ error: "threadId, contentType and size are required" }, { status: 400 });
+  const { threadId, scope, contentType, size } = payload;
+  if (typeof contentType !== "string" || typeof size !== "number") {
+    return NextResponse.json({ error: "contentType and size are required" }, { status: 400 });
   }
 
-  const decision = await canUploadTo(threadId, await currentUserId(), contentType, size);
+  // A thread id names a conversation; anything else is a listing being drafted,
+  // which has no id yet and is filed under whoever is uploading.
+  let target: UploadTarget;
+  if (typeof threadId === "string" && threadId) {
+    target = { kind: "chat", threadId };
+  } else if (scope === "listing") {
+    target = { kind: "listing" };
+  } else {
+    return NextResponse.json({ error: "threadId or scope is required" }, { status: 400 });
+  }
+
+  const decision = await canUpload(target, await currentUserId(), contentType, size);
   if (!decision.ok) {
     const status = decision.reason === "notParticipant" ? 403 : 422;
     return NextResponse.json({ error: decision.reason }, { status });

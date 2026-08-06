@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, ImageOff } from "lucide-react";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { PhotoPicker, type PickedPhoto } from "@/components/post/photo-picker";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import type { Locale } from "@/i18n/config";
@@ -38,6 +39,7 @@ export function PostListingScreen({
   const router = useRouter();
   const t = createTranslator(messages);
 
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [makeId, setMakeId] = useState("");
   const [modelId, setModelId] = useState("");
   const [year, setYear] = useState("");
@@ -88,6 +90,7 @@ export function PostListingScreen({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           category,
+          photoKeys: photos.filter((photo) => photo.key).map((photo) => photo.key),
           makeId,
           modelId,
           year: Number(year),
@@ -153,12 +156,9 @@ export function PostListingScreen({
     <>
       <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-5 px-4 py-4">
-          {/* Photos are not uploadable yet. Saying so plainly beats an upload
-              button that does nothing. */}
-          <div className="border-border text-muted-foreground flex items-center gap-3 rounded-xl border border-dashed px-3.5 py-3">
-            <ImageOff className="size-5 shrink-0" strokeWidth={1.8} />
-            <p className="text-xs leading-relaxed">{t("post.photosLater")}</p>
-          </div>
+          {/* First, because it is the first thing a seller has in hand and half
+              of what the listing is worth. */}
+          <PhotoPicker photos={photos} onChange={setPhotos} />
 
           <Field label={t("post.make")}>
             <Select

@@ -175,6 +175,17 @@ export function uploadPrefix(threadId: string): string {
 }
 
 /**
+ * Where a seller's listing photos go.
+ *
+ * Filed under the person, not the listing, because the pictures are chosen
+ * before the listing exists and therefore before it has an id. Publishing then
+ * accepts only objects sitting under the publisher's own prefix.
+ */
+export function listingPrefix(userId: string): string {
+  return `listings/${userId}`;
+}
+
+/**
  * Refuses a key that would escape the upload directory.
  *
  * The key reaches this from a URL path, so `..` in it is not a hypothetical —

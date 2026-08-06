@@ -317,7 +317,6 @@
     "descriptionPlaceholder": "Describe the condition, paperwork and anything that has been replaced.",
     "optional": "optional",
     "publish": "Publish",
-    "photosLater": "Photo upload is not ready yet. The listing is published with generated artwork, and you will be able to add your own photos later.",
     "error": {
       "generic": "The listing could not be published. Please try again shortly.",
       "offline": "No connection. Check your network and try again.",
@@ -348,7 +347,13 @@
     "fits": "Fits which motorcycles",
     "fitsHint": "leave empty for universal",
     "yearFrom": "from",
-    "yearTo": "to"
+    "yearTo": "to",
+    "addPhotos": "Add photos",
+    "removePhoto": "Remove photo",
+    "coverPhoto": "Cover",
+    "photosHelp": "Up to 8 photos. The first one is what buyers see in search.",
+    "photosCount": "{n} of {max} photos. The first one is the cover.",
+    "photoFailed": "A photo did not upload. Try adding it again."
   },
   "owner": {
     "stats": "{views} views · {contacts} contacts",

@@ -54,6 +54,11 @@ export async function POST(request: Request) {
       fitsYearFrom: numberOrUndefined(body.fitsYearFrom),
       fitsYearTo: numberOrUndefined(body.fitsYearTo),
       locale: isLocale(body.locale) ? body.locale : "az",
+      // Checked server-side against this seller and against storage, so an
+      // arbitrary list here buys nothing.
+      photoKeys: Array.isArray(body.photoKeys)
+        ? body.photoKeys.filter((key: unknown): key is string => typeof key === "string")
+        : undefined,
     },
     await currentUserId(),
   );

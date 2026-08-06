@@ -8,6 +8,7 @@ import { categorySchemas, makeById, makesFor, modelById, modelsFor } from "@/moc
 import type { ArtTone, AttributeValues, Listing, Photo, VehicleCategorySlug } from "@/types";
 
 import { useDatabase } from "./source";
+import { photosFor } from "./photos";
 
 /**
  * Publishing a vehicle listing.
@@ -38,6 +39,8 @@ export type ListingDraft = {
   delivery: boolean;
   customsCleared: boolean;
   attributes: AttributeValues;
+  /** Objects already uploaded by this seller, in the order they should show. */
+  photoKeys?: string[];
   /** Language the description was written in, so it is stored as that. */
   locale: Locale;
 };
@@ -163,7 +166,7 @@ export async function createListing(
     customsCleared: draft.customsCleared,
     delivery: draft.delivery,
     description: localisedDescription,
-    photos: generatedPhotos(id, tone, title),
+    photos: await photosFor(id, tone, title, sellerId, draft.photoKeys),
     attributes,
     sellerId,
     cityId: city.id,
@@ -213,16 +216,6 @@ export async function createListing(
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
-
-/** Three placeholder frames, the same shape the seeded catalogue uses. */
-function generatedPhotos(id: string, tone: ArtTone, alt: string): Photo[] {
-  return Array.from({ length: 3 }, (_, index) => ({
-    id: `${id}-p${index + 1}`,
-    seed: `${id}-${index + 1}`,
-    tone,
-    alt: `${alt} — ${index + 1}`,
-  }));
-}
 
 function slugify(value: string) {
   return value
