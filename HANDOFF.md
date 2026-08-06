@@ -2,7 +2,7 @@
 
 **Single source of truth for any agent or developer continuing this project.**
 
-Last updated: 31 July 2026 · Live at <https://ikitekerli.az> · Repo: `github.com/Lezetelemirde31/iki-teker`
+Last updated: 6 August 2026 · Live at <https://ikitekerli.az> · Repo: `github.com/Lezetelemirde31/iki-teker`
 
 Read this document before reading code. It records not only what exists but *why* it was built that way, which is the part the repository cannot tell you.
 
@@ -135,7 +135,13 @@ Blocked on: a registered legal entity and an SMS provider contract.
 
 ### Storage
 
-**None.** Photo upload does not exist. Listings render generated artwork (`components/common/vehicle-art.tsx`) from a deterministic seed + tone. Cloudflare R2 (10 GB free) is the intended target.
+**Cloudflare R2**, bucket `iki-teker` (EU jurisdiction), read back through `cdn.ikitekerli.az`. `src/server/storage.ts` is the whole adapter.
+
+Two backends behind one interface. With the five `R2_*` variables set, `/api/uploads` hands the browser a signed URL and the bytes go straight to the bucket — never through a function, which has a request-body limit a phone photo does not fit under. Without them, files are written to `.uploads/` and served by the app: the same upload, message and rendering, so the feature runs with no account anywhere.
+
+Rows store the object's **key**, never its URL — moving domains is configuration, not a migration over every message. `R2_ENDPOINT` is copied whole from the dashboard rather than assembled from an account id, because a jurisdiction-bound bucket lives on a different host.
+
+**Chat photos only so far.** Listings still render generated artwork (`components/common/vehicle-art.tsx`) from a deterministic seed + tone; pointing the post form at the same adapter is the remaining step.
 
 ### Deployment
 
@@ -286,7 +292,7 @@ Nothing is half-written in the working tree. The following are **specified and m
 - [ ] **Phone authentication (OTP).** Blocked on a legal entity and an SMS provider. Replace the body of `currentUser()` in `src/server/session.ts`; no caller changes. Add session storage, sign-in/up screens, and route protection for `/post`, `/account`, `/chats`.
 
 ### P1 — the product is not credible without these
-- [ ] **Photo upload.** Cloudflare R2, free tier. Presigned upload from the client, store keys in `listings.photos`. Keep `VehicleArt` as the fallback for photoless listings. Only `src/server/listings.ts` and the post form change.
+- [ ] **Photos on listings.** The storage adapter, signed uploads and R2 bucket already exist and carry chat photos — this is pointing the post form at `/api/uploads` and storing the keys in `listings.photos`. Keep `VehicleArt` as the fallback for photoless listings. Only `src/server/listings.ts` and the post form change.
 - [ ] **Complaints and disputes.** The moderation queue exists; reporting a listing or opening a dispute does not.
 
 ### P2 — trust and retention
@@ -699,7 +705,7 @@ Each of these was a deliberate decision with a cost paid for it.
 
 In this order.
 
-**1. Photo upload (R2).** Highest value per unit of work and not blocked by anything. Half a listing's value is its photos. Add a storage adapter, presigned uploads, and store keys in `listings.photos`. Keep `VehicleArt` for photoless listings. Touches `src/server/listings.ts` and the post form only.
+**1. Photos on listings.** Highest value per unit of work and no longer blocked by anything: R2, the adapter and signed uploads all exist and are carrying chat photos. Half a listing's value is its pictures. Store the keys in `listings.photos` and keep `VehicleArt` for photoless listings. Touches `src/server/listings.ts` and the post form only.
 
 **2. Authentication** — as soon as the SMS provider and legal entity exist. Everything above works without it; everything below needs it. Replace `currentUser()`; add sign-in screens and route protection.
 
