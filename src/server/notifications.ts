@@ -36,7 +36,10 @@ export type NotificationKind =
   | "messageReceived"
   | "listingApproved"
   | "listingRejected"
-  | "reviewReceived";
+  | "reviewReceived"
+  | "appointmentRequested"
+  | "appointmentConfirmed"
+  | "appointmentDeclined";
 
 type Payload = {
   title: string;
@@ -161,6 +164,11 @@ async function compose(
     listingRejected: `/${locale}/account`,
     // Straight to the profile the rating is now on.
     reviewReceived: values.userId ? `/${locale}/seller/${values.userId}` : `/${locale}/account`,
+    // The owner answers requests from their account screen; the customer's own
+    // appointments are listed there too, so both ends land somewhere useful.
+    appointmentRequested: `/${locale}/account`,
+    appointmentConfirmed: `/${locale}/account`,
+    appointmentDeclined: `/${locale}/account`,
   };
 
   return {

@@ -90,6 +90,25 @@ export const complaintReason = pgEnum("complaint_reason", [
 /** A closed complaint's status *is* its outcome, so there is no second column. */
 export const complaintStatus = pgEnum("complaint_status", ["open", "upheld", "dismissed"]);
 
+/**
+ * A workshop's own lifecycle. Deliberately not `listing_status`, which carries
+ * `sold` — a workshop is a business, and a business is never sold off the
+ * directory the way a motorcycle is sold off the catalogue.
+ */
+export const workshopStatus = pgEnum("workshop_status", [
+  "active",
+  "moderation",
+  "draft",
+  "archived",
+]);
+
+export const appointmentStatus = pgEnum("appointment_status", [
+  "requested",
+  "confirmed",
+  "completed",
+  "cancelled",
+]);
+
 /* -------------------------------------------------------------------------- */
 /*  Geography and taxonomy                                                     */
 /* -------------------------------------------------------------------------- */
@@ -541,6 +560,145 @@ export const complaints = pgTable(
   ],
 );
 
+/* -------------------------------------------------------------------------- */
+/*  Service directory                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A workshop.
+ *
+ * Opening hours are minutes from midnight rather than "09:00" strings, and that
+ * is the whole timezone story for this feature. Every workshop is in Azerbaijan
+ * and quotes its hours in local time; an appointment is asked for in the same
+ * local time. Storing either as an absolute instant would mean converting on
+ * every read, and the one place this codebase computes a calendar date
+ * (`toISODate` in lib/demo-clock) reads the *server's* zone — which on Vercel is
+ * UTC. Nine in the morning in Baku would have been checked as five, and the
+ * opening-hours test would have quietly returned the wrong answer. Integers in
+ * one agreed zone cannot drift.
+ *
+ * `concurrentSlots` is how many vehicles the workshop can have in at once. It is
+ * not decoration: the exclusion constraint on `appointments` keys on the slot
+ * index, so a shop that says three really can hold three ten-o'clock bookings
+ * and really cannot hold a fourth.
+ */
+export const workshops = pgTable(
+  "workshops",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cityId: text("city_id")
+      .notNull()
+      .references(() => cities.id),
+    districtId: text("district_id")
+      .notNull()
+      .references(() => districts.id),
+    address: jsonb("address").$type<Localized>().notNull(),
+    phone: text("phone").notNull(),
+    summary: jsonb("summary").$type<Localized>().notNull(),
+    about: jsonb("about").$type<Localized>().notNull(),
+    specialties: jsonb("specialties").$type<string[]>().notNull(),
+    /** Minutes from midnight, workshop-local. 09:00 is 540. */
+    openMinute: integer("open_minute").notNull(),
+    closeMinute: integer("close_minute").notNull(),
+    daysLabel: jsonb("days_label").$type<Localized>().notNull(),
+    mobileService: boolean("mobile_service").notNull().default(false),
+    verified: boolean("verified").notNull().default(false),
+    /** Paid priority placement. Sold by the promotion module, not here. */
+    promoted: boolean("promoted").notNull().default(false),
+    concurrentSlots: integer("concurrent_slots").notNull().default(1),
+    photos: jsonb("photos")
+      .$type<{ id: string; seed: string; tone: string; alt: string; key?: string }[]>()
+      .notNull(),
+    status: workshopStatus("status").notNull().default("moderation"),
+    rating: numeric("rating", { precision: 2, scale: 1 }).notNull().default("0"),
+    reviewsCount: integer("reviews_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("workshops_city_idx").on(table.cityId),
+    index("workshops_owner_idx").on(table.ownerId),
+    /** The directory's order: paid placement first, then rating. */
+    index("workshops_directory_idx").on(table.status, table.promoted, table.rating),
+  ],
+);
+
+/**
+ * One line on a workshop's menu.
+ *
+ * `durationMinutes` is what makes the booking safe. The customer picks a service
+ * and a start time; how long that occupies the workshop is read from here, never
+ * sent by the browser. Otherwise the end of an appointment would be whatever the
+ * person booking it decided to claim.
+ */
+export const serviceItems = pgTable(
+  "service_items",
+  {
+    id: text("id").primaryKey(),
+    workshopId: text("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    name: jsonb("name").$type<Localized>().notNull(),
+    /** Indicative — the workshop confirms the real figure after looking. */
+    priceFrom: integer("price_from").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    category: text("category").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => [index("service_items_workshop_idx").on(table.workshopId, table.sortOrder)],
+);
+
+/**
+ * An appointment.
+ *
+ * Same two-step shape as a rental booking, for the same reason: a request is a
+ * request, not a hold. Several customers may ask for Tuesday at ten and the
+ * workshop picks; only confirmation takes the slot, and only the database can
+ * arbitrate that.
+ *
+ * The date and the minute range are kept apart rather than fused into a
+ * timestamp so the exclusion constraint can compare them without a timezone
+ * ever entering the question — see the note on `workshops`.
+ */
+export const appointments = pgTable(
+  "appointments",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull().unique(),
+    workshopId: text("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => serviceItems.id, { onDelete: "cascade" }),
+    customerId: text("customer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Free text, or the customer's own listing if they picked one. */
+    vehicleLabel: text("vehicle_label").notNull(),
+    listingId: text("listing_id").references(() => listings.id, { onDelete: "set null" }),
+    appointmentDate: date("appointment_date").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    /** Derived from the service's duration on the server. Never sent by a client. */
+    endMinute: integer("end_minute").notNull(),
+    /** Which of the workshop's concurrent slots this occupies once confirmed. */
+    slotIndex: integer("slot_index").notNull().default(0),
+    status: appointmentStatus("status").notNull().default("requested"),
+    priceEstimate: integer("price_estimate").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("appointments_workshop_status_idx").on(table.workshopId, table.status),
+    index("appointments_customer_idx").on(table.customerId),
+    index("appointments_day_idx").on(table.workshopId, table.appointmentDate),
+  ],
+);
+
 export const chatThreads = pgTable(
   "chat_threads",
   {
@@ -664,6 +822,24 @@ export const chatThreadsRelations = relations(chatThreads, ({ one, many }) => ({
   messages: many(messages),
 }));
 
+export const workshopsRelations = relations(workshops, ({ one, many }) => ({
+  owner: one(users, { fields: [workshops.ownerId], references: [users.id] }),
+  city: one(cities, { fields: [workshops.cityId], references: [cities.id] }),
+  district: one(districts, { fields: [workshops.districtId], references: [districts.id] }),
+  services: many(serviceItems),
+  appointments: many(appointments),
+}));
+
+export const serviceItemsRelations = relations(serviceItems, ({ one }) => ({
+  workshop: one(workshops, { fields: [serviceItems.workshopId], references: [workshops.id] }),
+}));
+
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  workshop: one(workshops, { fields: [appointments.workshopId], references: [workshops.id] }),
+  service: one(serviceItems, { fields: [appointments.serviceId], references: [serviceItems.id] }),
+  customer: one(users, { fields: [appointments.customerId], references: [users.id] }),
+}));
+
 /** SQL fragment for the overlap guard, applied in the migration below. */
 export const bookingOverlapGuard = sql`
   ALTER TABLE bookings
@@ -673,4 +849,20 @@ export const bookingOverlapGuard = sql`
       daterange(start_date, end_date, '[]') WITH &&
     )
     WHERE (status IN ('confirmed', 'active'));
+`;
+
+/**
+ * The same promise for appointments, keyed on the slot as well as the workshop
+ * so a shop with three bays can hold three overlapping bookings and no more.
+ */
+export const appointmentOverlapGuard = sql`
+  ALTER TABLE appointments
+    ADD CONSTRAINT appointments_no_overlap
+    EXCLUDE USING gist (
+      workshop_id WITH =,
+      slot_index WITH =,
+      appointment_date WITH =,
+      int4range(start_minute, end_minute) WITH &&
+    )
+    WHERE (status = 'confirmed');
 `;

@@ -550,6 +550,18 @@
     "reviewReceived": {
       "title": "Yeni rəy",
       "body": "Sizə 5 ulduzdan {stars} verildi."
+    },
+    "appointmentRequested": {
+      "title": "Yeni randevu istəyi",
+      "body": "{customer} — {when}"
+    },
+    "appointmentConfirmed": {
+      "title": "Randevu təsdiqləndi",
+      "body": "{workshop} sizi {when} gözləyir."
+    },
+    "appointmentDeclined": {
+      "title": "Randevu alınmadı",
+      "body": "{workshop} bu vaxtı təsdiqləyə bilmədi."
     }
   },
   "review": {

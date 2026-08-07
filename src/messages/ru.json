@@ -550,6 +550,18 @@
     "reviewReceived": {
       "title": "Новый отзыв",
       "body": "Вам поставили {stars} из 5."
+    },
+    "appointmentRequested": {
+      "title": "Новая заявка на запись",
+      "body": "{customer} — {when}"
+    },
+    "appointmentConfirmed": {
+      "title": "Запись подтверждена",
+      "body": "{workshop} ждёт вас {when}."
+    },
+    "appointmentDeclined": {
+      "title": "Запись не состоялась",
+      "body": "{workshop} не смог подтвердить это время."
     }
   },
   "review": {

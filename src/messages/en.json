@@ -550,6 +550,18 @@
     "reviewReceived": {
       "title": "New review",
       "body": "Someone rated you {stars} out of 5."
+    },
+    "appointmentRequested": {
+      "title": "New appointment request",
+      "body": "{customer} — {when}"
+    },
+    "appointmentConfirmed": {
+      "title": "Appointment confirmed",
+      "body": "{workshop} expects you at {when}."
+    },
+    "appointmentDeclined": {
+      "title": "Appointment not taken",
+      "body": "{workshop} could not confirm that time."
     }
   },
   "review": {

@@ -40,6 +40,32 @@ export async function applyConstraints(database: Database) {
       END IF;
     END $$;
   `);
+
+  // The same promise for workshop appointments. Keyed on the slot index as well
+  // as the workshop, so a shop that can take three vehicles at once really can
+  // hold three ten-o'clock appointments — and really cannot hold a fourth.
+  //
+  // The day and the minute range are separate columns rather than one timestamp
+  // on purpose: every workshop quotes local Baku time, and comparing integers in
+  // one agreed zone cannot drift the way a server-zone conversion can.
+  await database.execute(sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'appointments_no_overlap'
+      ) THEN
+        ALTER TABLE appointments
+          ADD CONSTRAINT appointments_no_overlap
+          EXCLUDE USING gist (
+            workshop_id WITH =,
+            slot_index WITH =,
+            appointment_date WITH =,
+            int4range(start_minute, end_minute) WITH &&
+          )
+          WHERE (status = 'confirmed');
+      END IF;
+    END $$;
+  `);
 }
 
 /**
@@ -54,12 +80,15 @@ export async function applyConstraints(database: Database) {
  */
 export async function hasOverlapGuard(database: Database) {
   const result = await database.execute<{ count: string }>(
-    sql`SELECT count(*)::text AS count FROM pg_constraint WHERE conname = 'bookings_no_overlap'`,
+    sql`SELECT count(*)::text AS count FROM pg_constraint
+        WHERE conname IN ('bookings_no_overlap', 'appointments_no_overlap')`,
   );
 
   const rows: { count?: string }[] = Array.isArray(result)
     ? result
     : ((result as unknown as { rows?: { count: string }[] }).rows ?? []);
 
-  return Number(rows[0]?.count ?? 0) > 0;
+  // Both, not either. A deployment carrying one guarantee and not the other is
+  // exactly the state this check exists to refuse.
+  return Number(rows[0]?.count ?? 0) === 2;
 }

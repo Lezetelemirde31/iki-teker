@@ -722,5 +722,114 @@ heading("reporting a listing, and a moderator closing it");
   line("a report can also be dismissed", r.status, 200, r.json?.error);
 }
 
+heading("booking a workshop, and the slot it takes");
+{
+  const ask = (user, body) => post("/api/appointments", user, body);
+  const answer = (user, id, action) => post(`/api/appointments/${id}`, user, { action });
+
+  // Gəncə Moto: one bay, open 09:00–18:00. A 150-minute service started at
+  // 09:00 fits; started at 16:00 it does not.
+  const ganja = {
+    workshopId: "ws-ganja-moto",
+    serviceId: "svc-gms-to",
+    date: "2027-09-15",
+    time: "09:00",
+    vehicleLabel: "Honda CB500F, 2020",
+  };
+
+  let r;
+  r = await ask("u-rashad", { ...ganja, workshopId: "ws-does-not-exist" });
+  line("a workshop that is not there", r.status, 404, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, date: "2020-01-01" });
+  line("a day already gone", r.status, 422, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, date: "15/09/2027" });
+  line("a date that is not a date", r.status, 422, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, time: "half past nine" });
+  line("a time that is not a time", r.status, 422, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, time: "16:00" });
+  line("a job that runs past closing", r.status, 422, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, time: "08:00" });
+  line("and one that starts before opening", r.status, 422, r.json?.error);
+
+  // The service has to be on this workshop's own menu, or a customer could
+  // pair a cheap shop with a rival's price list.
+  r = await ask("u-rashad", { ...ganja, serviceId: "svc-sf-belt" });
+  line("a service from another workshop", r.status, 422, r.json?.error);
+
+  r = await ask("u-rashad", { ...ganja, vehicleLabel: " " });
+  line("no vehicle named", r.status, 422, r.json?.error);
+
+  r = await ask("u-veli-motors", ganja);
+  line("booking your own workshop", r.status, 422, r.json?.error);
+
+  // What the browser sends about money and duration is thrown away.
+  r = await ask("u-rashad", { ...ganja, priceEstimate: 1, endMinute: 9999 });
+  line("a real request is taken", r.status, 201, r.json?.error);
+  line("priced from the menu, not the client", r.json?.appointment?.priceEstimate, 120);
+  const first = r.json?.appointment?.id;
+
+  // Answering it.
+  r = await answer("u-rashad", first, "confirm");
+  line("a customer cannot confirm their own", r.status, 403, r.json?.error);
+
+  r = await answer("u-veli-motors", "ap-nope", "confirm");
+  line("nor can the workshop invent one", r.status, 404, r.json?.error);
+
+  r = await answer("u-veli-motors", first, "sideways");
+  line("only confirm or decline", r.status, 400);
+
+  r = await answer("u-veli-motors", first, "confirm");
+  line("the workshop confirms", r.status, 200, r.json?.error);
+
+  r = await answer("u-veli-motors", first, "decline");
+  line("and cannot answer it twice", r.status, 409, r.json?.error);
+
+  // The bay is now taken for that stretch of that day.
+  r = await ask("u-elvin", { ...ganja, time: "10:00", vehicleLabel: "Yamaha MT-07, 2021" });
+  const clashing = r.json?.appointment?.id;
+  line("a second customer may still ask", r.status, 201, r.json?.error);
+
+  r = await answer("u-veli-motors", clashing, "confirm");
+  line("but the one bay cannot take both", r.status, 409, r.json?.error);
+
+  // Declining gives the hour back.
+  r = await answer("u-veli-motors", clashing, "decline");
+  line("declining is always allowed", r.status, 200, r.json?.error);
+
+  r = await ask("u-elvin", { ...ganja, time: "14:00", vehicleLabel: "Yamaha MT-07, 2021" });
+  const later = r.json?.appointment?.id;
+  r = await answer("u-veli-motors", later, "confirm");
+  line("a later hour that day is free", r.status, 200, r.json?.error);
+
+  // Moto Servis Bakı runs two bays, so it really can take two at once.
+  const msb = {
+    workshopId: "ws-moto-servis-baki",
+    serviceId: "svc-msb-oil",
+    date: "2027-09-16",
+    time: "11:00",
+    vehicleLabel: "Suzuki SV650, 2019",
+  };
+
+  const both = [];
+  for (const customer of ["u-rashad", "u-elvin", "u-nermin"]) {
+    r = await ask(customer, msb);
+    both.push(r.json?.appointment?.id);
+  }
+
+  r = await answer("u-moto-servis-baki", both[0], "confirm");
+  line("two bays take the first", r.status, 200, r.json?.error);
+
+  r = await answer("u-moto-servis-baki", both[1], "confirm");
+  line("and the second at the same hour", r.status, 200, r.json?.error);
+
+  r = await answer("u-moto-servis-baki", both[2], "confirm");
+  line("the third has nowhere to go", r.status, 409, r.json?.error);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

@@ -33,6 +33,11 @@ import {
   reviews as mockReviews,
   users as mockUsers,
 } from "../src/mocks";
+import {
+  appointments as mockAppointments,
+  serviceItems as mockServiceItems,
+  workshops as mockWorkshops,
+} from "../src/mocks/services";
 
 const DATA_DIR = process.env.PGLITE_DIR ?? "./.pglite";
 
@@ -165,6 +170,7 @@ async function main() {
   // ---- clear --------------------------------------------------------------
   await db.execute(sql`
     TRUNCATE favorites, messages, chat_participants, chat_threads, reviews,
+             appointments, service_items, workshops,
              bookings, rental_blackouts, rental_offers, listings,
              users, models, makes, districts, cities RESTART IDENTITY CASCADE
   `);
@@ -379,6 +385,80 @@ async function main() {
     })),
   );
 
+  // ---- service directory --------------------------------------------------
+  //
+  // Hours arrive as "09:00" and are stored as minutes from midnight, which is
+  // the whole timezone story for this feature: every workshop quotes local Baku
+  // time and every appointment is asked for in the same local time, so nothing
+  // ever has to be converted.
+  const toMinute = (clock: string) => {
+    const [hours, minutes] = clock.split(":").map(Number);
+    return (hours ?? 0) * 60 + (minutes ?? 0);
+  };
+
+  await db.insert(schema.workshops).values(
+    mockWorkshops.map((w) => ({
+      id: w.id,
+      slug: w.slug,
+      name: w.name,
+      ownerId: w.ownerId,
+      cityId: w.cityId,
+      districtId: w.districtId,
+      address: w.address,
+      phone: w.phone,
+      summary: w.summary,
+      about: w.about,
+      specialties: w.specialties,
+      openMinute: toMinute(w.hours.open),
+      closeMinute: toMinute(w.hours.close),
+      daysLabel: w.hours.days,
+      mobileService: w.mobileService,
+      verified: w.verified,
+      promoted: w.promoted,
+      // Demo figure: the established shops can take two vehicles at once, the
+      // rest one. Enough to exercise the slot constraint in both directions.
+      concurrentSlots: w.verified ? 2 : 1,
+      photos: w.photos,
+      status: "active" as const,
+      rating: String(w.rating),
+      reviewsCount: w.reviewsCount,
+    })),
+  );
+
+  await db.insert(schema.serviceItems).values(
+    mockServiceItems.map((item, index) => ({
+      id: item.id,
+      workshopId: item.workshopId,
+      name: item.name,
+      priceFrom: item.priceFrom,
+      durationMinutes: item.durationMinutes,
+      category: item.category,
+      sortOrder: index,
+    })),
+  );
+
+  const serviceById = new Map(mockServiceItems.map((item) => [item.id, item]));
+  await db.insert(schema.appointments).values(
+    mockAppointments.map((a, index) => {
+      const startMinute = toMinute(a.time);
+      const duration = serviceById.get(a.serviceId)?.durationMinutes ?? 60;
+      return {
+        id: a.id,
+        code: `SR-${2100 + index}`,
+        workshopId: a.workshopId,
+        serviceId: a.serviceId,
+        customerId: a.customerId,
+        vehicleLabel: a.vehicleLabel,
+        listingId: a.listingId ?? null,
+        appointmentDate: a.date,
+        startMinute,
+        endMinute: startMinute + duration,
+        status: a.status,
+        priceEstimate: a.priceEstimate,
+      };
+    }),
+  );
+
   // ---- trust and messaging ------------------------------------------------
   await db.insert(schema.reviews).values(
     mockReviews.map((r) => ({
@@ -443,6 +523,9 @@ async function main() {
     "rental_offers",
     "rental_blackouts",
     "bookings",
+    "workshops",
+    "service_items",
+    "appointments",
     "reviews",
     "chat_threads",
     "messages",
