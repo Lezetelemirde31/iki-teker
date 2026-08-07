@@ -77,6 +77,19 @@ export const documentStatus = pgEnum("document_status", [
 export const reviewContext = pgEnum("review_context", ["rental", "sale", "service"]);
 export const messageKind = pgEnum("message_kind", ["text", "file", "image", "system"]);
 
+/** Why somebody reported a listing or a person. */
+export const complaintReason = pgEnum("complaint_reason", [
+  "fraud",
+  "wrongCategory",
+  "sold",
+  "offensive",
+  "spam",
+  "other",
+]);
+
+/** A closed complaint's status *is* its outcome, so there is no second column. */
+export const complaintStatus = pgEnum("complaint_status", ["open", "upheld", "dismissed"]);
+
 /* -------------------------------------------------------------------------- */
 /*  Geography and taxonomy                                                     */
 /* -------------------------------------------------------------------------- */
@@ -485,6 +498,47 @@ export const reviews = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("reviews_target_idx").on(table.targetId)],
+);
+
+/**
+ * Somebody reporting a listing or a person.
+ *
+ * `entityId` carries no foreign key. The target is polymorphic — a row here
+ * points at either a listing or a user, and one column cannot reference two
+ * tables. That turns out to be the right shape anyway: `entityLabel` freezes
+ * what was reported at the moment it was reported, so the record survives the
+ * listing being edited, sold or deleted afterwards. A complaint is evidence,
+ * and evidence that disappears with its subject is worth nothing.
+ */
+export const complaints = pgTable(
+  "complaints",
+  {
+    id: text("id").primaryKey(),
+    /** "listing" or "user" — text for the same reason `action` is above. */
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    entityLabel: text("entity_label").notNull(),
+    reporterId: text("reporter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reason: complaintReason("reason").notNull(),
+    note: text("note"),
+    status: complaintStatus("status").notNull().default("open"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    resolvedById: text("resolved_by_id").references(() => users.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolutionNote: text("resolution_note"),
+  },
+  (table) => [
+    /** One report per person per thing. Ten reports from one account is not ten
+     *  problems, and letting it through would make the queue trivial to flood. */
+    uniqueIndex("complaints_reporter_target_idx").on(
+      table.reporterId,
+      table.entityType,
+      table.entityId,
+    ),
+    index("complaints_open_idx").on(table.status, table.createdAt),
+  ],
 );
 
 export const chatThreads = pgTable(

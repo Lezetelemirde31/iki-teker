@@ -569,5 +569,42 @@
       "tooLong": "Çox uzundur.",
       "generic": "Rəy yerləşdirilə bilmədi."
     }
+  },
+  "report": {
+    "action": "Şikayət et",
+    "title": "Nə səhvdir?",
+    "placeholder": "Nə baş verdi? (istəyə bağlı)",
+    "submit": "Göndər",
+    "done": "Şikayətiniz göndərildi. Moderator baxacaq.",
+    "reasons": {
+      "fraud": "Fırıldaq",
+      "sold": "Artıq satılıb",
+      "wrongCategory": "Səhv kateqoriya",
+      "offensive": "Təhqiredici",
+      "spam": "Spam",
+      "other": "Digər"
+    },
+    "error": {
+      "ownContent": "Öz elanınızı şikayət edə bilməzsiniz.",
+      "alreadyReported": "Bunu artıq şikayət etmisiniz.",
+      "notFound": "Tapılmadı.",
+      "invalidReason": "Səbəbi seçin.",
+      "generic": "Şikayət göndərilə bilmədi."
+    }
+  },
+  "complaints": {
+    "title": "Şikayətlər",
+    "waiting": "{count} şikayət gözləyir",
+    "empty": "Şikayət yoxdur",
+    "emptyBody": "Kimsə elan və ya istifadəçi haqqında şikayət edəndə burada görünəcək.",
+    "uphold": "Qəbul et",
+    "dismiss": "Rədd et",
+    "upheld": "Qəbul edildi",
+    "dismissed": "Rədd edildi",
+    "taken": "Başqa moderator qərar verib",
+    "on": {
+      "listing": "Elan",
+      "user": "İstifadəçi"
+    }
   }
 }

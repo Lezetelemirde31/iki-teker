@@ -569,5 +569,42 @@
       "tooLong": "That is too long.",
       "generic": "The review could not be published."
     }
+  },
+  "report": {
+    "action": "Report",
+    "title": "What is wrong?",
+    "placeholder": "What happened? (optional)",
+    "submit": "Send",
+    "done": "Reported. A moderator will look at it.",
+    "reasons": {
+      "fraud": "Scam",
+      "sold": "Already sold",
+      "wrongCategory": "Wrong category",
+      "offensive": "Offensive",
+      "spam": "Spam",
+      "other": "Something else"
+    },
+    "error": {
+      "ownContent": "You cannot report your own listing.",
+      "alreadyReported": "You have already reported this.",
+      "notFound": "Not found.",
+      "invalidReason": "Pick a reason.",
+      "generic": "The report could not be sent."
+    }
+  },
+  "complaints": {
+    "title": "Reports",
+    "waiting": "{count} report(s) waiting",
+    "empty": "No reports",
+    "emptyBody": "When somebody reports a listing or a person, it appears here.",
+    "uphold": "Uphold",
+    "dismiss": "Dismiss",
+    "upheld": "Upheld",
+    "dismissed": "Dismissed",
+    "taken": "Another moderator got there first",
+    "on": {
+      "listing": "Listing",
+      "user": "Person"
+    }
   }
 }

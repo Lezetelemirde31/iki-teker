@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Rail } from "@/components/common/rail";
+import { ReportButton } from "@/components/common/report-button";
 import { AppHeader } from "@/components/layout/app-header";
 import { ContactActions } from "@/components/listing/contact-actions";
 import { OwnerActions } from "@/components/listing/owner-actions";
@@ -214,6 +215,11 @@ export default async function ListingPage({
                 </Link>
               </section>
             )}
+
+            {/* Under the seller, where somebody who has just decided this is
+                not right already is. Hidden on your own listing — reporting
+                yourself is refused anyway. */}
+            {!isOwner && <ReportButton entityType="listing" entityId={item.id} />}
           </div>
 
           {similar.length > 0 && (

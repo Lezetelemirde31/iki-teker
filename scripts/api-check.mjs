@@ -629,5 +629,98 @@ heading("a review needs a rental that finished");
   line("aimed back at the renter", r.json?.review?.targetId, "u-elvin");
 }
 
+heading("reporting a listing, and a moderator closing it");
+{
+  const report = (user, body) => post("/api/complaints", user, body);
+  const resolve = (user, id, body) => post(`/api/complaints/${id}`, user, body);
+
+  const statusOf = async (id) => {
+    const res = await fetch(`${API}/api/catalog`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ids: [id] }),
+    });
+    const data = await res.json().catch(() => null);
+    return data?.items?.[0]?.status;
+  };
+
+  // A listing of its own, so upholding a report cannot disturb the rest of the run.
+  const created = (await postListing({ ...valid, price: 15100 })).json?.listing;
+  const target = created?.id;
+  line("a listing to report", Boolean(target), true, target);
+
+  let r = await report("u-rashad", { entityType: "listing", entityId: target, reason: "fraud" });
+  line("not your own listing", r.status, 422, r.json?.error);
+
+  r = await report("u-elvin", { entityType: "listing", entityId: "does-not-exist", reason: "spam" });
+  line("an unknown listing", r.status, 404, r.json?.error);
+
+  r = await report("u-elvin", { entityType: "listing", entityId: target, reason: "nonsense" });
+  line("a reason nobody offered", r.status, 422, r.json?.error);
+
+  r = await report("u-elvin", { entityType: "workshop", entityId: target, reason: "spam" });
+  line("a kind of thing that has none", r.status, 400);
+
+  r = await report("u-elvin", {
+    entityType: "listing",
+    entityId: target,
+    reason: "fraud",
+    note: "Qabaqcadan köçürmə istəyir.",
+  });
+  line("somebody reports it", r.status, 201, r.json?.error);
+
+  // One account, one report. Otherwise the queue is trivial to flood.
+  r = await report("u-elvin", { entityType: "listing", entityId: target, reason: "spam" });
+  line("but only once", r.status, 409, r.json?.error);
+
+  r = await report("u-nermin", { entityType: "listing", entityId: target, reason: "sold" });
+  line("a second person still can", r.status, 201, r.json?.error);
+
+  // Reporting a person, not a listing.
+  r = await report("u-elvin", { entityType: "user", entityId: "u-elvin", reason: "spam" });
+  line("nor yourself", r.status, 422, r.json?.error);
+
+  r = await report("u-elvin", { entityType: "user", entityId: "u-kamran", reason: "offensive" });
+  line("a person can be reported", r.status, 201, r.json?.error);
+
+  // Who gets to close one.
+  const filed = await report("u-kamran", {
+    entityType: "listing",
+    entityId: target,
+    reason: "spam",
+  });
+  const complaintId = filed.json?.id;
+  line("the report has an id", Boolean(complaintId), true, complaintId);
+
+  r = await resolve("u-elvin", complaintId, { outcome: "upheld" });
+  line("a bystander cannot close one", r.status, 403, r.json?.error);
+
+  r = await resolve("u-moderator", "cp-does-not-exist", { outcome: "upheld" });
+  line("nor can a moderator invent one", r.status, 404, r.json?.error);
+
+  r = await resolve("u-moderator", complaintId, { outcome: "sideways" });
+  line("only two ways to close it", r.status, 400);
+
+  // Nothing has happened to the listing yet.
+  line("still on the market", await statusOf(target), "moderation");
+
+  r = await resolve("u-moderator", complaintId, { outcome: "upheld" });
+  line("a moderator upholds it", r.status, 200, r.json?.error);
+  line("the listing comes down", await statusOf(target), "draft");
+
+  // The second moderator to click gets told, rather than reopening it.
+  r = await resolve("u-moderator", complaintId, { outcome: "dismissed" });
+  line("and cannot be closed twice", r.status, 409, r.json?.error);
+
+  // Dismissing leaves everything where it is.
+  const other = await report("u-nermin", {
+    entityType: "user",
+    entityId: "u-kamran",
+    reason: "spam",
+  });
+  r = await resolve("u-moderator", other.json?.id, { outcome: "dismissed" });
+  line("a report can also be dismissed", r.status, 200, r.json?.error);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);

@@ -35,6 +35,7 @@ import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
 import { ReviewForm } from "@/components/rental/review-form";
 import { pendingRequestsFor } from "@/server/bookings";
+import { openComplaints } from "@/server/complaints";
 import { reviewableBookings } from "@/server/reviews";
 import { ownListings } from "@/server/listing-actions";
 import { pendingCount } from "@/server/moderation";
@@ -55,15 +56,21 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests, moderator, queued, mine, signedIn, reviewable] = await Promise.all([
-    getMyRentals(userId),
-    pendingRequestsFor(userId),
-    canModerate(),
-    pendingCount(),
-    ownListings(userId),
-    isSignedIn(),
-    reviewableBookings(userId),
-  ]);
+  const [rentals, requests, moderator, queued, reports, mine, signedIn, reviewable] =
+    await Promise.all([
+      getMyRentals(userId),
+      pendingRequestsFor(userId),
+      canModerate(),
+      pendingCount(),
+      openComplaints(),
+      ownListings(userId),
+      isSignedIn(),
+      reviewableBookings(userId),
+    ]);
+
+  // Listings waiting plus reports waiting. A moderator should not have to open
+  // the panel to find out whether there is anything in it.
+  const waiting = queued + reports;
 
   // Finished rentals this person has not written about yet.
   const awaitingReview = new Set(reviewable);
@@ -180,9 +187,9 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               >
                 <ShieldCheck className="text-muted-foreground size-5 shrink-0" strokeWidth={2} />
                 <span className="flex-1 text-sm font-semibold">{t("moderation.title")}</span>
-                {queued > 0 && (
+                {waiting > 0 && (
                   <Badge variant="warning" size="md">
-                    {formatNumber(queued, locale)}
+                    {formatNumber(waiting, locale)}
                   </Badge>
                 )}
                 <ChevronRight className="text-subtle-foreground size-5" />

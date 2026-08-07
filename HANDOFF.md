@@ -35,7 +35,7 @@ The single strongest product claim is **double booking is impossible**. That is 
 | **Rental operator** | Lists vehicles for hire, manages a calendar, confirms or declines requests |
 | **Buyer / renter** | Searches, filters, saves favourites, messages sellers, books rentals |
 | **Workshop** | Listed in the service directory (data exists, UI not built) |
-| **Moderator / admin** | Reviews listings, handles complaints and disputes (data modelled, **no UI**) |
+| **Moderator / admin** | Reviews queued listings and handles reports about listings and people |
 
 ### Current development stage
 
@@ -281,9 +281,8 @@ Nothing is half-written in the working tree. The following are **specified and m
 
 | Feature | State |
 |---|---|
-| **Complaints and disputes** | `src/mocks/admin.ts` types and mocks them. The moderation queue is built; complaints and disputes are **not** — no tables, no UI |
+| **Rental disputes** | `src/mocks/admin.ts` types them. Reporting a listing or a person is built (`complaints` table, `/admin/complaints`); opening a dispute over a rental is **not** — it needs the handover/return flow first |
 | **Workshops / service booking** | `src/mocks/services.ts` has workshops, service items and appointments. Only the home-feed shortcut renders. **No tables** |
-| **Reviews** | Read and displayed on seller profiles. **No way to write one** |
 | **Favourites sync** | Works via localStorage. A `favorites` table exists in the schema and is unused — syncing needs auth to mean anything |
 
 ---
@@ -294,10 +293,9 @@ Nothing is half-written in the working tree. The following are **specified and m
 - [ ] **Phone authentication (OTP).** Blocked on a legal entity and an SMS provider. Replace the body of `currentUser()` in `src/server/session.ts`; no caller changes. Add session storage, sign-in/up screens, and route protection for `/post`, `/account`, `/chats`.
 
 ### P1 — the product is not credible without these
-- [ ] **Complaints and disputes.** The moderation queue exists; reporting a listing or opening a dispute does not.
+- [ ] **Rental disputes.** Reporting a listing or a person is built. Opening a dispute over a rental is not, and cannot be until a booking can reach `returned` through a handover/return flow — `bookings.ts` only implements `pending → confirmed` and `pending → cancelled`.
 
 ### P2 — trust and retention
-- [ ] **Writing reviews** — after a returned booking or a confirmed sale
 - [ ] **Notifications** — a booking request with nobody watching the account screen is a lost rental. Web Push first (the service worker already exists)
 - [ ] **Favourites synced to the account** (needs P0)
 - [ ] **Saved searches with alerts**
@@ -423,11 +421,12 @@ makes ──< models
 | `reviews` | Author, target, rating, context, `verifiedTransaction` |
 | `chat_threads`, `chat_participants`, `messages` | Threads may be anchored to a listing and/or a booking. Participants is a join table, and it owns `archived` — filing a conversation away is a decision about *your* inbox, so the flag is per person, not per thread |
 | `moderation_actions` | Every approve/reject with its author and reason. Never updated or deleted |
+| `complaints` | Reports about a listing or a person. `entityId` carries **no foreign key** — the target is polymorphic, and `entityLabel` freezes what was reported so the record outlives the listing. Unique on `(reporterId, entityType, entityId)`: one account, one report per thing |
 | `favorites` | **Exists and is unused** — favourites are localStorage today |
 
 ### Enums
 
-`account_kind`, `booking_status` (`pending|confirmed|active|returned|cancelled|disputed`), `catalog_kind`, `condition_kind`, `document_status`, `licence_category`, `listing_status` (`active|moderation|draft|sold|archived`), `message_kind`, `payment_method`, `review_context`.
+`account_kind`, `booking_status` (`pending|confirmed|active|returned|cancelled|disputed`), `catalog_kind`, `condition_kind`, `document_status`, `licence_category`, `listing_status` (`active|moderation|draft|sold|archived`), `message_kind`, `payment_method`, `review_context`, `complaint_reason`, `complaint_status` (`open|upheld|dismissed` — a closed report's status is its outcome).
 
 ### Reference data is not in the database path
 
@@ -435,7 +434,7 @@ Cities, districts, makes, models, categories and attribute schemas are read **in
 
 ### Types with no table
 
-`types/services.ts` (workshops, service items, appointments) and `types/admin.ts` (moderation, complaints, disputes, audit, revenue) are mock-only.
+`types/services.ts` (workshops, service items, appointments) and the dispute, audit and revenue halves of `types/admin.ts` are mock-only.
 
 ---
 
@@ -708,15 +707,13 @@ In this order.
 
 **1. Real SMS.** Sign-in, sessions and passwords are built and tested; the one-time code is the only part still simulated. This is the last thing standing between the product and real accounts, and it is blocked on a registered legal entity rather than on code — `src/server/auth/sms.ts` is already the seam it plugs into.
 
-**2. Reviews.** After a returned booking or a confirmed sale. The data model is there; nothing writes to it.
+**2. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly. The PRD puts cash at launch by design, so this is about VIP placement, not checkout.
 
-**3. Complaints and disputes.** The moderation queue exists and empties; reporting a listing or opening a dispute does not exist at all.
+**3. Service directory.** Workshops are modelled and seeded, with no screen. The smallest remaining feature that adds a whole audience.
 
-**4. Promotion and payments.** The counters that justify a promotion price now work, so this can finally be sold honestly. The PRD puts cash at launch by design, so this is about VIP placement, not checkout.
+**4. Rental disputes.** Needs the handover/return flow before it can exist — a dispute is about a rental that went wrong, and no booking can currently reach `returned` through the app.
 
-**5. Service directory.** Workshops are modelled and seeded, with no screen. The smallest remaining feature that adds a whole audience.
-
-**6. Play Store (TWA).** Android only. iOS needs a different approach.
+**5. Play Store (TWA).** Android only. iOS needs a different approach.
 
 ---
 

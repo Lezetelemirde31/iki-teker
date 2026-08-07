@@ -1,6 +1,7 @@
 import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { ReportButton } from "@/components/common/report-button";
 import { ListingTile } from "@/components/listing/listing-cards";
 import { AppHeader } from "@/components/layout/app-header";
 import { PageTransition } from "@/components/motion/page-transition";
@@ -17,6 +18,7 @@ import {
   localized,
 } from "@/lib/format";
 import { getSellerProfile, getUser } from "@/server/data";
+import { currentUserId } from "@/server/session";
 
 export default async function SellerPage({
   params,
@@ -28,6 +30,8 @@ export default async function SellerPage({
 
   const profile = await getSellerProfile(id);
   if (!profile) notFound();
+
+  const viewerId = await currentUserId();
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
@@ -196,6 +200,9 @@ export default async function SellerPage({
               </div>
             )}
           </section>
+
+          {/* Not shown on your own profile — reporting yourself is refused. */}
+          {user.id !== viewerId && <ReportButton entityType="user" entityId={user.id} />}
         </div>
       </main>
     </PageTransition>
