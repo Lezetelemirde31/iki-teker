@@ -8,7 +8,7 @@ import * as schema from "@/db/schema";
 import { normalisePhone } from "@/lib/phone";
 import type { User } from "@/types";
 
-import { issueCode, verifyCode } from "./codes";
+import { discardCode, issueCode, verifyCode } from "./codes";
 import { checkStrength, hashPassword, verifyPassword } from "./passwords";
 import { createSession, destroySession } from "./session-store";
 import { emailSender, isDemoEmail, normaliseEmail } from "./email";
@@ -406,7 +406,17 @@ export async function startEmailSignIn(
 
   // Saying "sent" when nothing was sent leaves someone waiting for a code that
   // is never coming, and blaming their inbox.
-  if (!sent.sent) return { ok: false, reason: "undeliverable" };
+  if (!sent.sent) {
+    // The row that was just written is what the rate limiter counts, so leaving
+    // it there would lock them out for a minute over a failure that was not
+    // theirs. The provider's own words go to the server log, because the reason
+    // a message was refused — an unverified sending domain, a rejected key — is
+    // something only whoever configured it can act on, and it must not be
+    // handed to whoever typed the address.
+    await discardCode(email);
+    console.error(`[email] could not send to ${maskEmail(email)}: ${sent.reason}`);
+    return { ok: false, reason: "undeliverable" };
+  }
 
   return {
     ok: true,

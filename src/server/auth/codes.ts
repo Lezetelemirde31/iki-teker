@@ -152,3 +152,21 @@ export async function verifyCode(destination: string, code: string): Promise<Ver
 
   return { ok: true, pendingName: row.pendingName };
 }
+
+/**
+ * Throws away a code that was issued but never carried.
+ *
+ * Issuing writes a row, and that row is what the rate limiter counts. If the
+ * provider then refuses the message, the person is left unable to try again for
+ * a minute over a failure that was not theirs — punished for the platform's bad
+ * afternoon. Removing the row puts them back where they started.
+ *
+ * Deleted rather than consumed: a code nobody received is not a code that was
+ * used, and leaving it marked as spent would make the audit read as though one
+ * had been.
+ */
+export async function discardCode(destination: string): Promise<void> {
+  await db
+    .delete(schema.authCodes)
+    .where(and(eq(schema.authCodes.destination, destination), isNull(schema.authCodes.consumedAt)));
+}
