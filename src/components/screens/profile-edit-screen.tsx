@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, Lock, Phone } from "lucide-react";
+import { Check, Loader2, Lock, Mail, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -40,7 +40,6 @@ export function ProfileEditScreen({
   const [name, setName] = useState(user.name);
   const [cityId, setCityId] = useState(user.cityId ?? "");
   const [districtId, setDistrictId] = useState(user.districtId ?? "");
-  const [email, setEmail] = useState("");
   const [bio, setBio] = useState(localized(user.bio, locale));
 
   const [savingProfile, setSavingProfile] = useState(false);
@@ -73,7 +72,7 @@ export function ProfileEditScreen({
       const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, cityId, districtId: districtId || undefined, email, bio }),
+        body: JSON.stringify({ name, cityId, districtId: districtId || undefined, bio }),
       });
       if (!response.ok) {
         setProfileError(explain((await response.json())?.error));
@@ -118,11 +117,18 @@ export function ProfileEditScreen({
   return (
     <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
       <div className="space-y-6 px-4 py-4">
-        {/* Identity, stated rather than offered for editing. */}
+        {/* Identity, stated rather than offered for editing — whichever of the
+            two they signed up with. */}
         <div className="bg-muted flex items-center gap-3 rounded-xl px-3.5 py-3">
-          <Phone className="text-muted-foreground size-4.5 shrink-0" strokeWidth={2} />
+          {user.phone ? (
+            <Phone className="text-muted-foreground size-4.5 shrink-0" strokeWidth={2} />
+          ) : (
+            <Mail className="text-muted-foreground size-4.5 shrink-0" strokeWidth={2} />
+          )}
           <div className="min-w-0 flex-1">
-            <p className="tabular text-sm font-semibold">{formatPhone(user.phone)}</p>
+            <p className="tabular truncate text-sm font-semibold">
+              {user.phone ? formatPhone(user.phone) : (user.email ?? "—")}
+            </p>
             <p className="text-subtle-foreground mt-0.5 text-[0.6875rem] leading-relaxed">
               {t("profile.phoneFixed")}
             </p>
@@ -160,18 +166,6 @@ export function ProfileEditScreen({
                 label: localized(d.name, locale),
               }))}
             />
-          </Field>
-
-          <Field label={t("profile.email")} hint={t("post.optional")}>
-            <Input
-              value={email}
-              onChange={setEmail}
-              type="email"
-              placeholder="ad@example.com"
-            />
-            <span className="text-subtle-foreground mt-1.5 block text-[0.6875rem] leading-relaxed">
-              {t("profile.emailNote")}
-            </span>
           </Field>
 
           <Field label={t("profile.bio")} hint={t("post.optional")}>

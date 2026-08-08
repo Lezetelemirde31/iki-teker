@@ -198,7 +198,14 @@ export const users = pgTable(
     initials: text("initials").notNull(),
     avatarTone: text("avatar_tone").notNull(),
     kind: accountKind("kind").notNull().default("private"),
-    phone: text("phone").notNull(),
+    /**
+     * Optional since email became a way in.
+     *
+     * An account created by email has no phone until its owner adds one, and
+     * the alternative — storing an empty string — collides on the unique index
+     * the moment there are two of them.
+     */
+    phone: text("phone"),
     phoneVerified: boolean("phone_verified").notNull().default(false),
     verifiedBadge: boolean("verified_badge").notNull().default(false),
     rating: numeric("rating", { precision: 2, scale: 1 }).notNull().default("0"),
@@ -218,14 +225,25 @@ export const users = pgTable(
     /** Defaults to the least privilege; moderators are promoted deliberately. */
     role: userRole("role").notNull().default("user"),
     status: userStatus("status").notNull().default("active"),
-    /** Optional contact, never an identity. Sign-in is by phone; this exists so
-     *  receipts and rental agreements have somewhere to go later. */
+    /**
+     * An identity now, not just a contact.
+     *
+     * It used to be neither — sign-in was by phone and this was where a receipt
+     * would eventually be sent. Signing in by email means two accounts cannot
+     * share one, hence the unique index below, which allows any number of nulls
+     * for the accounts that still have only a phone.
+     */
     email: text("email"),
     /** scrypt, with its parameters embedded. Null for accounts created before
      *  passwords existed, and for anyone who only ever signs in by SMS. */
     passwordHash: text("password_hash"),
   },
-  (table) => [uniqueIndex("users_phone_idx").on(table.phone)],
+  // Both are ways in, so neither may be shared. Postgres allows any number of
+  // nulls in a unique index, which is what lets an account carry only one.
+  (table) => [
+    uniqueIndex("users_phone_idx").on(table.phone),
+    uniqueIndex("users_email_idx").on(table.email),
+  ],
 );
 
 /* -------------------------------------------------------------------------- */
@@ -425,16 +443,23 @@ export const authCodes = pgTable(
   "auth_codes",
   {
     id: text("id").primaryKey(),
-    phone: text("phone").notNull(),
+    /**
+     * Where the code was sent — a phone in E.164 or an email address.
+     *
+     * One column rather than two nullable ones, because a code has exactly one
+     * destination and modelling it as "either of these, never both" invites the
+     * row where both are set and nobody knows which was used.
+     */
+    destination: text("destination").notNull(),
     codeHash: text("code_hash").notNull(),
-    /** Present when this code is for a phone that has no account yet. */
+    /** Present when this code is for a destination that has no account yet. */
     pendingName: text("pending_name"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     attempts: integer("attempts").notNull().default(0),
     consumedAt: timestamp("consumed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("auth_codes_phone_idx").on(table.phone, table.createdAt)],
+  (table) => [index("auth_codes_destination_idx").on(table.destination, table.createdAt)],
 );
 
 /**

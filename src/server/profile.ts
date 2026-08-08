@@ -77,6 +77,14 @@ export async function updateProfile(
     districtId = district.id;
   }
 
+  // Deliberately not written any more.
+  //
+  // The address used to be a contact detail somebody could type. It is now one
+  // of the two things sign-in checks, and an identity that can be typed is one
+  // that can be taken: set it to an address you do not own and its real owner
+  // signs in straight into your account. It is set by proving it — by receiving
+  // the code sent to it — and by nothing else. Linking an address to an account
+  // that signed up by phone is its own operation, and needs the same proof.
   const email = draft.email?.trim() || undefined;
   if (email && !EMAIL.test(email)) return { ok: false, reason: "invalidEmail", field: "email" };
 
@@ -97,7 +105,6 @@ export async function updateProfile(
       initials: initialsOf(name),
       cityId: city.id,
       districtId,
-      email: email ?? null,
       // Stored under every locale. A seller writes one description of
       // themselves and it is not ours to invent the other two.
       bio: bio ? { az: bio, en: bio, ru: bio } : null,

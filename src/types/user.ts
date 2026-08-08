@@ -9,8 +9,11 @@ export type User = {
   initials: string;
   avatarTone: ArtTone;
   kind: AccountKind;
-  phone: string;
+  /** Absent on an account created by email that has not added one. */
+  phone?: string;
   phoneVerified: boolean;
+  /** The other way in. Absent on an account created by phone. */
+  email?: string;
   /** "Verified shop" badge — a manual trust signal granted by an admin. */
   verifiedBadge: boolean;
   rating: number;

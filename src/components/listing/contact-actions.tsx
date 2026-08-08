@@ -26,7 +26,8 @@ export function ContactActions({
   threadHref,
 }: {
   listingId: string;
-  phone: string;
+  /** Absent when the seller signed up by email and never added one. */
+  phone?: string;
   contacts: number;
   threadHref: string;
 }) {
@@ -88,17 +89,21 @@ export function ContactActions({
           {t("listing.message")}
         </Button>
 
-        <Button
-          size="lg"
-          className="flex-[1.35] font-semibold"
-          onClick={reveal}
-          aria-live="polite"
-        >
-          <Phone />
-          <span className={revealed ? "tabular" : undefined}>
-            {revealed ? phone : t("listing.showPhone")}
-          </span>
-        </Button>
+        {/* Only when there is a number behind it. Offering to reveal one that
+            does not exist wastes the tap that matters most on this screen. */}
+        {phone && (
+          <Button
+            size="lg"
+            className="flex-[1.35] font-semibold"
+            onClick={reveal}
+            aria-live="polite"
+          >
+            <Phone />
+            <span className={revealed ? "tabular" : undefined}>
+              {revealed ? phone : t("listing.showPhone")}
+            </span>
+          </Button>
+        )}
       </div>
 
       {revealed && (

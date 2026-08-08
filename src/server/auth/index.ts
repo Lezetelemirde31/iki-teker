@@ -11,6 +11,7 @@ import type { User } from "@/types";
 import { issueCode, verifyCode } from "./codes";
 import { checkStrength, hashPassword, verifyPassword } from "./passwords";
 import { createSession, destroySession } from "./session-store";
+import { emailSender, isDemoEmail, normaliseEmail } from "./email";
 import { demoAuthAllowed, isDemoAuth, smsSender } from "./sms";
 
 /**
@@ -343,10 +344,140 @@ function clearAttempts(userId: string): void {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  The same two steps, by email                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Signing in with an address instead of a number.
+ *
+ * Identical in shape to the phone flow above and deliberately so — same codes,
+ * same attempt limits, same rate limiting, same refusal to say whether an
+ * account exists. A destination is a destination; only the carrier differs.
+ *
+ * It exists because SMS is blocked on a legal entity that does not exist yet,
+ * and an email provider is not. This is what people can actually sign in with
+ * today.
+ */
+export type EmailStartResult =
+  | { ok: true; masked: string; expiresInSeconds: number; devCode?: string }
+  | {
+      ok: false;
+      reason: "invalidEmail" | "nameRequired" | "tooSoon" | "tooMany" | "undeliverable";
+      retryAfterSeconds?: number;
+    };
+
+export type EmailCompleteResult =
+  | { ok: true; user: { id: string; name: string }; created: boolean }
+  | {
+      ok: false;
+      reason: "invalidEmail" | "noCode" | "expired" | "tooManyAttempts" | "wrongCode" | "unavailable";
+    };
+
+export async function startEmailSignIn(
+  rawEmail: string,
+  name?: string,
+): Promise<EmailStartResult> {
+  const email = normaliseEmail(rawEmail);
+  if (!email) return { ok: false, reason: "invalidEmail" };
+
+  // Demo mode hands the code back to whoever asked, so it is refused in
+  // production for the same reason the SMS one is.
+  if (isDemoEmail() && process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_AUTH !== "1") {
+    return { ok: false, reason: "undeliverable" };
+  }
+
+  const existing = await db.query.users.findFirst({
+    where: eq(schema.users.email, email),
+    columns: { id: true },
+  });
+
+  if (!existing && !name?.trim()) return { ok: false, reason: "nameRequired" };
+
+  const issued = await issueCode(email, existing ? undefined : name);
+  if (!issued.ok) {
+    return { ok: false, reason: issued.reason, retryAfterSeconds: issued.retryAfterSeconds };
+  }
+
+  const sent = await emailSender().send(
+    email,
+    `Iki Tekerli — giriş kodu: ${issued.code}`,
+    `Giriş kodunuz: ${issued.code}\n\nKod 5 dəqiqə keçərlidir. Bu girişi siz istəməmisinizsə, bu məktubu nəzərə almayın.`,
+  );
+
+  // Saying "sent" when nothing was sent leaves someone waiting for a code that
+  // is never coming, and blaming their inbox.
+  if (!sent.sent) return { ok: false, reason: "undeliverable" };
+
+  return {
+    ok: true,
+    masked: maskEmail(email),
+    expiresInSeconds: issued.expiresInSeconds,
+    devCode: isDemoEmail() ? issued.code : undefined,
+  };
+}
+
+export async function completeEmailSignIn(
+  rawEmail: string,
+  code: string,
+): Promise<EmailCompleteResult> {
+  const email = normaliseEmail(rawEmail);
+  if (!email) return { ok: false, reason: "invalidEmail" };
+
+  const verified = await verifyCode(email, code);
+  if (!verified.ok) return { ok: false, reason: verified.reason };
+
+  let user = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+  let created = false;
+
+  if (!user) {
+    const name = verified.pendingName?.trim() || "İstifadəçi";
+    const id = `u-${crypto.randomUUID().slice(0, 8)}`;
+
+    await db.insert(schema.users).values({
+      id,
+      name,
+      initials: initialsOf(name),
+      avatarTone: "slate",
+      kind: "private",
+      // No phone. That is the whole point of this route, and why the column
+      // stopped being required.
+      email,
+      phoneVerified: false,
+      verifiedBadge: false,
+      rating: "0",
+      reviewsCount: 0,
+      rentalsCount: 0,
+      memberSince: new Date().toISOString().slice(0, 10),
+      responseMinutes: 60,
+      online: true,
+      cityId: "city-baku",
+      role: "user",
+    });
+
+    user = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+    created = true;
+  }
+
+  if (!user) return { ok: false, reason: "unavailable" };
+
+  const agent = (await headers()).get("user-agent") ?? undefined;
+  await createSession(user.id, agent);
+
+  return { ok: true, user: { id: user.id, name: user.name }, created };
+}
+
+/* -------------------------------------------------------------------------- */
 
 function maskFor(phone: string): string {
   const national = phone.replace(/^\+994/, "");
   return `+994 ${national.slice(0, 2)} *** ** ${national.slice(7)}`;
+}
+
+/** `abdullah@gmail.com` → `ab****@gmail.com`. Enough to recognise, not to learn. */
+function maskEmail(email: string): string {
+  const [local = "", domain = ""] = email.split("@");
+  const head = local.slice(0, 2);
+  return `${head}${"*".repeat(Math.max(2, local.length - 2))}@${domain}`;
 }
 
 /** "Rəşad Məmmədov" → "RM". Latin and Cyrillic both behave. */

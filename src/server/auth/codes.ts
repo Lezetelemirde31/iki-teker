@@ -5,7 +5,7 @@ import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import type { E164 } from "@/lib/phone";
+
 
 /**
  * One-time codes.
@@ -18,8 +18,13 @@ import type { E164 } from "@/lib/phone";
  *   - Each code has a **hard attempt limit**. Six digits is a million
  *     possibilities, which sounds safe until someone tries ten thousand a
  *     second; five guesses makes the space irrelevant.
- *   - Requests are **rate limited per number**. Otherwise the endpoint is a
- *     free way to send someone a hundred text messages.
+ *   - Requests are **rate limited per destination**. Otherwise the endpoint is
+ *     a free way to send someone a hundred messages.
+ *
+ * A destination is a phone in E.164 or an email address. Nothing here cares
+ * which: the rules that matter — hash it, bound the guesses, bound the sends —
+ * are the same either way, and the only thing that differs is who carries the
+ * message. That lives behind `sms.ts` and `email.ts`.
  */
 
 const CODE_LENGTH = 6;
@@ -49,8 +54,8 @@ function generateCode(): string {
  * guesses, so brute force is already bounded and the slowness would only cost
  * every honest sign-in.
  */
-function hash(code: string, phone: string): string {
-  return createHash("sha256").update(`${phone}:${code}`).digest("hex");
+function hash(code: string, destination: string): string {
+  return createHash("sha256").update(`${destination}:${code}`).digest("hex");
 }
 
 function equal(a: string, b: string): boolean {
@@ -63,7 +68,7 @@ function equal(a: string, b: string): boolean {
 
 /* -------------------------------------------------------------------------- */
 
-export async function issueCode(phone: E164, pendingName?: string): Promise<IssueResult> {
+export async function issueCode(destination: string, pendingName?: string): Promise<IssueResult> {
   const now = new Date();
 
   const recent = await db
@@ -71,7 +76,7 @@ export async function issueCode(phone: E164, pendingName?: string): Promise<Issu
     .from(schema.authCodes)
     .where(
       and(
-        eq(schema.authCodes.phone, phone),
+        eq(schema.authCodes.destination, destination),
         gt(schema.authCodes.createdAt, new Date(now.getTime() - 60 * 60 * 1000)),
       ),
     )
@@ -98,13 +103,13 @@ export async function issueCode(phone: E164, pendingName?: string): Promise<Issu
   await db
     .update(schema.authCodes)
     .set({ consumedAt: now })
-    .where(and(eq(schema.authCodes.phone, phone), isNull(schema.authCodes.consumedAt)));
+    .where(and(eq(schema.authCodes.destination, destination), isNull(schema.authCodes.consumedAt)));
 
   const code = generateCode();
   await db.insert(schema.authCodes).values({
     id: `ac-${crypto.randomUUID().slice(0, 12)}`,
-    phone,
-    codeHash: hash(code, phone),
+    destination,
+    codeHash: hash(code, destination),
     pendingName: pendingName?.trim().slice(0, 80) || null,
     expiresAt: new Date(now.getTime() + TTL_SECONDS * 1000),
     attempts: 0,
@@ -114,13 +119,13 @@ export async function issueCode(phone: E164, pendingName?: string): Promise<Issu
   return { ok: true, code, expiresInSeconds: TTL_SECONDS };
 }
 
-export async function verifyCode(phone: E164, code: string): Promise<VerifyResult> {
+export async function verifyCode(destination: string, code: string): Promise<VerifyResult> {
   const now = new Date();
 
   const [row] = await db
     .select()
     .from(schema.authCodes)
-    .where(and(eq(schema.authCodes.phone, phone), isNull(schema.authCodes.consumedAt)))
+    .where(and(eq(schema.authCodes.destination, destination), isNull(schema.authCodes.consumedAt)))
     .orderBy(desc(schema.authCodes.createdAt))
     .limit(1);
 
@@ -135,7 +140,7 @@ export async function verifyCode(phone: E164, code: string): Promise<VerifyResul
     .set({ attempts: sql`${schema.authCodes.attempts} + 1` })
     .where(eq(schema.authCodes.id, row.id));
 
-  if (!equal(row.codeHash, hash(code.trim(), phone))) {
+  if (!equal(row.codeHash, hash(code.trim(), destination))) {
     return { ok: false, reason: "wrongCode" };
   }
 

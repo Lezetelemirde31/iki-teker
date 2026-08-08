@@ -228,7 +228,7 @@ async function main() {
       // storing the pretty form would make every seeded account unreachable.
       // Landlines have no canonical mobile form and are kept as written; they
       // cannot receive an SMS anyway.
-      phone: normalisePhone(u.phone) ?? u.phone,
+      phone: u.phone ? (normalisePhone(u.phone) ?? u.phone) : null,
       phoneVerified: u.phoneVerified,
       verifiedBadge: u.verifiedBadge,
       rating: String(u.rating),

@@ -129,15 +129,17 @@ export function CheckoutScreen({
           <Section title={t("checkout.renter")}>
             <div className="bg-card border-border divide-border divide-y rounded-xl border">
               <Row label={t("checkout.name")} value={renter.name} />
-              <Row
-                label={t("checkout.phone")}
-                value={renter.phone}
-                trailing={
-                  renter.phoneVerified ? (
-                    <Check className="text-rental size-4" strokeWidth={3} />
-                  ) : undefined
-                }
-              />
+              {renter.phone && (
+                <Row
+                  label={t("checkout.phone")}
+                  value={renter.phone}
+                  trailing={
+                    renter.phoneVerified ? (
+                      <Check className="text-rental size-4" strokeWidth={3} />
+                    ) : undefined
+                  }
+                />
+              )}
               {licenceNeeded && (
                 <button
                   type="button"

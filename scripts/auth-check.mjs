@@ -260,5 +260,52 @@ heading("a password cannot be set by a stranger");
   line("no session, no reset", r.status, 401, r.json?.error);
 }
 
+heading("signing in with an email");
+{
+  // A fresh address each run, so the account is always created rather than
+  // found — the path that has to work for anybody arriving for the first time.
+  const address = () => `check-${Math.floor(Math.random() * 1e9)}@example.com`;
+
+  let r = await call("/api/auth/email/start", { email: "not-an-address" });
+  line("something that is not an address", r.json?.error, "invalidEmail", r.status);
+
+  r = await call("/api/auth/email/start", { email: "no-at-sign.example.com" });
+  line("nor is a bare domain", r.json?.error, "invalidEmail", r.status);
+
+  const mine = address();
+  r = await call("/api/auth/email/start", { email: mine });
+  line("a new address needs a name", r.json?.error, "nameRequired", r.status);
+
+  const started = await call("/api/auth/email/start", { email: mine, name: "Yeni İstifadəçi" });
+  line("a code is issued", started.status, 200, started.json?.masked);
+  line("the address is masked", /^.{2}\*+@example\.com$/.test(started.json?.masked ?? ""), true);
+  line("the code comes back in demo mode", typeof started.json?.devCode, "string");
+
+  // Asking again immediately is the cheapest way to make this endpoint a
+  // free mailing service, so it is refused. The name goes with it: the account
+  // does not exist until the code is used, so this is still a first sign-in and
+  // the missing-name check would answer first.
+  r = await call("/api/auth/email/start", { email: mine, name: "Yeni İstifadəçi" });
+  line("a second code too soon", r.status, 429, r.json?.error);
+
+  r = await call("/api/auth/email/verify", { email: mine, code: "000000" });
+  line("a wrong code", r.json?.error, "wrongCode", r.status);
+
+  const done = await call("/api/auth/email/verify", { email: mine, code: started.json.devCode });
+  line("the right code signs in", done.status, 200, done.json?.user?.id);
+  line("and creates the account", done.json?.created, true);
+  line("and it is a working session", done.setCookie ? "yes" : "no", "yes");
+
+  // The code is gone once it has been used.
+  r = await call("/api/auth/email/verify", { email: mine, code: started.json.devCode });
+  line("the same code cannot be reused", r.json?.error, "noCode", r.status);
+
+  // An account made this way has no number, which is the whole point.
+  const me = await fetch(API + "/api/auth/me", { headers: { cookie: done.setCookie } });
+  const profile = await me.json().catch(() => null);
+  line("the account carries no phone", profile?.user?.phone ?? "none", "none");
+  line("and is not marked phone-verified", profile?.user?.phoneVerified ?? false, false);
+}
+
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
 process.exit(fail === 0 ? 0 : 1);
