@@ -57,8 +57,11 @@ async function main() {
         applied++;
       } catch (error) {
         // Re-running against a database that already has the schema is the
-        // normal case, not a failure.
-        if (/already exists/i.test(String(error))) {
+        // normal case, not a failure. "does not exist" is the same situation
+        // seen from the other side: a DROP whose target is already gone has
+        // nothing left to do, and a migration that removes something has to be
+        // as replayable as one that adds it.
+        if (/already exists|does not exist/i.test(String(error))) {
           skipped++;
           continue;
         }

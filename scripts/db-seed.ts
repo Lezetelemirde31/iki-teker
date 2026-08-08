@@ -159,7 +159,9 @@ async function main() {
       } catch (error) {
         const message = String(error);
         // Re-running against an existing database is expected.
-        if (!/already exists/i.test(message)) throw error;
+        // A DROP whose target is already gone is the same "nothing to do" as a
+        // CREATE whose target is already there.
+        if (!/already exists|does not exist/i.test(message)) throw error;
       }
     }
   }

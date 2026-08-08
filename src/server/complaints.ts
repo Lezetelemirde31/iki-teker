@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
 import { canModerate } from "./authorization";
+import { recordAction } from "./audit";
 import { notify } from "./notifications";
 import { currentUserId } from "./session";
 import { useDatabase } from "./source";
@@ -230,17 +231,19 @@ async function takeDown(
 
   await db.update(schema.listings).set({ status: "draft" }).where(eq(schema.listings.id, listingId));
 
-  await db.insert(schema.moderationActions).values({
-    id: `ma-${crypto.randomUUID().slice(0, 8)}`,
-    listingId,
-    moderatorId,
-    action: "complaint",
+  await recordAction({
+    actorId: moderatorId,
+    action: "upholdComplaint",
+    entityType: "listing",
+    entityId: listingId,
+    entityLabel: listing.title,
+    from: listing.status,
+    to: "draft",
     // The complaint vocabulary is the reporter's, not the moderation queue's.
     // Only the one word both lists share carries across; the rest land on
     // "prohibited", and the note says what actually happened.
     reason: reason === "wrongCategory" ? "wrongCategory" : "prohibited",
-    note: note?.trim().slice(0, MAX_NOTE) || null,
-    createdAt: new Date(),
+    note: note?.slice(0, MAX_NOTE) ?? null,
   });
 
   // The seller finds their listing gone otherwise, with no idea why.

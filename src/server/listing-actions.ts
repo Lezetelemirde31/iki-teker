@@ -115,19 +115,20 @@ export async function ownListings(sellerId: string): Promise<OwnListing[]> {
   const decisions = rejectedIds.length
     ? await db
         .select()
-        .from(schema.moderationActions)
+        .from(schema.adminActions)
         .where(
           and(
-            inArray(schema.moderationActions.listingId, rejectedIds),
-            eq(schema.moderationActions.action, "reject"),
+            eq(schema.adminActions.entityType, "listing"),
+            inArray(schema.adminActions.entityId, rejectedIds),
+            inArray(schema.adminActions.action, ["rejectListing", "upholdComplaint"]),
           ),
         )
-        .orderBy(desc(schema.moderationActions.createdAt))
+        .orderBy(desc(schema.adminActions.createdAt))
     : [];
 
   const latest = new Map<string, (typeof decisions)[number]>();
   for (const decision of decisions) {
-    if (!latest.has(decision.listingId)) latest.set(decision.listingId, decision);
+    if (!latest.has(decision.entityId)) latest.set(decision.entityId, decision);
   }
 
   const rank: Record<string, number> = {

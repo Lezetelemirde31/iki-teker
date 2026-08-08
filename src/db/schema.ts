@@ -37,7 +37,30 @@ export const accountKind = pgEnum("account_kind", ["private", "shop", "rental"])
  * Kept on the user row because a role is a fact about the account, not about a
  * session: revoking a moderator has to survive them signing in again.
  */
-export const userRole = pgEnum("user_role", ["user", "moderator", "admin"]);
+/**
+ * What somebody may do behind the admin panel.
+ *
+ * Ordered by reach, least to most, and read that way in `authorization.ts`:
+ * every role can do what the one before it can. `support` answers people,
+ * `moderator` decides on content, `admin` acts on accounts, `superadmin` grants
+ * the roles themselves — which is the one power that must not be self-service.
+ */
+export const userRole = pgEnum("user_role", [
+  "user",
+  "support",
+  "moderator",
+  "admin",
+  "superadmin",
+]);
+
+/**
+ * Whether an account may still act.
+ *
+ * Separate from the role because they answer different questions: the role is
+ * what someone is trusted with, this is whether they are allowed in at all. A
+ * banned moderator is not demoted, they are stopped.
+ */
+export const userStatus = pgEnum("user_status", ["active", "suspended", "banned"]);
 
 /** Why a listing was turned down. Shown to the seller, so it must be specific. */
 export const rejectionReason = pgEnum("rejection_reason", [
@@ -194,6 +217,7 @@ export const users = pgTable(
     subscription: text("subscription").default("none"),
     /** Defaults to the least privilege; moderators are promoted deliberately. */
     role: userRole("role").notNull().default("user"),
+    status: userStatus("status").notNull().default("active"),
     /** Optional contact, never an identity. Sign-in is by phone; this exists so
      *  receipts and rental agreements have somewhere to go later. */
     email: text("email"),
@@ -472,27 +496,50 @@ export const sessions = pgTable(
  * trace. Rows are never updated or deleted — a corrected decision is a new row,
  * because the record of what was decided is the point.
  */
-export const moderationActions = pgTable(
-  "moderation_actions",
+/**
+ * Everything anybody does from behind the admin panel.
+ *
+ * Replaces the listing-only `moderation_actions`, which could record a
+ * rejection but had nowhere to put "banned this account" or "made this listing
+ * VIP" — the actions most worth being able to account for later.
+ *
+ * `entityId` carries no foreign key, because the target is polymorphic: one row
+ * points at a listing, a user, a workshop or a review, and one column cannot
+ * reference four tables. `entityLabel` freezes what the thing was called at the
+ * time, so the record still reads sensibly after the listing is deleted or the
+ * account renamed — the same reasoning as `complaints`.
+ *
+ * `fromValue`/`toValue` are what actually makes it an audit trail rather than a
+ * list of verbs: "changed status" answers nothing, "moderation → active"
+ * answers everything. Both are text so any kind of change fits without a
+ * migration.
+ *
+ * Append-only. Nothing updates or deletes a row here; a log somebody can edit
+ * is not a log.
+ */
+export const adminActions = pgTable(
+  "admin_actions",
   {
     id: text("id").primaryKey(),
-    listingId: text("listing_id")
-      .notNull()
-      .references(() => listings.id, { onDelete: "cascade" }),
-    moderatorId: text("moderator_id")
+    actorId: text("actor_id")
       .notNull()
       .references(() => users.id),
-    /** "approve" or "reject" — text rather than an enum so adding a third
-     *  outcome later does not need a migration on a live database. */
+    /** "approveListing", "banUser", "setVip" … text so new verbs need no migration. */
     action: text("action").notNull(),
+    /** "listing" | "user" | "workshop" | "review" | "booking" */
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    entityLabel: text("entity_label").notNull(),
+    fromValue: text("from_value"),
+    toValue: text("to_value"),
     reason: rejectionReason("reason"),
-    /** Free text the seller sees alongside the reason. */
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("moderation_listing_idx").on(table.listingId, table.createdAt),
-    index("moderation_moderator_idx").on(table.moderatorId),
+    index("admin_actions_recent_idx").on(table.createdAt),
+    index("admin_actions_entity_idx").on(table.entityType, table.entityId),
+    index("admin_actions_actor_idx").on(table.actorId),
   ],
 );
 
@@ -514,6 +561,15 @@ export const reviews = pgTable(
      *  rating worth trusting, so the booking is recorded alongside it. */
     bookingId: text("booking_id").references(() => bookings.id, { onDelete: "set null" }),
     verifiedTransaction: boolean("verified_transaction").notNull().default(false),
+    /**
+     * Hidden by a moderator rather than deleted.
+     *
+     * A rating that vanishes takes the average with it and leaves the person
+     * who wrote it no way to tell what happened. Hiding keeps the row, so the
+     * decision can be reversed and accounted for, and the recomputed average
+     * simply skips it.
+     */
+    hidden: boolean("hidden").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("reviews_target_idx").on(table.targetId)],
@@ -820,6 +876,10 @@ export const chatThreadsRelations = relations(chatThreads, ({ one, many }) => ({
   booking: one(bookings, { fields: [chatThreads.bookingId], references: [bookings.id] }),
   participants: many(chatParticipants),
   messages: many(messages),
+}));
+
+export const adminActionsRelations = relations(adminActions, ({ one }) => ({
+  actor: one(users, { fields: [adminActions.actorId], references: [users.id] }),
 }));
 
 export const workshopsRelations = relations(workshops, ({ one, many }) => ({

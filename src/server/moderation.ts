@@ -7,6 +7,7 @@ import * as schema from "@/db/schema";
 import type { CatalogItem, ModerationFlag } from "@/types";
 
 import { canModerate } from "./authorization";
+import { lastActionOn, recordAction } from "./audit";
 import { mapCatalogItem } from "./mappers";
 import { notify } from "./notifications";
 import { currentUserId } from "./session";
@@ -140,22 +141,25 @@ async function decide(
     .set({ status })
     .where(and(eq(schema.listings.id, listingId), eq(schema.listings.status, "moderation")));
 
-  await db.insert(schema.moderationActions).values({
-    id: `ma-${crypto.randomUUID().slice(0, 8)}`,
-    listingId,
-    moderatorId,
-    action,
-    reason: reason ?? null,
-    note: note?.trim().slice(0, 500) || null,
-    createdAt: new Date(),
-  });
-
   // The seller is waiting on this. Without it they refresh the account screen
   // hoping, which is the experience moderation is most often blamed for.
   const listing = await db.query.listings.findFirst({
     where: eq(schema.listings.id, listingId),
     columns: { sellerId: true, title: true },
   });
+
+  await recordAction({
+    actorId: moderatorId,
+    action: action === "approve" ? "approveListing" : "rejectListing",
+    entityType: "listing",
+    entityId: listingId,
+    entityLabel: listing?.title ?? listingId,
+    from: "moderation",
+    to: status,
+    reason: reason ?? null,
+    note: note ?? null,
+  });
+
   if (listing) {
     void notify(
       listing.sellerId,
@@ -173,14 +177,7 @@ async function decide(
 
 /** The most recent decision on a listing, so its seller can see why. */
 export async function lastDecision(listingId: string) {
-  if (!useDatabase) return undefined;
-  const rows = await db
-    .select()
-    .from(schema.moderationActions)
-    .where(eq(schema.moderationActions.listingId, listingId))
-    .orderBy(sql`${schema.moderationActions.createdAt} DESC`)
-    .limit(1);
-  return rows[0];
+  return lastActionOn("listing", listingId);
 }
 
 /* -------------------------------------------------------------------------- */
