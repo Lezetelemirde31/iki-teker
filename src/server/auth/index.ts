@@ -362,7 +362,7 @@ export type EmailStartResult =
   | { ok: true; masked: string; expiresInSeconds: number; devCode?: string }
   | {
       ok: false;
-      reason: "invalidEmail" | "nameRequired" | "tooSoon" | "tooMany" | "undeliverable";
+      reason: "invalidEmail" | "tooSoon" | "tooMany" | "undeliverable";
       retryAfterSeconds?: number;
     };
 
@@ -370,13 +370,41 @@ export type EmailCompleteResult =
   | { ok: true; user: { id: string; name: string }; created: boolean }
   | {
       ok: false;
-      reason: "invalidEmail" | "noCode" | "expired" | "tooManyAttempts" | "wrongCode" | "unavailable";
+      reason:
+        | "invalidEmail"
+        | "noCode"
+        | "expired"
+        | "tooManyAttempts"
+        | "wrongCode"
+        | "nameRequired"
+        | "invalidPhone"
+        | "phoneTaken"
+        | "tooShort"
+        | "tooLong"
+        | "tooCommon"
+        | "unavailable";
     };
 
-export async function startEmailSignIn(
-  rawEmail: string,
-  name?: string,
-): Promise<EmailStartResult> {
+/** What a new account is opened with, once the address has been proved. */
+export type NewAccount = {
+  name: string;
+  /** Optional: an account can be opened on an address alone. */
+  phone?: string;
+  /** Optional, but the only thing that makes signing in again quick. */
+  password?: string;
+};
+
+/**
+ * Step one asks for nothing but the address.
+ *
+ * The name, the number and the password are collected at step two, alongside
+ * the code. Asking for them first would mean typing a password into a form that
+ * has not yet established the address is even reachable — and asking only some
+ * of them would mean the answer here revealed whether the address already had
+ * an account, which turns a sign-in form into a way of finding out who is on
+ * the platform.
+ */
+export async function startEmailSignIn(rawEmail: string): Promise<EmailStartResult> {
   const email = normaliseEmail(rawEmail);
   if (!email) return { ok: false, reason: "invalidEmail" };
 
@@ -386,14 +414,7 @@ export async function startEmailSignIn(
     return { ok: false, reason: "undeliverable" };
   }
 
-  const existing = await db.query.users.findFirst({
-    where: eq(schema.users.email, email),
-    columns: { id: true },
-  });
-
-  if (!existing && !name?.trim()) return { ok: false, reason: "nameRequired" };
-
-  const issued = await issueCode(email, existing ? undefined : name);
+  const issued = await issueCode(email);
   if (!issued.ok) {
     return { ok: false, reason: issued.reason, retryAfterSeconds: issued.retryAfterSeconds };
   }
@@ -426,21 +447,62 @@ export async function startEmailSignIn(
   };
 }
 
+/**
+ * Step two: the code, and — for a new account — everything it opens with.
+ *
+ * The code is checked first and nothing is written unless it is right, so the
+ * details travelling alongside it belong to somebody who demonstrably reads
+ * that inbox. An address that already has an account ignores them entirely: a
+ * correct code proves you can receive mail there, which is enough to sign in
+ * and nowhere near enough to rewrite the account's name or take its number.
+ */
 export async function completeEmailSignIn(
   rawEmail: string,
   code: string,
+  account?: NewAccount,
 ): Promise<EmailCompleteResult> {
   const email = normaliseEmail(rawEmail);
   if (!email) return { ok: false, reason: "invalidEmail" };
 
+  const existing = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+
+  // Everything a new account needs is checked before the code is spent, so a
+  // rejected password does not also cost somebody their code and a fresh wait.
+  let phone: string | undefined;
+  let passwordHash: string | undefined;
+
+  if (!existing) {
+    const name = account?.name?.trim() ?? "";
+    if (name.length < 2) return { ok: false, reason: "nameRequired" };
+
+    if (account?.phone?.trim()) {
+      phone = normalisePhone(account.phone);
+      if (!phone) return { ok: false, reason: "invalidPhone" };
+
+      const taken = await db.query.users.findFirst({
+        where: eq(schema.users.phone, phone),
+        columns: { id: true },
+      });
+      // Said plainly. The person is standing in front of the form, and a number
+      // already in use is something they can only fix by knowing.
+      if (taken) return { ok: false, reason: "phoneTaken" };
+    }
+
+    if (account?.password) {
+      const strength = checkStrength(account.password);
+      if (!strength.ok) return { ok: false, reason: strength.reason };
+      passwordHash = await hashPassword(account.password);
+    }
+  }
+
   const verified = await verifyCode(email, code);
   if (!verified.ok) return { ok: false, reason: verified.reason };
 
-  let user = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+  let user = existing;
   let created = false;
 
   if (!user) {
-    const name = verified.pendingName?.trim() || "İstifadəçi";
+    const name = account!.name.trim().slice(0, 80);
     const id = `u-${crypto.randomUUID().slice(0, 8)}`;
 
     await db.insert(schema.users).values({
@@ -449,10 +511,12 @@ export async function completeEmailSignIn(
       initials: initialsOf(name),
       avatarTone: "slate",
       kind: "private",
-      // No phone. That is the whole point of this route, and why the column
-      // stopped being required.
       email,
+      phone: phone ?? null,
+      // The address was proved, the number was only typed. It carries no badge
+      // until an SMS actually reaches it.
       phoneVerified: false,
+      passwordHash: passwordHash ?? null,
       verifiedBadge: false,
       rating: "0",
       reviewsCount: 0,
@@ -474,6 +538,46 @@ export async function completeEmailSignIn(
   await createSession(user.id, agent);
 
   return { ok: true, user: { id: user.id, name: user.name }, created };
+}
+
+/**
+ * Signing in again, with the password set at registration.
+ *
+ * The quick path for somebody who already has an account: no waiting for a
+ * message, no switching to another app. The code remains the way back in when
+ * the password is gone, which is why it is worth having both.
+ */
+export type EmailPasswordResult =
+  | { ok: true; user: { id: string; name: string } }
+  | { ok: false; reason: "invalidEmail" | "wrongCredentials" | "noPassword" | "locked" };
+
+export async function signInWithEmailPassword(
+  rawEmail: string,
+  password: string,
+): Promise<EmailPasswordResult> {
+  const email = normaliseEmail(rawEmail);
+  if (!email) return { ok: false, reason: "invalidEmail" };
+
+  const user = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+
+  if (!user?.passwordHash) {
+    // Spend the time anyway, so the shape of the answer is the only thing that
+    // differs between "no account" and "wrong password" — not how long it took.
+    await verifyPassword(password, DUMMY_HASH);
+    return { ok: false, reason: user ? "noPassword" : "wrongCredentials" };
+  }
+
+  if (recordAttempt(user.id) === "locked") return { ok: false, reason: "locked" };
+
+  if (!(await verifyPassword(password, user.passwordHash))) {
+    return { ok: false, reason: "wrongCredentials" };
+  }
+
+  clearAttempts(user.id);
+  const agent = (await headers()).get("user-agent") ?? undefined;
+  await createSession(user.id, agent);
+
+  return { ok: true, user: { id: user.id, name: user.name } };
 }
 
 /* -------------------------------------------------------------------------- */

@@ -170,10 +170,17 @@ async function main() {
   console.log(`overlap guard  : ${(await hasOverlapGuard(db)) ? "present" : "MISSING"}`);
 
   // ---- clear --------------------------------------------------------------
+  // `auth_codes` is named explicitly because nothing reaches it otherwise: its
+  // destination column is plain text with no foreign key, so CASCADE from
+  // `users` leaves every row behind. Codes outliving a reseed means the
+  // per-destination rate limiter carries yesterday's attempts into a fresh
+  // database, and the sign-in checks start refusing a seeded number for
+  // reasons that are nowhere in the seed.
   await db.execute(sql`
     TRUNCATE favorites, messages, chat_participants, chat_threads, reviews,
              appointments, service_items, workshops,
              bookings, rental_blackouts, rental_offers, listings,
+             auth_codes, admin_actions, complaints,
              users, models, makes, districts, cities RESTART IDENTITY CASCADE
   `);
 

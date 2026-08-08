@@ -479,7 +479,8 @@
       "notSignedIn": "Sign in first.",
       "noAccount": "That number is not registered.",
       "invalidEmail": "That email address is not valid.",
-      "undeliverable": "We cannot send a code right now. Try again shortly."
+      "undeliverable": "We cannot send a code right now. Try again shortly.",
+      "phoneTaken": "That number already belongs to another account."
     },
     "password": "Password",
     "newPassword": "New password",
@@ -497,7 +498,12 @@
     "emailNote": "We will email you a six-digit code. No password needed.",
     "changeEmail": "Use another address",
     "demoCode": "Demo code:",
-    "orPhone": "or use a phone number"
+    "orPhone": "or use a phone number",
+    "almostThere": "Almost there",
+    "detailsBody": "Your email is confirmed. Now finish your account.",
+    "phoneOptional": "A number is optional — you can add one later.",
+    "passwordPlaceholder": "Password (at least 8 characters)",
+    "passwordOptional": "Password"
   },
   "profile": {
     "title": "Edit profile",

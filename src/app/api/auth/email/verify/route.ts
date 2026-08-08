@@ -17,7 +17,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "noDatabase" }, { status: 503 });
   }
 
-  let body: { email?: unknown; code?: unknown };
+  let body: {
+    email?: unknown;
+    code?: unknown;
+    name?: unknown;
+    phone?: unknown;
+    password?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -28,7 +34,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const result = await completeEmailSignIn(body.email, body.code);
+  // Only used when the address turns out to have no account yet; an existing
+  // one ignores all three.
+  const result = await completeEmailSignIn(body.email, body.code, {
+    name: typeof body.name === "string" ? body.name : "",
+    ...(typeof body.phone === "string" ? { phone: body.phone } : {}),
+    ...(typeof body.password === "string" ? { password: body.password } : {}),
+  });
 
   if (result.ok) {
     return NextResponse.json({ user: result.user, created: result.created });

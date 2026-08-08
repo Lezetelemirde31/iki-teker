@@ -479,12 +479,13 @@
       "notSignedIn": "Əvvəlcə hesaba daxil olun.",
       "noAccount": "Bu nömrə qeydiyyatda deyil.",
       "invalidEmail": "Email ünvanı düzgün deyil.",
-      "undeliverable": "Hazırda kod göndərə bilmirik. Bir azdan yenidən cəhd edin."
+      "undeliverable": "Hazırda kod göndərə bilmirik. Bir azdan yenidən cəhd edin.",
+      "phoneTaken": "Bu nömrə artıq başqa hesabda istifadə olunur."
     },
     "password": "Parol",
     "newPassword": "Yeni parol",
     "passwordHint": "ən azı 8 simvol",
-    "createAccount": "Hesab yarat",
+    "createAccount": "Hesabı yarat",
     "forgotPassword": "Parolu unutmusunuz?",
     "newPasswordTitle": "Yeni parol təyin edin",
     "newPasswordBody": "Nömrəniz təsdiqləndi. İndi yeni parol yazın.",
@@ -497,7 +498,12 @@
     "emailNote": "Email ünvanınıza 6 rəqəmli kod göndərəcəyik. Parol lazım deyil.",
     "changeEmail": "Başqa ünvan",
     "demoCode": "Demo kodu:",
-    "orPhone": "və ya nömrə ilə"
+    "orPhone": "və ya nömrə ilə",
+    "almostThere": "Az qaldı",
+    "detailsBody": "Email təsdiqləndi. İndi hesabınızı tamamlayın.",
+    "phoneOptional": "Nömrə istəyə bağlıdır — sonra da əlavə edə bilərsiniz.",
+    "passwordPlaceholder": "Parol (ən azı 8 simvol)",
+    "passwordOptional": "Parol"
   },
   "profile": {
     "title": "Profili redaktə et",

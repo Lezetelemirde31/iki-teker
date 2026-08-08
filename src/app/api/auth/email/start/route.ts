@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "noDatabase" }, { status: 503 });
   }
 
-  let body: { email?: unknown; name?: unknown };
+  let body: { email?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -27,10 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const result = await startEmailSignIn(
-    body.email,
-    typeof body.name === "string" ? body.name : undefined,
-  );
+  const result = await startEmailSignIn(body.email);
 
   if (result.ok) {
     return NextResponse.json({

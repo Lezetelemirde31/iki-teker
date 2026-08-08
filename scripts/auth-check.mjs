@@ -260,11 +260,11 @@ heading("a password cannot be set by a stranger");
   line("no session, no reset", r.status, 401, r.json?.error);
 }
 
-heading("signing in with an email");
+heading("registering with an email");
 {
   // A fresh address each run, so the account is always created rather than
   // found — the path that has to work for anybody arriving for the first time.
-  const address = () => `check-${Math.floor(Math.random() * 1e9)}@example.com`;
+  const address = `check-${Math.floor(Math.random() * 1e9)}@example.com`;
 
   let r = await call("/api/auth/email/start", { email: "not-an-address" });
   line("something that is not an address", r.json?.error, "invalidEmail", r.status);
@@ -272,39 +272,79 @@ heading("signing in with an email");
   r = await call("/api/auth/email/start", { email: "no-at-sign.example.com" });
   line("nor is a bare domain", r.json?.error, "invalidEmail", r.status);
 
-  const mine = address();
-  r = await call("/api/auth/email/start", { email: mine });
-  line("a new address needs a name", r.json?.error, "nameRequired", r.status);
-
-  const started = await call("/api/auth/email/start", { email: mine, name: "Yeni İstifadəçi" });
+  // Step one asks for nothing else, so its answer cannot be used to find out
+  // which addresses are registered.
+  const started = await call("/api/auth/email/start", { email: address });
   line("a code is issued", started.status, 200, started.json?.masked);
   line("the address is masked", /^.{2}\*+@example\.com$/.test(started.json?.masked ?? ""), true);
   line("the code comes back in demo mode", typeof started.json?.devCode, "string");
+  const code = started.json.devCode;
 
-  // Asking again immediately is the cheapest way to make this endpoint a
-  // free mailing service, so it is refused. The name goes with it: the account
-  // does not exist until the code is used, so this is still a first sign-in and
-  // the missing-name check would answer first.
-  r = await call("/api/auth/email/start", { email: mine, name: "Yeni İstifadəçi" });
+  r = await call("/api/auth/email/start", { email: address });
   line("a second code too soon", r.status, 429, r.json?.error);
 
-  r = await call("/api/auth/email/verify", { email: mine, code: "000000" });
+  // Details valid, code wrong — they are checked in that order, so probing the
+  // code needs everything else to be right first.
+  r = await call("/api/auth/email/verify", {
+    email: address,
+    code: "000000",
+    name: "Yeni",
+    password: "a-good-enough-password-9",
+  });
   line("a wrong code", r.json?.error, "wrongCode", r.status);
 
-  const done = await call("/api/auth/email/verify", { email: mine, code: started.json.devCode });
-  line("the right code signs in", done.status, 200, done.json?.user?.id);
-  line("and creates the account", done.json?.created, true);
+  // Everything below is rejected *before* the code is spent, so a mistyped
+  // password does not also cost somebody their code and another minute's wait.
+  r = await call("/api/auth/email/verify", { email: address, code, name: "" });
+  line("a new address needs a name", r.json?.error, "nameRequired", r.status);
+
+  r = await call("/api/auth/email/verify", { email: address, code, name: "Yeni", password: "123" });
+  line("and a password worth having", r.json?.error, "tooShort", r.status);
+
+  r = await call("/api/auth/email/verify", {
+    email: address,
+    code,
+    name: "Yeni",
+    password: "a-good-enough-password-9",
+    phone: "+994 50 100 00 12",
+  });
+  line("a number somebody else holds", r.json?.error, "phoneTaken", r.status);
+
+  // The code survived all three refusals.
+  const mine = `+99455${String(Math.floor(1000000 + Math.random() * 8999999))}`;
+  const done = await call("/api/auth/email/verify", {
+    email: address,
+    code,
+    name: "Yeni İstifadəçi",
+    password: "a-good-enough-password-9",
+    phone: mine,
+  });
+  line("the code still worked afterwards", done.status, 200, done.json?.user?.id);
+  line("and created the account", done.json?.created, true);
   line("and it is a working session", done.setCookie ? "yes" : "no", "yes");
 
-  // The code is gone once it has been used.
-  r = await call("/api/auth/email/verify", { email: mine, code: started.json.devCode });
+  r = await call("/api/auth/email/verify", { email: address, code, name: "Yeni" });
   line("the same code cannot be reused", r.json?.error, "noCode", r.status);
 
-  // An account made this way has no number, which is the whole point.
   const me = await fetch(API + "/api/auth/me", { headers: { cookie: done.setCookie } });
   const profile = await me.json().catch(() => null);
-  line("the account carries no phone", profile?.user?.phone ?? "none", "none");
-  line("and is not marked phone-verified", profile?.user?.phoneVerified ?? false, false);
+  line("the account carries the number given", profile?.user?.phone, mine);
+  line("but it is not verified by typing it", profile?.user?.phoneVerified ?? false, false);
+
+  // The quick way back in.
+  r = await call("/api/auth/email/password", { email: address, password: "a-good-enough-password-9" });
+  line("the password signs them back in", r.status, 200, r.json?.user?.name);
+
+  r = await call("/api/auth/email/password", { email: address, password: "not-the-password-1" });
+  line("a wrong one does not", r.status, 401, r.json?.error);
+
+  // An address nobody has registered answers exactly like a wrong password, so
+  // this cannot be used to enumerate accounts.
+  r = await call("/api/auth/email/password", {
+    email: "nobody-here@example.com",
+    password: "a-good-enough-password-9",
+  });
+  line("an unknown address answers the same", r.json?.error, "wrongCredentials", r.status);
 }
 
 console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES: " + fail}  (${pass} passed)\n`);
