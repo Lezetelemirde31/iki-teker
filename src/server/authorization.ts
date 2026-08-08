@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
-import { currentUserId } from "./session";
+import { currentUser } from "./session";
 import { useDatabase } from "./source";
 
 /**
@@ -95,8 +95,19 @@ export async function roleOf(userId: string): Promise<Role> {
   return (await principalOf(userId)).role;
 }
 
-export async function currentPrincipal(): Promise<Principal> {
-  return principalOf(await currentUserId());
+/**
+ * The principal, and whether anybody actually proved they are it.
+ *
+ * `session.currentUser` answers with an id even when nobody has signed in — the
+ * demo-identity cookie lets one browser act as an owner and another as a renter
+ * while the product is being shown. That cookie is not a credential: anyone can
+ * set it to anything. Which is fine for looking at a catalogue and completely
+ * unacceptable for anything behind the panel, so the fact is carried here
+ * rather than dropped.
+ */
+export async function currentPrincipal(): Promise<Principal & { authenticated: boolean }> {
+  const session = await currentUser();
+  return { ...(await principalOf(session.userId)), authenticated: session.authenticated };
 }
 
 export async function currentRole(): Promise<Role> {
@@ -106,12 +117,23 @@ export async function currentRole(): Promise<Role> {
 /**
  * The single gate.
  *
- * A suspended or banned account holds no capability whatever its role says.
- * Checking the status here rather than at each call site means an account can
- * be stopped in one place and is stopped everywhere.
+ * Three conditions, and all of them have to hold.
+ *
+ * Signed in for real, first. The demo-identity cookie names a user without
+ * proving anything, so honouring it here would mean anybody who typed a
+ * privileged id into their own browser held that person's powers. Every screen
+ * and every write behind the panel goes through this function, so refusing
+ * unauthenticated callers once refuses them everywhere.
+ *
+ * Then the account's status, because a suspended or banned account holds no
+ * capability whatever its role says — stopping someone has to stop them, not
+ * demote them.
+ *
+ * Then the role.
  */
 export async function can(capability: Capability): Promise<boolean> {
   const principal = await currentPrincipal();
+  if (!principal.authenticated) return false;
   if (principal.status !== "active") return false;
   return CAPABILITIES[principal.role].includes(capability);
 }
@@ -131,6 +153,5 @@ export async function canModerate(): Promise<boolean> {
 }
 
 export async function isAdmin(): Promise<boolean> {
-  const role = await currentRole();
-  return role === "admin" || role === "superadmin";
+  return can("manageUsers");
 }

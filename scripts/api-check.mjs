@@ -54,10 +54,15 @@ const line = (label, got, want, extra = "") => {
 };
 const heading = (text) => console.log(`\n— ${text} —`);
 
+/**
+ * `user` is either a user id, which becomes the demo-identity cookie, or a raw
+ * cookie header from `signIn` for the places that need a real session.
+ */
 async function post(path, user, body) {
+  const cookie = user.includes("=") ? user : `iki-demo-user=${user}`;
   const res = await fetch(API + path, {
     method: "POST",
-    headers: { "content-type": "application/json", cookie: `iki-demo-user=${user}` },
+    headers: { "content-type": "application/json", cookie },
     body: JSON.stringify(body ?? {}),
   });
   let json = null;
@@ -65,6 +70,33 @@ async function post(path, user, body) {
     json = await res.json();
   } catch {}
   return { status: res.status, json };
+}
+
+/**
+ * Sign in properly, the way a person would.
+ *
+ * Anything behind the admin panel refuses the demo-identity cookie, because
+ * that cookie names a user without proving anything — anyone could type a
+ * privileged id into their own browser. So the moderation checks below have to
+ * hold a real session, and getting one exercises the whole phone-code path as
+ * a side effect.
+ */
+async function signIn(phone) {
+  const started = await fetch(API + "/api/auth/start", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ phone }),
+  });
+  const { devCode } = await started.json();
+
+  const verified = await fetch(API + "/api/auth/verify", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ phone, code: devCode }),
+  });
+
+  const raw = verified.headers.getSetCookie?.() ?? [];
+  return raw.map((entry) => entry.split(";")[0]).join("; ");
 }
 
 const book = (user, body) =>
@@ -634,6 +666,12 @@ heading("reporting a listing, and a moderator closing it");
   const report = (user, body) => post("/api/complaints", user, body);
   const resolve = (user, id, body) => post(`/api/complaints/${id}`, user, body);
 
+  // Leyla is the seeded moderator. She has to actually sign in: the demo
+  // cookie names a user but proves nothing, and nothing behind the panel
+  // accepts it.
+  const moderator = await signIn("+994 50 100 00 12");
+  line("the moderator can sign in", moderator.length > 0, true);
+
   const statusOf = async (id) => {
     const res = await fetch(`${API}/api/catalog`, {
       method: "POST",
@@ -695,21 +733,21 @@ heading("reporting a listing, and a moderator closing it");
   r = await resolve("u-elvin", complaintId, { outcome: "upheld" });
   line("a bystander cannot close one", r.status, 403, r.json?.error);
 
-  r = await resolve("u-moderator", "cp-does-not-exist", { outcome: "upheld" });
+  r = await resolve(moderator, "cp-does-not-exist", { outcome: "upheld" });
   line("nor can a moderator invent one", r.status, 404, r.json?.error);
 
-  r = await resolve("u-moderator", complaintId, { outcome: "sideways" });
+  r = await resolve(moderator, complaintId, { outcome: "sideways" });
   line("only two ways to close it", r.status, 400);
 
   // Nothing has happened to the listing yet.
   line("still on the market", await statusOf(target), "moderation");
 
-  r = await resolve("u-moderator", complaintId, { outcome: "upheld" });
+  r = await resolve(moderator, complaintId, { outcome: "upheld" });
   line("a moderator upholds it", r.status, 200, r.json?.error);
   line("the listing comes down", await statusOf(target), "draft");
 
   // The second moderator to click gets told, rather than reopening it.
-  r = await resolve("u-moderator", complaintId, { outcome: "dismissed" });
+  r = await resolve(moderator, complaintId, { outcome: "dismissed" });
   line("and cannot be closed twice", r.status, 409, r.json?.error);
 
   // Dismissing leaves everything where it is.
@@ -718,7 +756,7 @@ heading("reporting a listing, and a moderator closing it");
     entityId: "u-kamran",
     reason: "spam",
   });
-  r = await resolve("u-moderator", other.json?.id, { outcome: "dismissed" });
+  r = await resolve(moderator, other.json?.id, { outcome: "dismissed" });
   line("a report can also be dismissed", r.status, 200, r.json?.error);
 }
 
