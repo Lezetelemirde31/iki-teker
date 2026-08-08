@@ -23,6 +23,12 @@ function detectLocale(request: NextRequest) {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // The admin panel sits outside the localised app on purpose. It is a desktop
+  // tool for the people running the marketplace, not a screen the marketplace's
+  // customers ever see — so it does not live inside the phone frame that wraps
+  // every `/[locale]` route, and it has no locale segment to negotiate.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return NextResponse.next();
+
   const hasLocale = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );

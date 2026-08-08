@@ -249,7 +249,19 @@ async function main() {
       // visitor to the deployed site is `currentUserId`, and granting that
       // account moderation would put the queue one URL away from the public.
       // Reaching it takes setting the iki-demo-user cookie on purpose.
-      role: u.id === "u-moderator" ? ("admin" as const) : ("user" as const),
+      // Staff for the demo, one at each level that has different powers.
+      // `u-moderator` used to be seeded as an admin, which made the two
+      // indistinguishable — the panel showed a "moderator" every screen an
+      // admin gets, and no test could tell the difference between the roles
+      // being right and the matrix being ignored.
+      role:
+        u.id === "u-rashad"
+          ? ("superadmin" as const)
+          : u.id === "u-moderator"
+            ? ("moderator" as const)
+            : u.id === "u-aysel"
+              ? ("admin" as const)
+              : ("user" as const),
     })),
   );
 
