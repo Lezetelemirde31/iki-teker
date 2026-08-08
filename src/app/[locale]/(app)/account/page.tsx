@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Star,
   UserPen,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -34,6 +35,9 @@ import { OwnListings } from "@/components/listing/own-listings";
 import { RequestQueue } from "@/components/rental/request-queue";
 import { canModerate } from "@/server/authorization";
 import { ReviewForm } from "@/components/rental/review-form";
+import { AppointmentQueue } from "@/components/service/appointment-queue";
+import { myAppointments, pendingAppointmentsFor } from "@/server/appointments";
+import { servicesByIds, workshopNamesByIds } from "@/server/workshops";
 import { pendingRequestsFor } from "@/server/bookings";
 import { openComplaints } from "@/server/complaints";
 import { reviewableBookings } from "@/server/reviews";
@@ -56,17 +60,42 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const user = await getUser(userId);
   if (!user) notFound();
 
-  const [rentals, requests, moderator, queued, reports, mine, signedIn, reviewable] =
-    await Promise.all([
-      getMyRentals(userId),
-      pendingRequestsFor(userId),
-      canModerate(),
-      pendingCount(),
-      openComplaints(),
-      ownListings(userId),
-      isSignedIn(),
-      reviewableBookings(userId),
-    ]);
+  const [
+    rentals,
+    requests,
+    moderator,
+    queued,
+    reports,
+    mine,
+    signedIn,
+    reviewable,
+    appointmentQueue,
+    bookedServices,
+  ] = await Promise.all([
+    getMyRentals(userId),
+    pendingRequestsFor(userId),
+    canModerate(),
+    pendingCount(),
+    openComplaints(),
+    ownListings(userId),
+    isSignedIn(),
+    reviewableBookings(userId),
+    pendingAppointmentsFor(userId),
+    myAppointments(userId),
+  ]);
+
+  // Names for whatever the two appointment lists actually contain — one query
+  // each rather than one per row, and nothing fetched when both are empty.
+  const appointmentServices = await servicesByIds([
+    ...new Set([...appointmentQueue, ...bookedServices].map((a) => a.serviceId)),
+  ]);
+  const [appointmentCustomers, bookedWorkshops] = await Promise.all([
+    Promise.all([...new Set(appointmentQueue.map((a) => a.customerId))].map((id) => getUser(id))),
+    workshopNamesByIds([...new Set(bookedServices.map((a) => a.workshopId))]),
+  ]);
+  const customerNames = Object.fromEntries(
+    appointmentCustomers.filter((person) => person !== undefined).map((p) => [p.id, p.name]),
+  );
 
   // Listings waiting plus reports waiting. A moderator should not have to open
   // the panel to find out whether there is anything in it.
@@ -215,6 +244,23 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
             </section>
           )}
 
+          {/* Somebody is waiting on this workshop to say yes or no, so it sits
+              with the rental requests rather than below the settings. */}
+          {appointmentQueue.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
+                {t("appointment.queueTitle")}
+              </h2>
+              <AppointmentQueue
+                appointments={appointmentQueue}
+                services={appointmentServices}
+                customers={customerNames}
+                locale={locale}
+                messages={messages}
+              />
+            </section>
+          )}
+
           {/* The seller's own listings, whatever state they are in. Above their
               rentals because a listing waiting for review is something they are
               owed an answer on. */}
@@ -291,6 +337,50 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               </div>
             )}
           </section>
+
+          {/* What this person has booked at a workshop, alongside what they
+              have rented. Both are "things I am expected somewhere for". */}
+          {bookedServices.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
+                {t("appointment.myTitle")}
+              </h2>
+              <div className="space-y-2">
+                {bookedServices.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="bg-card border-border flex items-center gap-3 rounded-xl border p-3"
+                  >
+                    <span className="bg-muted text-foreground grid size-10 shrink-0 place-items-center rounded-lg">
+                      <Wrench className="size-4" strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {appointmentServices[appointment.serviceId]?.name[locale] ??
+                          appointment.vehicleLabel}
+                      </p>
+                      <p className="text-muted-foreground tabular mt-0.5 text-xs">
+                        {bookedWorkshops[appointment.workshopId] ?? ""} · {appointment.date}{" "}
+                        {appointment.time}
+                      </p>
+                      <Badge
+                        variant={appointment.status === "confirmed" ? "rentalSoft" : "muted"}
+                        size="md"
+                        className="mt-1"
+                      >
+                        {t(
+                          `appointment.status.${appointment.status}` as Parameters<typeof t>[0],
+                        )}
+                      </Badge>
+                    </div>
+                    <span className="tabular shrink-0 text-sm font-semibold">
+                      {formatPrice(appointment.priceEstimate, locale)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="space-y-3">
             <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">

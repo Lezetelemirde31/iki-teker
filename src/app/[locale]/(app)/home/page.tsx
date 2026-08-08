@@ -75,7 +75,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               href={
                 category.slug === "rental"
                   ? `/${locale}/search?hasRental=true`
-                  : `/${locale}/search?category=${category.slug}`
+                  : // Workshops are not catalogue rows and never were: sending
+                    // this to search returned an empty page, because `services`
+                    // is not one of the categories the catalogue holds.
+                    category.slug === "services"
+                    ? `/${locale}/services`
+                    : `/${locale}/search?category=${category.slug}`
               }
               className="bg-card border-border flex flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2.5 shadow-[var(--shadow-card)] transition-transform active:scale-95"
             >
@@ -163,14 +168,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           {/* Workshops — the directory entry, with paid placement marked. */}
           <section className="space-y-3">
-            <h2 className="font-display px-4 text-lg leading-tight font-extrabold">
-              {t("home.workshops")}
-            </h2>
+            <div className="flex items-baseline justify-between gap-3 px-4">
+              <h2 className="font-display text-lg leading-tight font-extrabold">
+                {t("home.workshops")}
+              </h2>
+              <Link
+                href={`/${locale}/services`}
+                className="text-rental shrink-0 text-xs font-semibold"
+              >
+                {t("common.all")}
+              </Link>
+            </div>
             <div className="space-y-2 px-4">
               {feed.workshops.map((workshop) => (
-                <div
+                <Link
                   key={workshop.id}
-                  className="bg-card border-border flex items-center gap-3 rounded-xl border p-3 shadow-[var(--shadow-card)]"
+                  href={`/${locale}/services/${workshop.slug}`}
+                  className="bg-card border-border flex items-center gap-3 rounded-xl border p-3 shadow-[var(--shadow-card)] transition-transform active:scale-[0.99]"
                 >
                   <span className="bg-muted text-foreground grid size-11 shrink-0 place-items-center rounded-lg">
                     <CategoryIcon slug="services" className="size-5" />
@@ -180,14 +194,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
                       <Star className="fill-primary text-primary size-3" />
                       {formatRating(workshop.rating, locale)}
-                      <span className="text-subtle-foreground">· {workshop.distanceKm} km</span>
+                      {/* Only when it is known. The directory has no coordinates
+                          yet, and "0 km away" is worse than saying nothing. */}
+                      {workshop.distanceKm > 0 && (
+                        <span className="text-subtle-foreground">· {workshop.distanceKm} km</span>
+                      )}
                     </p>
                     <p className="text-subtle-foreground mt-0.5 truncate text-[0.6875rem]">
                       {localized(workshop.summary, locale)}
                     </p>
                   </div>
                   {workshop.promoted && <Badge variant="warning">★</Badge>}
-                </div>
+                </Link>
               ))}
             </div>
           </section>

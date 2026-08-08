@@ -1,7 +1,7 @@
 import "server-only";
 
 import * as mocks from "@/lib/queries";
-import { directoryOrder } from "@/mocks/services";
+import { listWorkshops } from "./workshops";
 import type {
   Booking,
   CatalogItem,
@@ -31,9 +31,11 @@ import { useDatabase } from "./source";
  */
 
 export async function getHomeFeed() {
-  // Workshops have no table yet, so they come from the seeded directory in both
-  // branches rather than being dropped from the screen.
-  const workshops = directoryOrder.slice(0, 4);
+  // The teaser and the directory read the same source, so tapping a workshop
+  // here always lands on the page for the one that was tapped. `listWorkshops`
+  // already returns them in the order the directory uses — promoted, then
+  // rating — so the four shown here are the four at the top of that list.
+  const workshops = (await listWorkshops()).slice(0, 4);
 
   if (!useDatabase) {
     const feed = mocks.getHomeFeed();

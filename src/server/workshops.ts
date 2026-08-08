@@ -1,6 +1,6 @@
 import "server-only";
 
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
@@ -83,6 +83,44 @@ export async function getWorkshopById(id: string): Promise<Workshop | undefined>
   });
 
   return row ? toWorkshop(row) : undefined;
+}
+
+/**
+ * Service menu lines by id — what an appointment list needs to name what was
+ * booked, in one query rather than one per row.
+ */
+export async function servicesByIds(ids: string[]): Promise<Record<string, ServiceItem>> {
+  if (ids.length === 0) return {};
+
+  if (!useDatabase) {
+    const wanted = new Set(ids);
+    return Object.fromEntries(
+      mockServiceItems.filter((item) => wanted.has(item.id)).map((item) => [item.id, item]),
+    );
+  }
+
+  const rows = await db.query.serviceItems.findMany({
+    where: inArray(schema.serviceItems.id, ids),
+  });
+  return Object.fromEntries(rows.map((row) => [row.id, toServiceItem(row)]));
+}
+
+/** Workshop names by id, for the same reason. */
+export async function workshopNamesByIds(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+
+  if (!useDatabase) {
+    const wanted = new Set(ids);
+    return Object.fromEntries(
+      mockWorkshops.filter((shop) => wanted.has(shop.id)).map((shop) => [shop.id, shop.name]),
+    );
+  }
+
+  const rows = await db.query.workshops.findMany({
+    where: inArray(schema.workshops.id, ids),
+    columns: { id: true, name: true, slug: true },
+  });
+  return Object.fromEntries(rows.map((row) => [row.id, row.name]));
 }
 
 /* -------------------------------------------------------------------------- */
