@@ -429,7 +429,7 @@
     "sendCode": "Send code",
     "code": "Verification code",
     "codeTitle": "Enter the code",
-    "codeSentTo": "A 6-digit code was sent to {phone}",
+    "codeSentTo": "Code sent to",
     "verify": "Verify",
     "resend": "Send the code again",
     "resendIn": "Resend in {seconds}s",
@@ -477,7 +477,9 @@
       "locked": "Too many wrong attempts. Try again in 15 minutes.",
       "alreadyRegistered": "That number is already registered.",
       "notSignedIn": "Sign in first.",
-      "noAccount": "That number is not registered."
+      "noAccount": "That number is not registered.",
+      "invalidEmail": "That email address is not valid.",
+      "undeliverable": "We cannot send a code right now. Try again shortly."
     },
     "password": "Password",
     "newPassword": "New password",
@@ -489,7 +491,13 @@
     "savePassword": "Save password",
     "back": "Back",
     "verifyPhone": "Verify your number",
-    "verifyPhoneBody": "Your number is not verified yet. A verified number earns more trust from buyers."
+    "verifyPhoneBody": "Your number is not verified yet. A verified number earns more trust from buyers.",
+    "emailPlaceholder": "you@gmail.com",
+    "continueWithEmail": "Continue with email",
+    "emailNote": "We will email you a six-digit code. No password needed.",
+    "changeEmail": "Use another address",
+    "demoCode": "Demo code:",
+    "orPhone": "or use a phone number"
   },
   "profile": {
     "title": "Edit profile",

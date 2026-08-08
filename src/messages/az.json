@@ -429,7 +429,7 @@
     "sendCode": "Kod göndər",
     "code": "Təsdiq kodu",
     "codeTitle": "Kodu daxil edin",
-    "codeSentTo": "{phone} nömrəsinə 6 rəqəmli kod göndərildi",
+    "codeSentTo": "Kod göndərildi:",
     "verify": "Təsdiqlə",
     "resend": "Kodu yenidən göndər",
     "resendIn": "{seconds} saniyə sonra yenidən",
@@ -477,7 +477,9 @@
       "locked": "Çox səhv cəhd. 15 dəqiqə sonra yenidən yoxlayın.",
       "alreadyRegistered": "Bu nömrə artıq qeydiyyatdadır.",
       "notSignedIn": "Əvvəlcə hesaba daxil olun.",
-      "noAccount": "Bu nömrə qeydiyyatda deyil."
+      "noAccount": "Bu nömrə qeydiyyatda deyil.",
+      "invalidEmail": "Email ünvanı düzgün deyil.",
+      "undeliverable": "Hazırda kod göndərə bilmirik. Bir azdan yenidən cəhd edin."
     },
     "password": "Parol",
     "newPassword": "Yeni parol",
@@ -489,7 +491,13 @@
     "savePassword": "Parolu yadda saxla",
     "back": "Geri",
     "verifyPhone": "Nömrəni təsdiqlə",
-    "verifyPhoneBody": "Nömrəniz hələ təsdiqlənməyib. Təsdiqlənmiş nömrə alıcılarda daha çox etibar yaradır."
+    "verifyPhoneBody": "Nömrəniz hələ təsdiqlənməyib. Təsdiqlənmiş nömrə alıcılarda daha çox etibar yaradır.",
+    "emailPlaceholder": "ad@gmail.com",
+    "continueWithEmail": "Email ilə davam et",
+    "emailNote": "Email ünvanınıza 6 rəqəmli kod göndərəcəyik. Parol lazım deyil.",
+    "changeEmail": "Başqa ünvan",
+    "demoCode": "Demo kodu:",
+    "orPhone": "və ya nömrə ilə"
   },
   "profile": {
     "title": "Profili redaktə et",

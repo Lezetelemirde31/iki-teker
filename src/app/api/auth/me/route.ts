@@ -18,7 +18,16 @@ export async function GET() {
   const user = await getUser(session.userId);
   if (!user) return NextResponse.json({ user: null });
 
+  // Both identities, because an account now has one or the other and a screen
+  // that only ever asks for the phone shows a blank for everybody who signed
+  // up with an address.
   return NextResponse.json({
-    user: { id: user.id, name: user.name, initials: user.initials, phone: user.phone },
+    user: {
+      id: user.id,
+      name: user.name,
+      initials: user.initials,
+      phone: user.phone ?? null,
+      email: user.email ?? null,
+    },
   });
 }
