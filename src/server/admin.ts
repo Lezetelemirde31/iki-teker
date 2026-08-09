@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, gte, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, sql, sum } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
@@ -239,4 +239,54 @@ export async function byCategory() {
     .where(and(eq(schema.listings.status, "active")))
     .groupBy(schema.listings.category)
     .orderBy(desc(count()));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Rentals                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Every booking, newest first.
+ *
+ * Read-only. Nothing in the panel moves a booking between states: the owner
+ * confirms or declines, and the exclusion constraint arbitrates. An admin
+ * button that overrode either would quietly become the way disputes get
+ * settled, without any of the checks the real path has.
+ *
+ * Names are fetched in one extra query rather than through drizzle relations —
+ * `bookings` points at `users` twice, as renter and as owner, and telling those
+ * apart needs a declared name on both sides of each.
+ */
+export async function allBookings(limit = 200) {
+  if (!useDatabase) return [];
+
+  const rows = await db.query.bookings.findMany({
+    orderBy: desc(schema.bookings.createdAt),
+    limit,
+  });
+  if (rows.length === 0) return [];
+
+  const people = [...new Set(rows.flatMap((row) => [row.renterId, row.ownerId]))];
+  const listings = [...new Set(rows.map((row) => row.listingId))];
+
+  const [names, titles] = await Promise.all([
+    db
+      .select({ id: schema.users.id, name: schema.users.name })
+      .from(schema.users)
+      .where(inArray(schema.users.id, people)),
+    db
+      .select({ id: schema.listings.id, title: schema.listings.title })
+      .from(schema.listings)
+      .where(inArray(schema.listings.id, listings)),
+  ]);
+
+  const nameOf = new Map(names.map((row) => [row.id, row.name]));
+  const titleOf = new Map(titles.map((row) => [row.id, row.title]));
+
+  return rows.map((row) => ({
+    ...row,
+    renterName: nameOf.get(row.renterId) ?? row.renterId,
+    ownerName: nameOf.get(row.ownerId) ?? row.ownerId,
+    listingTitle: titleOf.get(row.listingId) ?? row.listingId,
+  }));
 }

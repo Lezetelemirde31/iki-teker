@@ -7,6 +7,9 @@ import * as schema from "@/db/schema";
 import { directoryOrder, serviceItems as mockServiceItems, workshops as mockWorkshops } from "@/mocks/services";
 import type { ServiceItem, Workshop } from "@/types";
 
+import { canModerate } from "./authorization";
+import { recordAction } from "./audit";
+import { currentUserId } from "./session";
 import { useDatabase } from "./source";
 
 /**
@@ -180,4 +183,129 @@ function withMockServices(workshop: Workshop): Workshop {
     ...workshop,
     services: mockServiceItems.filter((item) => item.workshopId === workshop.id),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Moderation                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Every workshop, whatever its state, for the panel.
+ *
+ * Ordered so the ones waiting come first — this screen exists to answer "is
+ * anybody stuck outside the directory", and a queue sorted by rating buries
+ * exactly that.
+ */
+export async function allWorkshops() {
+  if (!useDatabase) return [];
+
+  const rows = await db.query.workshops.findMany({
+    orderBy: [asc(schema.workshops.status), desc(schema.workshops.createdAt)],
+    with: { services: true },
+  });
+
+  const owners = [...new Set(rows.map((row) => row.ownerId))];
+  const people = owners.length
+    ? await db
+        .select({ id: schema.users.id, name: schema.users.name })
+        .from(schema.users)
+        .where(inArray(schema.users.id, owners))
+    : [];
+  const nameOf = new Map(people.map((row) => [row.id, row.name]));
+
+  return rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    status: row.status,
+    verified: row.verified,
+    promoted: row.promoted,
+    mobileService: row.mobileService,
+    concurrentSlots: row.concurrentSlots,
+    serviceCount: row.services.length,
+    ownerName: nameOf.get(row.ownerId) ?? row.ownerId,
+    city: row.cityId,
+    summary: row.summary,
+  }));
+}
+
+export type WorkshopDecision =
+  | { ok: true; status: string }
+  | { ok: false; reason: "notAllowed" | "notFound" | "invalidStatus" };
+
+const DECIDABLE = ["active", "moderation", "draft", "archived"] as const;
+
+/**
+ * Lets a workshop into the directory, or takes it out.
+ *
+ * A workshop is a business somebody sends a broken motorcycle to, so the
+ * decision to list one is a real one and it is recorded like any other. Taking
+ * one out sets it back rather than deleting it: the appointments already made
+ * against it still have to point somewhere.
+ *
+ * Permission is checked here rather than in the route, so it cannot be
+ * sidestepped by reaching this function from anywhere else.
+ */
+export async function setWorkshopStatus(
+  workshopId: string,
+  status: string,
+): Promise<WorkshopDecision> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+  if (!(await canModerate())) return { ok: false, reason: "notAllowed" };
+  if (!(DECIDABLE as readonly string[]).includes(status)) {
+    return { ok: false, reason: "invalidStatus" };
+  }
+
+  const row = await db.query.workshops.findFirst({
+    where: eq(schema.workshops.id, workshopId),
+    columns: { id: true, name: true, status: true },
+  });
+  if (!row) return { ok: false, reason: "notFound" };
+
+  const next = status as (typeof DECIDABLE)[number];
+  await db
+    .update(schema.workshops)
+    .set({ status: next })
+    .where(eq(schema.workshops.id, workshopId));
+
+  await recordAction({
+    actorId: await currentUserId(),
+    action: next === "active" ? "approveWorkshop" : "suspendWorkshop",
+    entityType: "workshop",
+    entityId: workshopId,
+    entityLabel: row.name,
+    from: row.status,
+    to: next,
+  });
+
+  return { ok: true, status: next };
+}
+
+/** The badge, granted by hand. It says the platform checked, so nothing else sets it. */
+export async function setWorkshopVerified(
+  workshopId: string,
+  verified: boolean,
+): Promise<WorkshopDecision> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+  if (!(await canModerate())) return { ok: false, reason: "notAllowed" };
+
+  const row = await db.query.workshops.findFirst({
+    where: eq(schema.workshops.id, workshopId),
+    columns: { id: true, name: true, verified: true },
+  });
+  if (!row) return { ok: false, reason: "notFound" };
+
+  await db.update(schema.workshops).set({ verified }).where(eq(schema.workshops.id, workshopId));
+
+  await recordAction({
+    actorId: await currentUserId(),
+    action: verified ? "verifyWorkshop" : "unverifyWorkshop",
+    entityType: "workshop",
+    entityId: workshopId,
+    entityLabel: row.name,
+    from: row.verified ? "verified" : "unverified",
+    to: verified ? "verified" : "unverified",
+  });
+
+  return { ok: true, status: verified ? "verified" : "unverified" };
 }
