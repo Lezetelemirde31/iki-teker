@@ -33,6 +33,14 @@ type Item = {
   icon: typeof LayoutDashboard;
   needs: Capability;
   badge?: number;
+  /**
+   * Whether the screen behind it exists yet.
+   *
+   * The sections still to be built are listed here so the order is settled and
+   * visible, but they are not rendered — a sidebar that navigates to a 404 is
+   * worse than a shorter sidebar, because it makes every other entry suspect.
+   */
+  ready?: boolean;
 };
 
 export function AdminSidebar({
@@ -46,13 +54,14 @@ export function AdminSidebar({
   const held = new Set(capabilities);
 
   const items: Item[] = [
-    { href: "/admin", label: "İcmal", icon: LayoutDashboard, needs: "viewPanel" },
+    { href: "/admin", label: "İcmal", icon: LayoutDashboard, needs: "viewPanel", ready: true },
     {
       href: "/admin/moderation",
       label: "Moderasiya",
       icon: ListChecks,
       needs: "moderateContent",
       badge: counts.moderation,
+      ready: true,
     },
     {
       href: "/admin/reports",
@@ -60,6 +69,7 @@ export function AdminSidebar({
       icon: FileWarning,
       needs: "moderateContent",
       badge: counts.reports,
+      ready: true,
     },
     { href: "/admin/listings", label: "Elanlar", icon: Bike, needs: "viewPanel" },
     { href: "/admin/users", label: "İstifadəçilər", icon: Users, needs: "viewPanel" },
@@ -79,7 +89,7 @@ export function AdminSidebar({
   return (
     <nav className="flex flex-col gap-0.5 p-3">
       {items
-        .filter((item) => held.has(item.needs))
+        .filter((item) => item.ready && held.has(item.needs))
         .map((item) => {
           const active =
             item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);

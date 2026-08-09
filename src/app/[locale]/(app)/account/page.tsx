@@ -207,11 +207,16 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               <ChevronRight className="text-subtle-foreground size-5" />
             </Link>
 
-            {/* Only rendered for a moderator. The page itself answers 404 to
-                everyone else, so this is convenience, not the guard. */}
+            {/* Only rendered for a moderator. The panel itself answers 404 to
+                everyone else, so this is convenience, not the guard.
+
+                A plain anchor rather than a Link: the panel lives outside the
+                localised app and has its own root layout, so this is a real
+                navigation and not a client-side transition into a tree that
+                shares nothing with this one. */}
             {moderator && (
-              <Link
-                href={`/${locale}/admin`}
+              <a
+                href="/admin"
                 className="bg-card border-border flex items-center gap-3 rounded-xl border px-3.5 py-3 transition-transform active:scale-[0.99]"
               >
                 <ShieldCheck className="text-muted-foreground size-5 shrink-0" strokeWidth={2} />
@@ -222,7 +227,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                   </Badge>
                 )}
                 <ChevronRight className="text-subtle-foreground size-5" />
-              </Link>
+              </a>
             )}
           </section>
 

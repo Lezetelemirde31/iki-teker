@@ -94,7 +94,6 @@ export default async function AdminDashboard() {
           label="Servis gözləyir"
           value={az.format(stats.workshops.moderation)}
           hint="Kataloqa buraxılmayıb"
-          href="/admin/workshops"
           tone="attention"
           icon={<Wrench className="text-subtle-foreground size-4" />}
         />
@@ -108,26 +107,22 @@ export default async function AdminDashboard() {
           hint={`Bu ay ${az.format(stats.users.newThisMonth)} yeni${
             stats.users.suspended > 0 ? ` · ${az.format(stats.users.suspended)} bloklu` : ""
           }`}
-          href="/admin/users"
           icon={<Users className="text-subtle-foreground size-4" />}
         />
         <StatCard
           label="Aktiv elan"
           value={az.format(stats.listings.active)}
           hint={`${az.format(stats.listings.sold)} satılıb · ${az.format(stats.listings.draft)} qaralama`}
-          href="/admin/listings"
         />
         <StatCard
           label="VIP elan"
           value={az.format(stats.vip)}
           hint="Ödənişli yerləşdirmə"
-          href="/admin/listings?vip=1"
         />
         <StatCard
           label="İcarə təklifi"
           value={az.format(stats.rentalOffers)}
           hint={`${az.format(Object.values(stats.bookings).reduce((a, b) => a + b, 0))} rezervasiya`}
-          href="/admin/rentals"
         />
         <StatCard
           label="Baxış"
@@ -145,14 +140,12 @@ export default async function AdminDashboard() {
           label="Servis və randevu"
           value={az.format(stats.workshops.active)}
           hint={`${az.format(stats.appointments)} randevu`}
-          href="/admin/workshops"
           icon={<Wrench className="text-subtle-foreground size-4" />}
         />
         <StatCard
           label="Rəy"
           value={az.format(stats.reviews)}
           hint="Gizlədilməmiş"
-          href="/admin/reviews"
           icon={<Star className="text-subtle-foreground size-4" />}
         />
       </section>
@@ -163,12 +156,12 @@ export default async function AdminDashboard() {
       </section>
 
       <section className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Son əlavə olunan elanlar" href="/admin/listings">
+        <Panel title="Son əlavə olunan elanlar">
           {newest.length === 0 ? (
             <Empty>Hələ elan yoxdur.</Empty>
           ) : (
             newest.map((listing) => (
-              <Row key={listing.id} href={`/admin/listings/${listing.id}`}>
+              <Row key={listing.id}>
                 <span className="min-w-0 flex-1 truncate">{listing.title}</span>
                 {listing.vip && (
                   <Badge variant="vip" size="md">
@@ -183,12 +176,12 @@ export default async function AdminDashboard() {
           )}
         </Panel>
 
-        <Panel title="Ən çox baxılan" href="/admin/listings">
+        <Panel title="Ən çox baxılan">
           {viewed.length === 0 ? (
             <Empty>Hələ baxış yoxdur.</Empty>
           ) : (
             viewed.map((listing) => (
-              <Row key={listing.id} href={`/admin/listings/${listing.id}`}>
+              <Row key={listing.id}>
                 <span className="min-w-0 flex-1 truncate">{listing.title}</span>
                 <span className="text-subtle-foreground tabular shrink-0 text-xs">
                   {az.format(listing.views)} baxış · {az.format(listing.contacts)} kontakt
@@ -198,12 +191,12 @@ export default async function AdminDashboard() {
           )}
         </Panel>
 
-        <Panel title="Ən aktiv satıcılar" href="/admin/users">
+        <Panel title="Ən aktiv satıcılar">
           {sellers.length === 0 ? (
             <Empty>Hələ satıcı yoxdur.</Empty>
           ) : (
             sellers.map((seller) => (
-              <Row key={seller.id} href={`/admin/users/${seller.id}`}>
+              <Row key={seller.id}>
                 <span className="min-w-0 flex-1 truncate">{seller.name}</span>
                 {seller.status !== "active" && (
                   <Badge variant="warning" size="md">
@@ -223,7 +216,7 @@ export default async function AdminDashboard() {
             <Empty>Hələ aktiv elan yoxdur.</Empty>
           ) : (
             categories.map((row) => (
-              <Row key={row.category} href={`/admin/listings?category=${row.category}`}>
+              <Row key={row.category}>
                 <span className="min-w-0 flex-1 truncate">{row.category}</span>
                 <span className="text-subtle-foreground tabular shrink-0 text-xs">
                   {az.format(row.n)}
@@ -263,11 +256,16 @@ function Panel({
   );
 }
 
-function Row({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="hover:bg-muted flex items-center gap-2 px-4 py-2.5 text-sm">
+/** A row links only where there is somewhere to go; the detail screens are
+ *  not built yet, and a row that navigates nowhere is worse than a plain one. */
+function Row({ href, children }: { href?: string; children: React.ReactNode }) {
+  const className = "flex items-center gap-2 px-4 py-2.5 text-sm";
+  return href ? (
+    <Link href={href} className={`${className} hover:bg-muted`}>
       {children}
     </Link>
+  ) : (
+    <div className={className}>{children}</div>
   );
 }
 
