@@ -582,6 +582,10 @@
     "appointmentDeclined": {
       "title": "Appointment not taken",
       "body": "{workshop} could not confirm that time."
+    },
+    "vipConfirmed": {
+      "title": "VIP is live",
+      "body": "{title} — until {until}"
     }
   },
   "services": {
@@ -697,6 +701,28 @@
     "on": {
       "listing": "Listing",
       "user": "Person"
+    }
+  },
+  "vip": {
+    "promote": "Make VIP",
+    "pick": "Choose how long",
+    "days": "{count} days",
+    "until": "until {date}",
+    "awaiting": "Awaiting payment",
+    "reference": "Reference:",
+    "copy": "Copy",
+    "howToPay": "Transfer {amount} and put the code above in the payment reference. Once it is confirmed the listing stays on top for {days} days.",
+    "noBankYet": "Bank details are not set up yet. Please contact support.",
+    "transferNote": "There is no card payment yet. Ordering gives you a reference for a bank transfer.",
+    "error": {
+      "notYours": "That listing is not yours.",
+      "notActive": "Only an active listing can be promoted.",
+      "alreadyPending": "There is already an order waiting for this listing.",
+      "unknownPackage": "No such package.",
+      "notFound": "Listing not found.",
+      "unavailable": "Not available right now.",
+      "offline": "No connection.",
+      "generic": "The order could not be placed."
     }
   }
 }

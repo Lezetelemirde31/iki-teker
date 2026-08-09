@@ -11,6 +11,7 @@ import { fontVariables } from "@/lib/fonts";
 import { openComplaints } from "@/server/complaints";
 import { pendingCount } from "@/server/moderation";
 import { pendingWorkshopCount } from "@/server/admin";
+import { pendingVipCount } from "@/server/promotions";
 import { can, currentPrincipal, roleCan, type Capability } from "@/server/authorization";
 import { getUser } from "@/server/data";
 
@@ -43,11 +44,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (!(await can("viewPanel"))) notFound();
 
   const principal = await currentPrincipal();
-  const [me, moderation, reports, workshops, messages] = await Promise.all([
+  const [me, moderation, reports, workshops, vip, messages] = await Promise.all([
     getUser(principal.id),
     pendingCount(),
     openComplaints(),
     pendingWorkshopCount(),
+    pendingVipCount(),
     // Shared components — the theme toggle, badges, anything reused from the
     // app — expect a translator. The panel itself is written in Azerbaijani:
     // it is a tool for the people running the marketplace, not a screen its
@@ -90,7 +92,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               <div className="flex-1 overflow-y-auto">
                 <AdminSidebar
                   capabilities={capabilities}
-                  counts={{ moderation, reports, workshops }}
+                  counts={{ moderation, reports, workshops, vip }}
                 />
               </div>
 

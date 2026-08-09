@@ -118,6 +118,20 @@ export const complaintStatus = pgEnum("complaint_status", ["open", "upheld", "di
  * `sold` — a workshop is a business, and a business is never sold off the
  * directory the way a motorcycle is sold off the catalogue.
  */
+/**
+ * A VIP order's life.
+ *
+ * `pending` is somebody who has been told where to transfer and has not been
+ * confirmed yet — nothing is granted at that point. Only an administrator
+ * seeing the money moves it to `paid`, which is the moment the listing rises.
+ */
+export const vipOrderStatus = pgEnum("vip_order_status", [
+  "pending",
+  "paid",
+  "rejected",
+  "cancelled",
+]);
+
 export const workshopStatus = pgEnum("workshop_status", [
   "active",
   "moderation",
@@ -638,6 +652,48 @@ export const complaints = pgTable(
       table.entityId,
     ),
     index("complaints_open_idx").on(table.status, table.createdAt),
+  ],
+);
+
+/**
+ * Somebody buying VIP placement for a listing.
+ *
+ * There is no payment gateway, and the PRD is explicit that there will not be
+ * one at launch: a card acquirer needs a registered legal entity and a bank
+ * agreement. So this is the shape the money actually takes today — the seller
+ * transfers, quoting the reference, and an administrator who can see the
+ * account marks it paid. That is the only thing which grants VIP.
+ *
+ * The order is kept after it is decided rather than deleted. It is the receipt:
+ * what was bought, for how long, at what price, and who confirmed it.
+ *
+ * `days` and `amount` are frozen onto the row at purchase. Prices change, and a
+ * six-month-old order has to keep saying what was actually paid.
+ */
+export const vipOrders = pgTable(
+  "vip_orders",
+  {
+    id: text("id").primaryKey(),
+    /** Quoted on the transfer so a payment can be matched to an order. */
+    reference: text("reference").notNull().unique(),
+    listingId: text("listing_id")
+      .notNull()
+      .references(() => listings.id, { onDelete: "cascade" }),
+    sellerId: text("seller_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    days: integer("days").notNull(),
+    amount: integer("amount").notNull(),
+    status: vipOrderStatus("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    decidedById: text("decided_by_id").references(() => users.id),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    note: text("note"),
+  },
+  (table) => [
+    index("vip_orders_pending_idx").on(table.status, table.createdAt),
+    index("vip_orders_seller_idx").on(table.sellerId),
+    index("vip_orders_listing_idx").on(table.listingId),
   ],
 );
 

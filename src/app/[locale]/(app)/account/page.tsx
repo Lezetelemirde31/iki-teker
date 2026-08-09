@@ -41,6 +41,7 @@ import { servicesByIds, workshopNamesByIds } from "@/server/workshops";
 import { pendingRequestsFor } from "@/server/bookings";
 import { openComplaints } from "@/server/complaints";
 import { reviewableBookings } from "@/server/reviews";
+import { VIP_PACKAGES, bankDetails, myVipOrders } from "@/server/promotions";
 import { ownListings } from "@/server/listing-actions";
 import { pendingCount } from "@/server/moderation";
 import { getListing, getMyRentals, getUser } from "@/server/data";
@@ -71,6 +72,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
     reviewable,
     appointmentQueue,
     bookedServices,
+    vipOrders,
   ] = await Promise.all([
     getMyRentals(userId),
     pendingRequestsFor(userId),
@@ -82,6 +84,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
     reviewableBookings(userId),
     pendingAppointmentsFor(userId),
     myAppointments(userId),
+    myVipOrders(userId),
   ]);
 
   // Names for whatever the two appointment lists actually contain — one query
@@ -274,7 +277,27 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               <h2 className="text-subtle-foreground text-[0.6875rem] font-semibold tracking-[0.12em] uppercase">
                 {t("account.myListings")}
               </h2>
-              <OwnListings listings={mine} locale={locale} messages={messages} />
+              <OwnListings
+                listings={mine.map((entry) => {
+                  const waiting = vipOrders.find(
+                    (order) => order.listingId === entry.item.id && order.status === "pending",
+                  );
+                  return waiting
+                    ? {
+                        ...entry,
+                        vipPending: {
+                          reference: waiting.reference,
+                          days: waiting.days,
+                          amount: waiting.amount,
+                        },
+                      }
+                    : entry;
+                })}
+                locale={locale}
+                messages={messages}
+                vipPackages={[...VIP_PACKAGES]}
+                {...(bankDetails() ? { bankDetails: bankDetails()! } : {})}
+              />
             </section>
           )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BadgeDollarSign,
   Bike,
   CalendarRange,
   FileWarning,
@@ -48,7 +49,7 @@ export function AdminSidebar({
   counts,
 }: {
   capabilities: Capability[];
-  counts: { moderation: number; reports: number; workshops: number };
+  counts: { moderation: number; reports: number; workshops: number; vip: number };
 }) {
   const pathname = usePathname();
   const held = new Set(capabilities);
@@ -69,6 +70,14 @@ export function AdminSidebar({
       icon: FileWarning,
       needs: "moderateContent",
       badge: counts.reports,
+      ready: true,
+    },
+    {
+      href: "/admin/vip",
+      label: "VIP sifarişləri",
+      icon: BadgeDollarSign,
+      needs: "moderateContent",
+      badge: counts.vip,
       ready: true,
     },
     { href: "/admin/listings", label: "Elanlar", icon: Bike, needs: "viewPanel" },

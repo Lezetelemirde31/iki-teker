@@ -39,7 +39,8 @@ export type NotificationKind =
   | "reviewReceived"
   | "appointmentRequested"
   | "appointmentConfirmed"
-  | "appointmentDeclined";
+  | "appointmentDeclined"
+  | "vipConfirmed";
 
 type Payload = {
   title: string;
@@ -169,6 +170,10 @@ async function compose(
     appointmentRequested: `/${locale}/account`,
     appointmentConfirmed: `/${locale}/account`,
     appointmentDeclined: `/${locale}/account`,
+    // Straight to the listing that just rose.
+    vipConfirmed: values.listingId
+      ? `/${locale}/listing/${values.listingId}`
+      : `/${locale}/account`,
   };
 
   return {

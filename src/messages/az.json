@@ -582,6 +582,10 @@
     "appointmentDeclined": {
       "title": "Randevu alınmadı",
       "body": "{workshop} bu vaxtı təsdiqləyə bilmədi."
+    },
+    "vipConfirmed": {
+      "title": "VIP aktivləşdi",
+      "body": "{title} — {until} tarixinə qədər"
     }
   },
   "services": {
@@ -697,6 +701,28 @@
     "on": {
       "listing": "Elan",
       "user": "İstifadəçi"
+    }
+  },
+  "vip": {
+    "promote": "VIP et",
+    "pick": "Müddəti seçin",
+    "days": "{count} gün",
+    "until": "{date} tarixinə qədər",
+    "awaiting": "Ödəniş gözlənilir",
+    "reference": "Təyinat:",
+    "copy": "Kopyala",
+    "howToPay": "{amount} köçürün və köçürmənin təyinatına yuxarıdakı kodu yazın. Ödəniş təsdiqlənəndən sonra elan {days} gün yuxarıda qalacaq.",
+    "noBankYet": "Bank rekvizitləri hələ təyin olunmayıb. Dəstəklə əlaqə saxlayın.",
+    "transferNote": "Kart ödənişi hələ yoxdur. Sifariş verəndə sizə bank köçürməsi üçün kod veriləcək.",
+    "error": {
+      "notYours": "Bu elan sizin deyil.",
+      "notActive": "Yalnız aktiv elanı VIP etmək olar.",
+      "alreadyPending": "Bu elan üçün artıq gözləyən sifariş var.",
+      "unknownPackage": "Belə paket yoxdur.",
+      "notFound": "Elan tapılmadı.",
+      "unavailable": "Hazırda mümkün deyil.",
+      "offline": "İnternet bağlantısı yoxdur.",
+      "generic": "Sifariş alınmadı."
     }
   }
 }

@@ -237,7 +237,7 @@ function buildFilters(query: SearchQuery) {
   }
   if (query.customsCleared) clauses.push(eq(schema.listings.customsCleared, true));
   if (query.delivery) clauses.push(eq(schema.listings.delivery, true));
-  if (query.vipOnly) clauses.push(eq(schema.listings.vip, true));
+  if (query.vipOnly) clauses.push(liveVip);
 
   // "Has rental" is a relationship, not a column: it means an offer exists.
   if (query.hasRental) {
@@ -274,10 +274,19 @@ function buildFilters(query: SearchQuery) {
   return and(...clauses);
 }
 
+/**
+ * Currently VIP — the flag *and* an end date that has not passed.
+ *
+ * Expiry is decided on every read rather than swept by a scheduled job. A
+ * sweep that fails to run leaves somebody at the top of every search for free,
+ * and nobody notices until the next invoice; a predicate cannot fail to run.
+ */
+const liveVip = sql`(${schema.listings.vip} AND (${schema.listings.vipUntil} IS NULL OR ${schema.listings.vipUntil} >= CURRENT_DATE))`;
+
 function orderFor(sort: SearchQuery["sort"]) {
   // VIP always floats to the top of whatever ordering is chosen — that is the
   // product being sold, so it has to be visible in every sort.
-  const vipFirst = desc(schema.listings.vip);
+  const vipFirst = sql`${liveVip} DESC`;
   switch (sort) {
     case "priceAsc":
       return [vipFirst, schema.listings.price];
@@ -333,7 +342,7 @@ export async function getHomeFeed() {
   const [offerRows, vipRows, freshRows, partRows] = await Promise.all([
     db.select().from(schema.rentalOffers).limit(6),
     db.query.listings.findMany({
-      where: and(eq(schema.listings.status, "active"), eq(schema.listings.vip, true)),
+      where: and(eq(schema.listings.status, "active"), liveVip),
       limit: 6,
     }),
     db.query.listings.findMany({
