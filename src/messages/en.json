@@ -480,7 +480,8 @@
       "noAccount": "That number is not registered.",
       "invalidEmail": "That email address is not valid.",
       "undeliverable": "We cannot send a code right now. Try again shortly.",
-      "phoneTaken": "That number already belongs to another account."
+      "phoneTaken": "That number already belongs to another account.",
+      "emailTaken": "That email is already registered. Sign in instead."
     },
     "password": "Password",
     "newPassword": "New password",
@@ -495,7 +496,7 @@
     "verifyPhoneBody": "Your number is not verified yet. A verified number earns more trust from buyers.",
     "emailPlaceholder": "you@gmail.com",
     "continueWithEmail": "Continue with email",
-    "emailNote": "We will email you a six-digit code. No password needed.",
+    "emailNote": "We will email you a six-digit confirmation code.",
     "changeEmail": "Use another address",
     "demoCode": "Demo code:",
     "orPhone": "or use a phone number",
@@ -503,7 +504,12 @@
     "detailsBody": "Your email is confirmed. Now finish your account.",
     "phoneOptional": "A number is optional — you can add one later.",
     "passwordPlaceholder": "Password (at least 8 characters)",
-    "passwordOptional": "Password"
+    "passwordOptional": "Password",
+    "firstName": "First name",
+    "lastName": "Surname",
+    "identifierPlaceholder": "Email or phone number",
+    "signInWithCode": "Forgotten your password? Email me a code",
+    "confirmEmail": "Confirm your email"
   },
   "profile": {
     "title": "Edit profile",

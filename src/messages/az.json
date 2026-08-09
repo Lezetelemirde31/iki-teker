@@ -480,7 +480,8 @@
       "noAccount": "Bu nömrə qeydiyyatda deyil.",
       "invalidEmail": "Email ünvanı düzgün deyil.",
       "undeliverable": "Hazırda kod göndərə bilmirik. Bir azdan yenidən cəhd edin.",
-      "phoneTaken": "Bu nömrə artıq başqa hesabda istifadə olunur."
+      "phoneTaken": "Bu nömrə artıq başqa hesabda istifadə olunur.",
+      "emailTaken": "Bu email artıq qeydiyyatdan keçib. Daxil olun."
     },
     "password": "Parol",
     "newPassword": "Yeni parol",
@@ -495,7 +496,7 @@
     "verifyPhoneBody": "Nömrəniz hələ təsdiqlənməyib. Təsdiqlənmiş nömrə alıcılarda daha çox etibar yaradır.",
     "emailPlaceholder": "ad@gmail.com",
     "continueWithEmail": "Email ilə davam et",
-    "emailNote": "Email ünvanınıza 6 rəqəmli kod göndərəcəyik. Parol lazım deyil.",
+    "emailNote": "Email ünvanınıza 6 rəqəmli təsdiq kodu göndərəcəyik.",
     "changeEmail": "Başqa ünvan",
     "demoCode": "Demo kodu:",
     "orPhone": "və ya nömrə ilə",
@@ -503,7 +504,12 @@
     "detailsBody": "Email təsdiqləndi. İndi hesabınızı tamamlayın.",
     "phoneOptional": "Nömrə istəyə bağlıdır — sonra da əlavə edə bilərsiniz.",
     "passwordPlaceholder": "Parol (ən azı 8 simvol)",
-    "passwordOptional": "Parol"
+    "passwordOptional": "Parol",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "identifierPlaceholder": "Email və ya nömrə",
+    "signInWithCode": "Parolu unutmusan? Emailə kod göndər",
+    "confirmEmail": "Emaili təsdiqləyin"
   },
   "profile": {
     "title": "Profili redaktə et",

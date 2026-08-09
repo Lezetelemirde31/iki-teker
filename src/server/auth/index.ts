@@ -395,14 +395,71 @@ export type NewAccount = {
 };
 
 /**
- * Step one asks for nothing but the address.
+ * Everything a registration form can get wrong, answered before a code is sent.
  *
- * The name, the number and the password are collected at step two, alongside
- * the code. Asking for them first would mean typing a password into a form that
- * has not yet established the address is even reachable — and asking only some
- * of them would mean the answer here revealed whether the address already had
- * an account, which turns a sign-in form into a way of finding out who is on
- * the platform.
+ * The alternative is letting somebody fill in five fields, wait for a message,
+ * type the code, and only then be told the address was already taken. Checking
+ * first costs one query and is what every registration form people have used
+ * before this one does.
+ *
+ * It does mean this endpoint will confirm that an address or a number is
+ * already registered. That is the trade the conventional shape makes, and it is
+ * the right one here: somebody who cannot be told "you already have an account"
+ * simply cannot get in.
+ */
+export type RegistrationCheck =
+  | { ok: true }
+  | {
+      ok: false;
+      reason:
+        | "invalidEmail"
+        | "emailTaken"
+        | "nameRequired"
+        | "invalidPhone"
+        | "phoneTaken"
+        | "tooShort"
+        | "tooLong"
+        | "tooCommon";
+    };
+
+export async function checkRegistration(details: {
+  email: string;
+  name: string;
+  phone?: string;
+  password: string;
+}): Promise<RegistrationCheck> {
+  const email = normaliseEmail(details.email);
+  if (!email) return { ok: false, reason: "invalidEmail" };
+
+  const taken = await db.query.users.findFirst({
+    where: eq(schema.users.email, email),
+    columns: { id: true },
+  });
+  if (taken) return { ok: false, reason: "emailTaken" };
+
+  if (details.name.trim().length < 2) return { ok: false, reason: "nameRequired" };
+
+  if (details.phone?.trim()) {
+    const phone = normalisePhone(details.phone);
+    if (!phone) return { ok: false, reason: "invalidPhone" };
+    const held = await db.query.users.findFirst({
+      where: eq(schema.users.phone, phone),
+      columns: { id: true },
+    });
+    if (held) return { ok: false, reason: "phoneTaken" };
+  }
+
+  const strength = checkStrength(details.password);
+  if (!strength.ok) return { ok: false, reason: strength.reason };
+
+  return { ok: true };
+}
+
+/**
+ * Sends the code.
+ *
+ * Called on its own when somebody is signing in, and after `checkRegistration`
+ * when somebody is registering.
  */
 export async function startEmailSignIn(rawEmail: string): Promise<EmailStartResult> {
   const email = normaliseEmail(rawEmail);
@@ -550,6 +607,41 @@ export async function completeEmailSignIn(
 export type EmailPasswordResult =
   | { ok: true; user: { id: string; name: string } }
   | { ok: false; reason: "invalidEmail" | "wrongCredentials" | "noPassword" | "locked" };
+
+/**
+ * Signing in with whichever of the two they remember.
+ *
+ * One field on the form, because making somebody first decide *how* they are
+ * identified is a question they should never have been asked — they know their
+ * address or they know their number, and the shape of what they typed says
+ * which. An `@` is the whole test; anything else is treated as a number and
+ * normalised, so `0501234567` and `+994 50 123 45 67` are the same person.
+ */
+export async function signInWithIdentifier(
+  identifier: string,
+  password: string,
+): Promise<EmailPasswordResult> {
+  const trimmed = identifier.trim();
+
+  if (trimmed.includes("@")) return signInWithEmailPassword(trimmed, password);
+
+  const phone = normalisePhone(trimmed);
+  if (!phone) return { ok: false, reason: "invalidEmail" };
+
+  const byPhone = await signInWithPassword(phone, password);
+  if (byPhone.ok) return byPhone;
+
+  // The phone path distinguishes "no account" from "wrong password"; this one
+  // deliberately does not, so a sign-in form cannot be used to find out who is
+  // registered.
+  const reason =
+    byPhone.reason === "noPassword"
+      ? "noPassword"
+      : byPhone.reason === "locked"
+        ? "locked"
+        : "wrongCredentials";
+  return { ok: false, reason };
+}
 
 export async function signInWithEmailPassword(
   rawEmail: string,
