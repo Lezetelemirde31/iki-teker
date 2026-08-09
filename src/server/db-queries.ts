@@ -387,7 +387,11 @@ export async function getSellerProfile(sellerId: string) {
       where: and(eq(schema.listings.sellerId, sellerId), eq(schema.listings.status, "active")),
     }),
     db.query.reviews.findMany({
-      where: eq(schema.reviews.targetId, sellerId),
+      // A hidden review is hidden here, not merely left out of the average.
+      // Taking it down and still printing it underneath the rating would be
+      // the worst of both: the moderator's decision is invisible and the words
+      // are still there.
+      where: and(eq(schema.reviews.targetId, sellerId), eq(schema.reviews.hidden, false)),
       orderBy: desc(schema.reviews.createdAt),
     }),
     db.select().from(schema.rentalOffers).where(eq(schema.rentalOffers.ownerId, sellerId)),

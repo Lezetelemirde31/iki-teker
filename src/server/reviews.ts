@@ -1,14 +1,17 @@
 import "server-only";
 
-import { and, avg, count, eq, inArray, or } from "drizzle-orm";
+import { and, avg, count, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { locales, localeMeta, type Locale } from "@/i18n/config";
 import type { Review } from "@/types";
 
+import { canModerate } from "./authorization";
+import { recordAction } from "./audit";
 import { getCatalogItem } from "./data";
 import { notify } from "./notifications";
+import { currentUserId } from "./session";
 import { useDatabase } from "./source";
 
 /**
@@ -153,7 +156,9 @@ export async function refreshRating(userId: string): Promise<void> {
   const [totals] = await db
     .select({ average: avg(schema.reviews.rating), n: count() })
     .from(schema.reviews)
-    .where(eq(schema.reviews.targetId, userId));
+    // Hidden reviews are excluded, which is the whole point of hiding one: a
+    // rating a moderator has taken down must stop pulling the average with it.
+    .where(and(eq(schema.reviews.targetId, userId), eq(schema.reviews.hidden, false)));
 
   await db
     .update(schema.users)
@@ -194,4 +199,89 @@ export async function reviewableBookings(userId: string): Promise<string[]> {
 
   const done = new Set(written.map((row) => row.bookingId));
   return ids.filter((id) => !done.has(id));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Moderation                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Every review, for the panel.
+ *
+ * Hidden ones are included and marked, because the screen that can hide a
+ * review is the only one that can put it back — a moderation list that omits
+ * what it has already acted on offers no way to change its mind.
+ */
+export async function allReviews(limit = 200) {
+  if (!useDatabase) return [];
+
+  const rows = await db.query.reviews.findMany({
+    orderBy: desc(schema.reviews.createdAt),
+    limit,
+  });
+  if (rows.length === 0) return [];
+
+  // Two lookups in one, rather than four drizzle relations declared purely to
+  // tell 'author' and 'target' apart when both point at the same table.
+  const ids = [...new Set(rows.flatMap((row) => [row.authorId, row.targetId]))];
+  const people = await db
+    .select({ id: schema.users.id, name: schema.users.name })
+    .from(schema.users)
+    .where(inArray(schema.users.id, ids));
+  const nameOf = new Map(people.map((person) => [person.id, person.name]));
+
+  return rows.map((row) => ({
+    ...row,
+    authorName: nameOf.get(row.authorId) ?? row.authorId,
+    targetName: nameOf.get(row.targetId) ?? row.targetId,
+  }));
+}
+
+export type HideResult =
+  | { ok: true; hidden: boolean }
+  | { ok: false; reason: "notAllowed" | "notFound" };
+
+/**
+ * Takes a review down, or puts it back.
+ *
+ * Hidden rather than deleted. A rating that vanishes takes the average with it
+ * and leaves whoever wrote it no way to find out what happened; hiding keeps
+ * the row, so the decision is reversible and accountable, and the recomputed
+ * average simply skips it.
+ *
+ * Permission is checked here rather than in the route, so it cannot be bypassed
+ * by reaching this function from anywhere else.
+ */
+export async function setReviewHidden(
+  reviewId: string,
+  hidden: boolean,
+): Promise<HideResult> {
+  if (!useDatabase) return { ok: false, reason: "notFound" };
+  if (!(await canModerate())) return { ok: false, reason: "notAllowed" };
+
+  const row = await db.query.reviews.findFirst({ where: eq(schema.reviews.id, reviewId) });
+  if (!row) return { ok: false, reason: "notFound" };
+
+  await db.update(schema.reviews).set({ hidden }).where(eq(schema.reviews.id, reviewId));
+
+  // The profile carries the average, so it has to be recomputed now rather
+  // than whenever somebody next writes a review.
+  await refreshRating(row.targetId);
+
+  const target = await db.query.users.findFirst({
+    where: eq(schema.users.id, row.targetId),
+    columns: { name: true },
+  });
+
+  await recordAction({
+    actorId: await currentUserId(),
+    action: hidden ? "hideReview" : "restoreReview",
+    entityType: "review",
+    entityId: reviewId,
+    entityLabel: `${row.rating}★ — ${target?.name ?? row.targetId}`,
+    from: row.hidden ? "hidden" : "visible",
+    to: hidden ? "hidden" : "visible",
+  });
+
+  return { ok: true, hidden };
 }

@@ -907,6 +907,11 @@ export const adminActionsRelations = relations(adminActions, ({ one }) => ({
   actor: one(users, { fields: [adminActions.actorId], references: [users.id] }),
 }));
 
+// No relations for `reviews`. It points at `users` twice — author and target —
+// and drizzle needs a matching name on both sides of each to tell them apart.
+// Declaring four relations to save one lookup is not the trade: the panel reads
+// the names in a second query, the way the appointment screens already do.
+
 export const workshopsRelations = relations(workshops, ({ one, many }) => ({
   owner: one(users, { fields: [workshops.ownerId], references: [users.id] }),
   city: one(cities, { fields: [workshops.cityId], references: [cities.id] }),
