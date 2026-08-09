@@ -49,6 +49,15 @@ export function RegisterForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  /**
+   * Set when the code could not be delivered at all.
+   *
+   * Not a transient failure to retry into: it means this address cannot be
+   * reached from here, and telling somebody to try again shortly would have
+   * them doing it forever. The number they may already have typed is a way in
+   * that works, so the form offers it rather than ending there.
+   */
+  const [emailBlocked, setEmailBlocked] = useState(false);
 
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -107,6 +116,33 @@ export function RegisterForm({
         return;
       }
       if (data?.retryAfterSeconds) setCooldown(data.retryAfterSeconds);
+      // Nothing will be delivered to this address, so the number becomes the
+      // way through rather than a suggestion to wait.
+      if (data?.error === "undeliverable") setEmailBlocked(true);
+      setError(explain(data?.error));
+    } catch {
+      setError(t("auth.error.offline"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** The way in that needs no message delivered anywhere. */
+  async function registerWithPhone() {
+    if (!national || password.length < 8 || fullName.length < 3 || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { ok, data } = await send("/api/auth/register", {
+        phone,
+        name: fullName,
+        password,
+      });
+      if (ok) {
+        router.refresh();
+        setTimeout(() => router.replace(redirectTo), 900);
+        return;
+      }
       setError(explain(data?.error));
     } catch {
       setError(t("auth.error.offline"));
@@ -285,6 +321,29 @@ export function RegisterForm({
       </div>
 
       {alert}
+
+      {/* Only once the address has actually been refused. Offering both from
+          the start would ask somebody to choose between two things they have
+          no way to tell apart. */}
+      {emailBlocked && (
+        <div className="border-border space-y-2 rounded-xl border p-3">
+          <p className="text-xs leading-relaxed">{t("auth.usePhoneInstead")}</p>
+          <Button
+            size="lg"
+            block
+            variant="outline"
+            className="font-display uppercase"
+            disabled={busy || national.length !== 9 || password.length < 8}
+            onClick={registerWithPhone}
+          >
+            {busy && <Loader2 className="animate-spin" />}
+            {t("auth.registerWithPhone")}
+          </Button>
+          {national.length !== 9 && (
+            <p className="text-subtle-foreground text-[0.6875rem]">{t("auth.phoneNeeded")}</p>
+          )}
+        </div>
+      )}
 
       <Button
         size="lg"

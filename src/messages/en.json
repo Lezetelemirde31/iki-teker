@@ -479,7 +479,7 @@
       "notSignedIn": "Sign in first.",
       "noAccount": "That number is not registered.",
       "invalidEmail": "That email address is not valid.",
-      "undeliverable": "We cannot send a code right now. Try again shortly.",
+      "undeliverable": "A code cannot be delivered to that address.",
       "phoneTaken": "That number already belongs to another account.",
       "emailTaken": "That email is already registered. Sign in instead."
     },
@@ -509,7 +509,10 @@
     "lastName": "Surname",
     "identifierPlaceholder": "Email or phone number",
     "signInWithCode": "Forgotten your password? Email me a code",
-    "confirmEmail": "Confirm your email"
+    "confirmEmail": "Confirm your email",
+    "usePhoneInstead": "A code cannot be delivered to that address. You can continue with your phone number instead — the same password applies.",
+    "registerWithPhone": "Register with phone",
+    "phoneNeeded": "Enter your number to use this."
   },
   "profile": {
     "title": "Edit profile",

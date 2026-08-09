@@ -479,7 +479,7 @@
       "notSignedIn": "Əvvəlcə hesaba daxil olun.",
       "noAccount": "Bu nömrə qeydiyyatda deyil.",
       "invalidEmail": "Email ünvanı düzgün deyil.",
-      "undeliverable": "Hazırda kod göndərə bilmirik. Bir azdan yenidən cəhd edin.",
+      "undeliverable": "Bu ünvana kod göndərilə bilmir.",
       "phoneTaken": "Bu nömrə artıq başqa hesabda istifadə olunur.",
       "emailTaken": "Bu email artıq qeydiyyatdan keçib. Daxil olun."
     },
@@ -509,7 +509,10 @@
     "lastName": "Soyad",
     "identifierPlaceholder": "Email və ya nömrə",
     "signInWithCode": "Parolu unutmusan? Emailə kod göndər",
-    "confirmEmail": "Emaili təsdiqləyin"
+    "confirmEmail": "Emaili təsdiqləyin",
+    "usePhoneInstead": "Bu email ünvanına kod göndərilə bilmir. Nömrənizlə davam edə bilərsiniz — parolunuz eyni qalır.",
+    "registerWithPhone": "Nömrə ilə qeydiyyat",
+    "phoneNeeded": "Bunun üçün nömrənizi yazın."
   },
   "profile": {
     "title": "Profili redaktə et",
