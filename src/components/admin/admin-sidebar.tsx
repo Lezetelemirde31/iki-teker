@@ -83,7 +83,7 @@ export function AdminSidebar({
     { href: "/admin/rentals", label: "İcarə", icon: CalendarRange, needs: "viewPanel" },
     { href: "/admin/reviews", label: "Rəylər", icon: Star, needs: "moderateContent" },
     { href: "/admin/catalog", label: "Marka və model", icon: Tags, needs: "manageCatalog" },
-    { href: "/admin/activity", label: "Jurnal", icon: ScrollText, needs: "viewAudit" },
+    { href: "/admin/activity", label: "Jurnal", icon: ScrollText, needs: "viewAudit", ready: true },
   ];
 
   return (
