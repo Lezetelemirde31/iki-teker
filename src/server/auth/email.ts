@@ -52,7 +52,13 @@ function resendSender(apiKey: string, from: string): EmailSender {
         });
 
         if (response.ok) return { sent: true };
-        return { sent: false, reason: `resend ${response.status}` };
+
+        // The status alone is not enough to act on. A 403 can mean an
+        // unverified domain, a key scoped to a different one, or a sender
+        // address the account does not own — three different fixes. Resend
+        // says which in the body, so the body is what gets logged.
+        const detail = await response.text().catch(() => "");
+        return { sent: false, reason: `resend ${response.status}: ${detail.slice(0, 300)}` };
       } catch (error) {
         // A provider having a bad minute must not throw out of sign-in; the
         // caller turns a false into "could not send", which is the truth.
