@@ -80,8 +80,8 @@ export function AdminSidebar({
       badge: counts.vip,
       ready: true,
     },
-    { href: "/admin/listings", label: "Elanlar", icon: Bike, needs: "viewPanel" },
-    { href: "/admin/users", label: "İstifadəçilər", icon: Users, needs: "viewPanel" },
+    { href: "/admin/listings", label: "Elanlar", icon: Bike, needs: "viewPanel", ready: true },
+    { href: "/admin/users", label: "İstifadəçilər", icon: Users, needs: "viewPanel", ready: true },
     {
       href: "/admin/workshops",
       label: "Servislər",
