@@ -129,6 +129,7 @@ export async function createListingAs(
   sellerId: string,
   draft: ListingDraft,
   status: "active" | "moderation" = "active",
+  contact?: { name?: string; phone?: string },
 ): Promise<AdminListingResult> {
   if (!useDatabase) return { ok: false, reason: "unavailable" };
   if (!(await can("manageCatalog"))) return { ok: false, reason: "notAllowed" };
@@ -149,11 +150,14 @@ export async function createListingAs(
     };
   }
 
-  if (status === "active") {
-    await db
-      .update(schema.listings)
-      .set({ status: "active" })
-      .where(eq(schema.listings.id, created.listing.id));
+  // The status the panel may set, and the contact details it may override,
+  // in one write. Both are things a seller's own form cannot do.
+  const patch: Record<string, unknown> = {};
+  if (status === "active") patch.status = "active";
+  if (contact?.name?.trim()) patch.contactName = contact.name.trim().slice(0, 80);
+  if (contact?.phone?.trim()) patch.contactPhone = contact.phone.trim().slice(0, 32);
+  if (Object.keys(patch).length > 0) {
+    await db.update(schema.listings).set(patch).where(eq(schema.listings.id, created.listing.id));
   }
 
   const actorId = await currentUserId();
@@ -166,7 +170,9 @@ export async function createListingAs(
     from: "—",
     to: status,
     // Both names, always. This is the record of who actually typed it.
-    note: `${seller.name} adına yaradıldı`,
+    note: contact?.name
+      ? `${seller.name} hesabında, əlaqə: ${contact.name}`
+      : `${seller.name} adına yaradıldı`,
   });
 
   return { ok: true, id: created.listing.id };

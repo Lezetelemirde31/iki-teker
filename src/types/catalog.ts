@@ -35,6 +35,9 @@ type CatalogItemBase = {
   photos: Photo[];
   attributes: AttributeValues;
   sellerId: ID;
+  /** Shown instead of the owning account, when staff published for somebody else. */
+  contactName?: string;
+  contactPhone?: string;
   cityId: ID;
   districtId: ID;
   delivery: boolean;

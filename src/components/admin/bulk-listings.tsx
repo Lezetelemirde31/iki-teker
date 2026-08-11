@@ -77,10 +77,19 @@ export function BulkListings({
               // A row may name its own seller, which is what makes one paste
               // able to cover listings gathered from several people. The
               // picker above is the default for everything that does not.
-              const { sellerId: own, ...draft } = (row ?? {}) as Record<string, unknown>;
+              // Three keys are about the listing rather than in it: who owns
+              // it, and whose name and number a buyer should see.
+              const {
+                sellerId: own,
+                contactName,
+                contactPhone,
+                ...draft
+              } = (row ?? {}) as Record<string, unknown>;
               return {
                 sellerId: typeof own === "string" && own ? own : sellerId,
                 status,
+                contactName,
+                contactPhone,
                 draft,
               };
             }),

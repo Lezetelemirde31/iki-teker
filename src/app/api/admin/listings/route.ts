@@ -15,7 +15,14 @@ import type { ListingDraft } from "@/server/listings";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type Entry = { sellerId?: unknown; status?: unknown; draft?: unknown };
+type Entry = {
+  sellerId?: unknown;
+  status?: unknown;
+  draft?: unknown;
+  /** Whose name and number the buyer sees, when not the owning account. */
+  contactName?: unknown;
+  contactPhone?: unknown;
+};
 
 export async function POST(request: Request) {
   let payload: { items?: unknown } | Entry;
@@ -47,11 +54,10 @@ export async function POST(request: Request) {
     }
 
     const status = entry.status === "moderation" ? "moderation" : "active";
-    const result = await createListingAs(
-      entry.sellerId,
-      entry.draft as ListingDraft,
-      status,
-    );
+    const result = await createListingAs(entry.sellerId, entry.draft as ListingDraft, status, {
+      ...(typeof entry.contactName === "string" ? { name: entry.contactName } : {}),
+      ...(typeof entry.contactPhone === "string" ? { phone: entry.contactPhone } : {}),
+    });
 
     if (result.ok) created.push(result.id);
     else failed.push({ index, reason: result.reason, ...(result.field ? { field: result.field } : {}) });

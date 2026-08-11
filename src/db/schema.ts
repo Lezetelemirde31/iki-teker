@@ -315,6 +315,22 @@ export const listings = pgTable(
     localizedTitle: jsonb("localized_title").$type<Localized>(),
     compatibility: jsonb("compatibility").$type<unknown[]>(),
 
+    /**
+     * Who to contact, when that is not the account holding the listing.
+     *
+     * Staff publishing for a seller who telephoned, or seeding a catalogue
+     * before those sellers have accounts — the listing belongs to a platform
+     * account, but the person a buyer should reach is somebody else. Both are
+     * null for an ordinary listing, and the seller's own details are used.
+     *
+     * They do not change ownership. The account named by `sellerId` is still
+     * what moderation acts on, what the audit log points at, and what a
+     * complaint attaches to; these two only change whose name and number a
+     * buyer sees.
+     */
+    contactName: text("contact_name"),
+    contactPhone: text("contact_phone"),
+
     // Promotion
     vip: boolean("vip").notNull().default(false),
     vipUntil: date("vip_until"),

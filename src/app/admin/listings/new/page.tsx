@@ -55,6 +55,10 @@ export default async function AdminNewListingsPage() {
       customsCleared: true,
       attributes,
       locale: "az",
+      // Whose name and number the buyer sees. Leave both out and the owning
+      // account's own details are used.
+      contactName: "Elvin",
+      contactPhone: "+994 50 123 45 67",
     },
   ];
 
@@ -77,7 +81,7 @@ export default async function AdminNewListingsPage() {
         </p>
         <p>
           <span className="font-semibold">İstəyə bağlı:</span> negotiable, delivery,
-          customsCleared, photoKeys
+          customsCleared, photoKeys, sellerId, contactName, contactPhone
         </p>
         {required.length > 0 && (
           <p>
@@ -85,6 +89,11 @@ export default async function AdminNewListingsPage() {
             {required.map((row) => row.key).join(", ")}
           </p>
         )}
+        <p>
+          <span className="font-semibold">contactName / contactPhone:</span> elanın üstündə
+          görünəcək ad və nömrə. Satıcının hesabı olmasa da olar — elan platformanın hesabında
+          durur, alıcı isə bu adı və nömrəni görür.
+        </p>
         <p className="text-subtle-foreground">
           Marka və model bir-birinə uyğun olmalıdır, yoxsa sətir rədd olunur. Aşağıdakı nümunə
           həqiqi id-lərlə doldurulub — olduğu kimi yapışdırsan işləyir.

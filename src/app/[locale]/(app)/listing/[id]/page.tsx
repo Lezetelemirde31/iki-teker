@@ -177,7 +177,10 @@ export default async function ListingPage({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5 truncate text-sm font-bold">
-                        {seller.name}
+                        {/* The person to contact, which is not always the
+                            account that holds the listing — staff publish for
+                            sellers who have no account yet. */}
+                        {item.contactName ?? seller.name}
                         {seller.verifiedBadge && (
                           <BadgeCheck className="text-rental size-4 shrink-0" strokeWidth={2.4} />
                         )}
@@ -242,7 +245,7 @@ export default async function ListingPage({
       {seller && (
         <ContactActions
           listingId={item.id}
-          phone={seller.phone}
+          phone={item.contactPhone ?? seller.phone}
           contacts={item.stats.contacts}
           threadHref={`/chats?listing=${item.id}`}
         />
