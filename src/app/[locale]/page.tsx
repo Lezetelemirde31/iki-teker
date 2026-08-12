@@ -1,23 +1,25 @@
 import { notFound, redirect } from "next/navigation";
 
-import { SplashScreen } from "@/components/screens/splash-screen";
 import { isLocale } from "@/i18n/config";
-import { getMessages } from "@/i18n/dictionaries";
 
-export default async function SplashPage({
+/**
+ * The entry point goes straight to the home screen.
+ *
+ * It used to hold a splash for two seconds and then a four-panel intro with a
+ * button at the bottom, which is a reasonable thing to show somebody who has
+ * just installed an application and a poor thing to show somebody who typed the
+ * address. Anyone arriving at the site wants the listings, and the intro sat
+ * between them and the listings every single visit.
+ *
+ * The intro itself is kept at `/[locale]/onboarding` — a first run in the
+ * native shell is the place it belongs, and it is one link away when wanted.
+ */
+export default async function LocaleEntryPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ skip?: string }>;
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-
-  // Lets a demo jump straight past the intro when linking someone to the app.
-  const { skip } = await searchParams;
-  if (skip !== undefined) redirect(`/${locale}/home`);
-
-  const messages = await getMessages(locale);
-  return <SplashScreen locale={locale} messages={messages} />;
+  redirect(`/${locale}/home`);
 }
