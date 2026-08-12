@@ -1,4 +1,6 @@
+import { Store } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -117,6 +119,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 <AdminDrawer footer={whoami}>{nav}</AdminDrawer>
                 <span className="font-display text-sm font-extrabold md:hidden">Idarəetmə</span>
                 <div className="flex-1" />
+                {/* Back to the marketplace itself. Half of what is decided in
+                    here is decided by looking at the listing as a buyer sees
+                    it, and the panel is a separate root — so without this the
+                    only way across is to type the address. */}
+                <Link
+                  href="/az/home"
+                  aria-label="Sayta keç"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors"
+                >
+                  <Store className="size-4" strokeWidth={2} />
+                  <span className="hidden sm:inline">Sayta keç</span>
+                </Link>
                 <ThemeToggle />
               </header>
 
