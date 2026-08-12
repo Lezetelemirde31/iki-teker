@@ -353,7 +353,13 @@
     "coverPhoto": "Əsas",
     "photosHelp": "Ən çox 8 şəkil. Birincisi axtarışda görünür.",
     "photosCount": "{max} şəkildən {n}. Birincisi əsas şəkildir.",
-    "photoFailed": "Şəkil yüklənmədi. Yenidən əlavə et."
+    "photoFailed": "Şəkil yüklənmədi. Yenidən əlavə et.",
+    "descriptionOptional": "istəyə bağlı",
+    "contactPhone": "Əlaqə nömrəsi",
+    "contactPhonePlaceholder": "+994 50 123 45 67",
+    "contactPhoneHint": "istəyə bağlı",
+    "contactPhoneHelp": "Boş qalsa, hesabındakı nömrə göstərilir.",
+    "contactPhoneMissing": "Hesabında nömrə yoxdur. Yazmasan, alıcılar yalnız mesaj yaza biləcək."
   },
   "owner": {
     "stats": "{views} baxış · {contacts} əlaqə",

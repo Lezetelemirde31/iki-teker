@@ -33,10 +33,13 @@ export function PostPartScreen({
   category,
   locale,
   messages,
+  accountPhone,
 }: {
   category: "parts" | "gear";
   locale: Locale;
   messages: Messages;
+  /** The number on the account, when there is one. */
+  accountPhone?: string;
 }) {
   const router = useRouter();
   const t = createTranslator(messages);
@@ -53,6 +56,7 @@ export function PostPartScreen({
   const [cityId, setCityId] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [description, setDescription] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [delivery, setDelivery] = useState(true);
   const [attributes, setAttributes] = useState<AttributeValues>({});
   const [fitsMakeIds, setFitsMakeIds] = useState<string[]>([]);
@@ -77,7 +81,6 @@ export function PostPartScreen({
     Number(stock) >= 1 &&
     cityId &&
     districtId &&
-    description.trim().length >= 20 &&
     required.every((definition) => {
       const value = attributes[definition.key];
       return value !== undefined && value !== "";
@@ -112,6 +115,7 @@ export function PostPartScreen({
           cityId,
           districtId,
           description,
+          contactPhone,
           delivery,
           attributes,
           fitsMakeIds: category === "parts" ? fitsMakeIds : [],
@@ -343,7 +347,7 @@ export function PostPartScreen({
             />
           </Field>
 
-          <Field label={t("post.description")} hint={`${description.trim().length}/20`}>
+          <Field label={t("post.description")} hint={t("post.descriptionOptional")}>
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -351,6 +355,20 @@ export function PostPartScreen({
               placeholder={t("post.descriptionPlaceholder")}
               className="bg-card border-border focus:border-primary w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none transition-colors"
             />
+          </Field>
+
+          <Field label={t("post.contactPhone")} hint={t("post.contactPhoneHint")}>
+            <input
+              type="tel"
+              inputMode="tel"
+              value={contactPhone}
+              onChange={(event) => setContactPhone(event.target.value)}
+              placeholder={accountPhone ?? t("post.contactPhonePlaceholder")}
+              className="bg-card border-border focus:border-primary w-full rounded-xl border px-3.5 py-3 text-sm outline-none transition-colors"
+            />
+            <p className="text-subtle-foreground mt-1.5 text-[0.6875rem] leading-relaxed">
+              {accountPhone ? t("post.contactPhoneHelp") : t("post.contactPhoneMissing")}
+            </p>
           </Field>
 
           <Toggle checked={delivery} onChange={setDelivery} label={t("listing.delivery")} />

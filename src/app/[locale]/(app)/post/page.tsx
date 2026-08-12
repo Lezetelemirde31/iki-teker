@@ -9,6 +9,7 @@ import { getMessages } from "@/i18n/dictionaries";
 import { createTranslator } from "@/i18n/translate";
 import { categorySchemas } from "@/mocks/taxonomy";
 import { requireUser } from "@/server/auth/guard";
+import { getUser } from "@/server/data";
 import type { VehicleCategorySlug } from "@/types";
 
 export default async function PostPage({
@@ -30,7 +31,11 @@ export default async function PostPage({
 
   // Posting attaches a listing to a person, so it needs one. They come back
   // here afterwards rather than landing on a generic account page.
-  await requireUser(locale, `/${locale}/post?category=${category}`);
+  const { userId } = await requireUser(locale, `/${locale}/post?category=${category}`);
+  // Signing up by email leaves an account with no telephone number. The form
+  // asks for one in that case, because a listing nobody can ring is a listing
+  // that only gets messages.
+  const me = await getUser(userId);
 
   const messages = await getMessages(locale);
   const t = createTranslator(messages);
@@ -49,12 +54,14 @@ export default async function PostPage({
           category={category as "parts" | "gear"}
           locale={locale}
           messages={messages}
+          accountPhone={me?.phone}
         />
       ) : (
         <PostListingScreen
           category={category as VehicleCategorySlug}
           locale={locale}
           messages={messages}
+          accountPhone={me?.phone}
         />
       )}
     </PageTransition>

@@ -353,7 +353,13 @@
     "coverPhoto": "Cover",
     "photosHelp": "Up to 8 photos. The first one is what buyers see in search.",
     "photosCount": "{n} of {max} photos. The first one is the cover.",
-    "photoFailed": "A photo did not upload. Try adding it again."
+    "photoFailed": "A photo did not upload. Try adding it again.",
+    "descriptionOptional": "optional",
+    "contactPhone": "Contact number",
+    "contactPhonePlaceholder": "+994 50 123 45 67",
+    "contactPhoneHint": "optional",
+    "contactPhoneHelp": "Left blank, the number on your account is shown.",
+    "contactPhoneMissing": "Your account has no number. Without one, buyers can only message you."
   },
   "owner": {
     "stats": "{views} views · {contacts} contacts",

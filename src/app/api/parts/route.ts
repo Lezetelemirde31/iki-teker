@@ -54,6 +54,10 @@ export async function POST(request: Request) {
       fitsYearFrom: numberOrUndefined(body.fitsYearFrom),
       fitsYearTo: numberOrUndefined(body.fitsYearTo),
       locale: isLocale(body.locale) ? body.locale : "az",
+      // Optional, and only a number to ring — never written to the account.
+      ...(typeof body.contactPhone === "string" && body.contactPhone.trim()
+        ? { contactPhone: body.contactPhone }
+        : {}),
       // Checked server-side against this seller and against storage, so an
       // arbitrary list here buys nothing.
       photoKeys: Array.isArray(body.photoKeys)

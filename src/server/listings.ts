@@ -43,6 +43,14 @@ export type ListingDraft = {
   photoKeys?: string[];
   /** Language the description was written in, so it is stored as that. */
   locale: Locale;
+  /**
+   * A number for buyers to ring, when it is not the one on the account.
+   *
+   * Signing up by email leaves an account with no number at all, and a listing
+   * nobody can telephone loses most of its calls. This is per listing and is
+   * not a credential — it never touches sign-in.
+   */
+  contactPhone?: string;
 };
 
 export type ListingFailure =
@@ -54,14 +62,12 @@ export type ListingFailure =
   | "invalidPrice"
   | "unknownCity"
   | "districtMismatch"
-  | "descriptionTooShort"
   | "missingAttribute";
 
 export type ListingResult =
   | { ok: true; listing: Listing }
   | { ok: false; reason: ListingFailure; field?: string };
 
-const MIN_DESCRIPTION = 20;
 const MAX_DESCRIPTION = 4000;
 const MAX_PRICE = 1_000_000;
 const EARLIEST_YEAR = 1950;
@@ -117,10 +123,11 @@ export async function createListing(
   }
 
   /* ---- description ------------------------------------------------------ */
-  const description = draft.description.trim();
-  if (description.length < MIN_DESCRIPTION) {
-    return { ok: false, reason: "descriptionTooShort", field: "description" };
-  }
+  // Optional. A listing with photos, a model, a year and a price already says
+  // most of what a buyer needs, and refusing to publish over a blank text box
+  // loses the listing rather than improving it. Trimmed to a sane maximum so
+  // one seller cannot paste an essay into every card.
+  const description = draft.description.trim().slice(0, MAX_DESCRIPTION);
 
   /* ---- category attributes ---------------------------------------------- */
   const attributes: AttributeValues = {};
@@ -137,6 +144,7 @@ export async function createListing(
   }
 
   /* ---- derived ---------------------------------------------------------- */
+  const contactPhone = draft.contactPhone?.trim().slice(0, 32) || undefined;
   const id = `l-${crypto.randomUUID().slice(0, 8)}`;
   const title = `${make.name} ${model.name}, ${year}`;
   const tone = tones[Math.abs(hash(id)) % tones.length] ?? "slate";
@@ -169,6 +177,7 @@ export async function createListing(
     photos: await photosFor(id, tone, title, sellerId, draft.photoKeys),
     attributes,
     sellerId,
+    ...(contactPhone ? { contactPhone } : {}),
     cityId: city.id,
     districtId: district.id,
     // Queued for review, not published. There is now a screen that empties the
@@ -195,6 +204,7 @@ export async function createListing(
     attributes: listing.attributes,
     photos: listing.photos,
     sellerId: listing.sellerId,
+    ...(contactPhone ? { contactPhone } : {}),
     cityId: listing.cityId,
     districtId: listing.districtId,
     delivery: listing.delivery,

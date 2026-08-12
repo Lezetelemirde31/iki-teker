@@ -103,7 +103,7 @@ export default async function AdminNewListingsPage() {
       cityId: city?.id ?? "",
       districtId: district?.id ?? "",
       description:
-        "Elanın təsviri. Ən azı 20 simvol olmalıdır — alıcının bilməli olduğu şeyləri yaz.",
+        "İstəyə bağlı. Alıcının bilməli olduğu şeyləri yaz.",
       delivery: false,
       customsCleared: true,
       attributes,
@@ -134,11 +134,11 @@ export default async function AdminNewListingsPage() {
               </p>
               <p>
                 <span className="font-semibold">Mütləq:</span> category, makeId, modelId, year,
-                price, condition, cityId, districtId, description (20+ simvol), attributes, locale
+                price, condition, cityId, districtId, attributes, locale
               </p>
               <p>
                 <span className="font-semibold">İstəyə bağlı:</span> negotiable, delivery,
-                customsCleared, photoKeys, sellerId, contactName, contactPhone
+                customsCleared, photoKeys, sellerId, contactName, contactPhone, description
               </p>
               {required.length > 0 && (
                 <p>

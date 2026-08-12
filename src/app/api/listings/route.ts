@@ -46,6 +46,11 @@ export async function POST(request: Request) {
       attributes:
         body.attributes && typeof body.attributes === "object" ? body.attributes : {},
       locale: isLocale(body.locale) ? body.locale : "az",
+      // Optional, and only a number to ring — it is not written to the account
+      // and gives no one a way to sign in.
+      ...(typeof body.contactPhone === "string" && body.contactPhone.trim()
+        ? { contactPhone: body.contactPhone }
+        : {}),
       // Checked server-side against this seller and against storage, so an
       // arbitrary list here buys nothing.
       photoKeys: Array.isArray(body.photoKeys)

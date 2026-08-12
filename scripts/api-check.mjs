@@ -291,8 +291,9 @@ heading("listing validation");
   line("negative price", r.status, 422, r.json?.error);
   r = await postListing({ ...valid, districtId: "d-nizami-ganja" });
   line("district in the wrong city", r.status, 422, r.json?.error);
-  r = await postListing({ ...valid, description: "Satiram" });
-  line("description too short", r.status, 422, r.json?.error);
+  // The description is optional: a short one, or none at all, still publishes.
+  r = await postListing({ ...valid, description: "" });
+  line("empty description publishes", r.status, 201, r.json?.error);
   r = await postListing({ ...valid, attributes: { colour: "black" } });
   line("required attribute missing", r.status, 422, r.json?.error);
   r = await postListing({ ...valid, cityId: "" });

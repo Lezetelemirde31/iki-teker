@@ -61,7 +61,6 @@ const REASONS: Record<string, string> = {
   invalidPrice: "Qiymət düzgün deyil",
   unknownCity: "Şəhər tanınmadı",
   districtMismatch: "Rayon bu şəhərə aid deyil",
-  descriptionTooShort: "Təsvir ən azı 20 simvol olmalıdır",
   missingAttribute: "Mütləq xüsusiyyət boşdur",
   unknownSeller: "Hesab tapılmadı",
   sellerBlocked: "Hesab bloklanıb",
@@ -565,12 +564,12 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
       {/* ---- description and publishing ----------------------------------- */}
       <section className="bg-card border-border space-y-3 rounded-xl border p-4">
         <label className="block space-y-1.5">
-          <Label hint={`${description.trim().length} / ən azı 20`}>Təsvir</Label>
+          <Label hint="istəyə bağlı">Təsvir</Label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            placeholder="Alıcının bilməli olduğu şeylər: vəziyyəti, servisi, sənədləri."
+            placeholder="İstəsən yaz: vəziyyəti, servisi, sənədləri."
             className={FIELD}
           />
         </label>

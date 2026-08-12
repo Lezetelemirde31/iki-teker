@@ -56,6 +56,8 @@ export type PartDraft = {
   locale: Locale;
   /** Objects already uploaded by this seller, in the order they should show. */
   photoKeys?: string[];
+  /** A number for buyers to ring, when it is not the one on the account. */
+  contactPhone?: string;
 };
 
 export type PartFailure =
@@ -67,7 +69,6 @@ export type PartFailure =
   | "invalidStock"
   | "unknownCity"
   | "districtMismatch"
-  | "descriptionTooShort"
   | "missingAttribute"
   | "unknownMake"
   | "invalidYearRange";
@@ -92,7 +93,6 @@ const gearTypes: GearType[] = ["helmet", "jacket", "gloves", "boots", "protectio
 
 const MIN_TITLE = 6;
 const MIN_BRAND = 2;
-const MIN_DESCRIPTION = 20;
 const MAX_DESCRIPTION = 4000;
 const MAX_PRICE = 100_000;
 const MAX_STOCK = 9999;
@@ -122,10 +122,10 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
   const title = draft.title.trim();
   if (title.length < MIN_TITLE) return { ok: false, reason: "titleTooShort", field: "title" };
 
-  const description = draft.description.trim();
-  if (description.length < MIN_DESCRIPTION) {
-    return { ok: false, reason: "descriptionTooShort", field: "description" };
-  }
+  // Optional, as on a vehicle listing: the brand, the title and the fitment
+  // already identify the part.
+  const description = draft.description.trim().slice(0, MAX_DESCRIPTION);
+  const contactPhone = draft.contactPhone?.trim().slice(0, 32) || undefined;
 
   /* ---- numbers ---------------------------------------------------------- */
   const price = Math.trunc(draft.price);
@@ -203,6 +203,7 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     photos: await photosFor(id, tone, title, sellerId, draft.photoKeys),
     attributes,
     sellerId,
+    ...(contactPhone ? { contactPhone } : {}),
     cityId: city.id,
     districtId: district.id,
     // Reviewed before it reaches buyers, same as a vehicle.
@@ -233,6 +234,7 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     attributes: part.attributes,
     photos: part.photos,
     sellerId: part.sellerId,
+    ...(contactPhone ? { contactPhone } : {}),
     cityId: part.cityId,
     districtId: part.districtId,
     delivery: part.delivery,
