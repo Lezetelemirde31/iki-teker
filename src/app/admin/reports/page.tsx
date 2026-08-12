@@ -22,7 +22,9 @@ export default async function AdminReportsPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl">
+      {/* Same as the moderation queue: the screen expects the app's
+          fixed-height shell, and here the page is what scrolls. */}
+      <div className="max-w-2xl [&>main]:overflow-visible [&>main]:overscroll-auto">
         <ComplaintsScreen queue={queue} locale="az" messages={messages} />
       </div>
     </div>

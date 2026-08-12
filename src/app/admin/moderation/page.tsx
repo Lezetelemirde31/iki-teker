@@ -31,7 +31,11 @@ export default async function AdminModerationPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl">
+      {/* The screen was written for the app's shell, where it is a scrolling
+          pane inside a fixed-height frame. The panel has no such frame: the
+          page itself scrolls, and leaving the pane its own scrollbar makes two
+          nested scrolling areas that fight each other under a thumb. */}
+      <div className="max-w-2xl [&>main]:overflow-visible [&>main]:overscroll-auto">
         <ModerationScreen queue={queue} locale="az" messages={messages} />
       </div>
     </div>

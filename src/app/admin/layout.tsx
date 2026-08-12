@@ -106,7 +106,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </aside>
 
             <div className="flex min-w-0 flex-1 flex-col">
-              <header className="border-border bg-card/80 sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b px-4 backdrop-blur md:px-6">
+              {/* Opaque, not translucent. The page scrolls under this bar, and
+                  at 80% the heading of whatever section you are in passes
+                  visibly through the word above it. A blurred bar is a nice
+                  effect on a screen you scroll past; here it just makes two
+                  pieces of text sit on top of each other. */}
+              <header className="border-border bg-card sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b px-4 md:px-6">
                 {/* On a narrow screen the sidebar is gone, so this is both the
                     way between sections and the label saying where you are. */}
                 <AdminDrawer footer={whoami}>{nav}</AdminDrawer>
