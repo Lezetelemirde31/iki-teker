@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AdminDrawer } from "@/components/admin/admin-drawer";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -75,6 +76,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     superadmin: "Baş admin",
   };
 
+  const nav = <AdminSidebar capabilities={capabilities} counts={{ moderation, reports, workshops, vip }} />;
+  const whoami = (
+    <>
+      <p className="truncate text-sm font-semibold">{me?.name ?? principal.id}</p>
+      <p className="text-subtle-foreground text-[0.6875rem]">
+        {roleLabel[principal.role] ?? principal.role}
+      </p>
+    </>
+  );
+
   return (
     <html lang="az" className={fontVariables} suppressHydrationWarning>
       <body>
@@ -89,25 +100,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 <span className="font-display text-sm font-extrabold">Idarəetmə</span>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
-                <AdminSidebar
-                  capabilities={capabilities}
-                  counts={{ moderation, reports, workshops, vip }}
-                />
-              </div>
+              <div className="flex-1 overflow-y-auto">{nav}</div>
 
-              <div className="border-border border-t p-3">
-                <p className="truncate text-sm font-semibold">{me?.name ?? principal.id}</p>
-                <p className="text-subtle-foreground text-[0.6875rem]">
-                  {roleLabel[principal.role] ?? principal.role}
-                </p>
-              </div>
+              <div className="border-border border-t p-3">{whoami}</div>
             </aside>
 
             <div className="flex min-w-0 flex-1 flex-col">
               <header className="border-border bg-card/80 sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b px-4 backdrop-blur md:px-6">
-                {/* On a narrow screen the sidebar is gone, so the panel still
-                    needs to say what it is. */}
+                {/* On a narrow screen the sidebar is gone, so this is both the
+                    way between sections and the label saying where you are. */}
+                <AdminDrawer footer={whoami}>{nav}</AdminDrawer>
                 <span className="font-display text-sm font-extrabold md:hidden">Idarəetmə</span>
                 <div className="flex-1" />
                 <ThemeToggle />
