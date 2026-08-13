@@ -87,7 +87,7 @@ export default async function ListingPage({
           title={<span className="sr-only">{item.title}</span>}
         />
 
-        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+        <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
           <ListingGallery
             photos={item.photos}
             shape={item.category}

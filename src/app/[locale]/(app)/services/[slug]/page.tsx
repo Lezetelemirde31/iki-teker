@@ -46,7 +46,7 @@ export default async function WorkshopPage({
     <PageTransition>
       <AppHeader back title={workshop.name} />
 
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-6 px-4 py-4">
           <section className="flex items-start gap-3">
             <span className="bg-muted text-foreground grid size-14 shrink-0 place-items-center rounded-2xl">

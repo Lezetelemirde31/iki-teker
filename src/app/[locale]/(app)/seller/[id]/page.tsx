@@ -49,7 +49,7 @@ export default async function SellerPage({
     <PageTransition>
       <AppHeader back title={t("seller.title")} />
 
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-6 px-4 py-4">
           <section>
             <div className="flex items-center gap-3">

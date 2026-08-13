@@ -48,7 +48,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="glass border-border safe-bottom z-40 shrink-0 border-t">
+      <nav className="app-only glass border-border safe-bottom z-40 shrink-0 border-t">
         <div className="grid grid-cols-5 px-1 pt-1.5 pb-1.5">
           <Tab {...first} active={isActive(first.href)} locale={locale} label={t(first.labelKey)} />
           <Tab {...second} active={isActive(second.href)} locale={locale} label={t(second.labelKey)} />

@@ -47,7 +47,7 @@ export default async function SearchPage({
         resultCount={results.total}
       />
 
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         {results.items.length === 0 ? (
           <EmptyState
             title={t("search.emptyTitle")}
@@ -59,7 +59,11 @@ export default async function SearchPage({
             }
           />
         ) : (
-          <div className="space-y-2 px-4 py-3">
+          // One result per line is right on a phone and wrong on a monitor,
+          // where it makes each card a metre of whitespace with a photo at the
+          // end. The rows themselves are unchanged; only how many sit beside
+          // each other is.
+          <div className="space-y-2 px-4 py-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:grid-cols-3">
             {results.items.map((item) => (
               <ListingRow
                 key={item.id}

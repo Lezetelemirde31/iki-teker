@@ -291,9 +291,12 @@
 
 /* ============================================================================
    Device shell
-   Iki Tekerli is a mobile product. On a phone the app is full-bleed; on anything
-   wider we present the same UI inside a centred device frame rather than
-   inventing a desktop layout that will never ship.
+   One set of pages, two presentations. Below md the app is full-bleed and its
+   screen is a fixed-height pane that scrolls internally — what ships to a
+   phone. At md and above the same pages become a website: the frame is gone,
+   the document scrolls, and the site header and footer around it do the
+   navigating. The installed app keeps the phone presentation whatever the
+   window is, because a standalone window is the app, not the site.
    ========================================================================== */
 
 .device-shell {
@@ -310,74 +313,80 @@
   background: var(--background);
 }
 
-/* Anything wider than a large phone gets the framed presentation. */
-@media (min-width: 33rem) {
+/* Chrome a real phone's OS would draw. It only ever belonged to the demo
+   frame, which no longer exists. */
+.device-island,
+.device-status,
+.device-caption {
+  display: none;
+}
+
+@media (min-width: 48rem) {
   .device-shell {
-    display: grid;
-    grid-template-rows: 1fr auto;
-    place-items: center;
-    gap: 1.25rem;
-    padding: 1.5rem 1.5rem 1.75rem;
-    background:
-      radial-gradient(90rem 60rem at 50% -20%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%),
-      radial-gradient(50rem 40rem at 12% 110%, color-mix(in oklab, var(--rental) 10%, transparent), transparent 65%),
-      linear-gradient(180deg, color-mix(in oklab, var(--background) 92%, #000 8%), var(--background));
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
   }
 
   .device-frame {
-    position: relative;
-    width: var(--frame-width);
-    height: min(58rem, calc(100dvh - 6rem));
-    border-radius: var(--frame-radius);
-    padding: 0.625rem;
-    background: linear-gradient(160deg, #3a3936, #121210 42%, #26241f);
-    box-shadow: var(--shadow-frame);
+    flex: 1;
   }
 
-  .device-frame::after {
-    /* Glass edge highlight */
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(160deg, rgb(255 255 255 / 0.28), transparent 38%, rgb(255 255 255 / 0.12));
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
+  /* The page scrolls, not a pane inside it. Screens written for the app say
+     `flex-1 overflow-y-auto` about their content; with the height released
+     those become ordinary blocks. */
   .device-screen {
-    height: 100%;
-    border-radius: calc(var(--frame-radius) - 0.625rem);
-  }
-
-  /* Dynamic-island style cutout, framed presentation only. */
-  .device-island {
-    position: absolute;
-    top: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 7rem;
-    height: 2rem;
-    border-radius: 999px;
-    background: #080807;
-    z-index: 60;
-    pointer-events: none;
-  }
-
-  .device-caption {
-    display: flex;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
   }
 }
 
-/* On a real phone: no frame, no fake chrome, no caption. */
-@media (max-width: 32.999rem) {
-  .device-island,
-  .device-status,
-  .device-caption {
+/* Which chrome belongs to which presentation.
+
+   `app-only` is the tab bar and the screens' own headers; `web-only` is the
+   site header and footer. Two classes rather than Tailwind's `md:hidden` on
+   each, because the rule is not only about width: an installed application is
+   the app at any window size, and that exception has to be stated once rather
+   than remembered at every call site. */
+.web-only {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .app-only {
+    display: none;
+  }
+
+  .web-only {
+    display: revert;
+  }
+
+  /* The screens fill a phone edge to edge, which on a monitor is a line of
+     text a metre wide. This is put on a screen's own content region rather
+     than on the shell, so nothing about the app layout has to know. */
+  .web-page {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+/* The installed application, at any window size: the app presentation, never
+   the site's. Somebody who installed it asked for the app. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .device-screen {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-only {
+    display: revert;
+  }
+
+  .web-only {
     display: none;
   }
 }

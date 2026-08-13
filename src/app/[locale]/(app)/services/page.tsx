@@ -26,7 +26,7 @@ export default async function ServicesPage({ params }: { params: Promise<{ local
     <PageTransition>
       <AppHeader back title={t("services.title")} />
 
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-3 px-4 py-4">
           <p className="text-muted-foreground text-xs">{t("services.subtitle")}</p>
 

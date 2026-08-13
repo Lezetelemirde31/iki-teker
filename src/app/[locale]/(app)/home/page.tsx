@@ -33,7 +33,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <PageTransition>
-      <header className="glass z-40 shrink-0">
+      <header className="app-only glass z-40 shrink-0">
         <div className="flex items-center justify-between gap-2 px-4 pt-2.5 pb-3">
           <Logo />
           <div className="flex shrink-0 items-center gap-1.5">
@@ -55,7 +55,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <HazardDivider />
       </header>
 
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain pb-6">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain pb-6">
         {/* Search entry — tapping opens the search screen, as on a native app. */}
         <div className="px-4 pt-4">
           <Link
@@ -68,7 +68,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
 
         {/* Seven vehicle sections plus a dedicated rental entry point. */}
-        <nav className="mt-4 grid grid-cols-4 gap-2 px-4">
+        <nav className="mt-4 grid grid-cols-4 gap-2 px-4 md:mt-6 md:grid-cols-8 md:gap-3 md:px-0">
           {categories.map((category) => (
             <Link
               key={category.slug}

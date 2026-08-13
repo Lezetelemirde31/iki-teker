@@ -21,7 +21,7 @@ export default async function FavoritesPage({
   return (
     <PageTransition>
       <AppHeader back title={t("favorites.title")} />
-      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+      <main className="web-page no-scrollbar flex-1 overflow-y-auto overscroll-contain">
         <FavoritesScreen locale={locale} messages={messages} />
       </main>
     </PageTransition>

@@ -1,23 +1,31 @@
 import type { ReactNode } from "react";
 
-import { getMessages } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
-import { createTranslator } from "@/i18n/translate";
 
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 import { DeviceStatusBar } from "./device-status-bar";
+import { WebFooter } from "./web-footer";
+import { WebHeader } from "./web-header";
 
 /**
  * Presentation shell.
  *
- * Iki Tekerli is designed as a native mobile application, so there is deliberately
- * no desktop layout. Below ~528px the app is full-bleed — exactly what ships to
- * a phone. Above it, the identical UI is centred inside a device frame so the
- * product can be demoed on a laptop without pretending to be a desktop website.
+ * One set of pages, two presentations, decided by the width of the screen and
+ * nothing else.
  *
- * The frame is chrome only: it renders a status bar and island that a real
- * phone's OS would draw, and nothing inside `children` is aware of it.
+ * Below `md` this is the application, unchanged and full-bleed: its own glass
+ * header, its own tab bar, its own scrolling pane inside a fixed-height screen.
+ * That is what ships to a phone and what the installed app shows, so the
+ * product on the store is untouched by anything here.
+ *
+ * At `md` and above it is a website: a header with the sections and a real
+ * search field, the page scrolling as a document, a footer. It used to be the
+ * same phone UI centred inside a drawn device frame, which was honest while
+ * there was nothing to show a desktop visitor and became wrong the moment the
+ * address was something people typed.
+ *
+ * The classes doing the switching live in `globals.css` under "Device shell".
  */
 export async function DeviceFrame({
   locale,
@@ -26,12 +34,12 @@ export async function DeviceFrame({
   locale: Locale;
   children: ReactNode;
 }) {
-  const t = createTranslator(await getMessages(locale));
-
   return (
     <div className="device-shell">
+      <WebHeader locale={locale} />
+
       <div className="device-frame">
-        <div className="device-island" aria-hidden />
+        <div className="device-island md:hidden" aria-hidden />
         <div className="device-screen">
           <DeviceStatusBar />
           {children}
@@ -41,12 +49,7 @@ export async function DeviceFrame({
         </div>
       </div>
 
-      <p className="device-caption text-subtle-foreground hidden items-center gap-2 text-xs">
-        <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase">
-          {t("preview.badge")}
-        </span>
-        {t("preview.hint")}
-      </p>
+      <WebFooter locale={locale} />
     </div>
   );
 }
