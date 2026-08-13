@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { isLocale, locales, localeMeta, type Locale } from "@/i18n/config";
 import { getMessages } from "@/i18n/dictionaries";
 import { I18nProvider } from "@/i18n/provider";
-import { fontVariablesFor } from "@/lib/fonts";
+import { fontVariables } from "@/lib/fonts";
 import { siteUrl } from "@/lib/site";
 
 export function generateStaticParams() {
@@ -93,7 +93,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={localeMeta[typedLocale].htmlLang}
-      className={fontVariablesFor(typedLocale)}
+      className={fontVariables}
       suppressHydrationWarning
     >
       <body>
