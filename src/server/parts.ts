@@ -44,8 +44,10 @@ export type PartDraft = {
   price: number;
   negotiable: boolean;
   condition: string;
-  cityId: string;
-  districtId: string;
+  /** Optional, as on a vehicle listing. */
+  cityId?: string;
+  /** Optional, as on a vehicle listing. */
+  districtId?: string;
   description: string;
   delivery: boolean;
   attributes: AttributeValues;
@@ -139,10 +141,10 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
   }
 
   /* ---- location --------------------------------------------------------- */
-  const city = cityById.get(draft.cityId);
-  if (!city) return { ok: false, reason: "unknownCity", field: "cityId" };
-  const district = districtById.get(draft.districtId);
-  if (!district || district.cityId !== city.id) {
+  const city = draft.cityId ? cityById.get(draft.cityId) : undefined;
+  if (draft.cityId && !city) return { ok: false, reason: "unknownCity", field: "cityId" };
+  const district = draft.districtId ? districtById.get(draft.districtId) : undefined;
+  if (draft.districtId && (!district || (city && district.cityId !== city.id))) {
     return { ok: false, reason: "districtMismatch", field: "districtId" };
   }
 
@@ -204,8 +206,8 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     attributes,
     sellerId,
     ...(contactPhone ? { contactPhone } : {}),
-    cityId: city.id,
-    districtId: district.id,
+    ...(city ? { cityId: city.id } : {}),
+    ...(district ? { districtId: district.id } : {}),
     // Reviewed before it reaches buyers, same as a vehicle.
     status: "moderation",
     promotion: { vip: false },
@@ -235,8 +237,8 @@ export async function createPart(draft: PartDraft, sellerId: string): Promise<Pa
     photos: part.photos,
     sellerId: part.sellerId,
     ...(contactPhone ? { contactPhone } : {}),
-    cityId: part.cityId,
-    districtId: part.districtId,
+    cityId: part.cityId ?? null,
+    districtId: part.districtId ?? null,
     delivery: part.delivery,
     status: part.status,
     vip: false,

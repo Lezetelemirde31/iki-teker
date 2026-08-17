@@ -35,8 +35,10 @@ const workshopIds = new Set(workshops.map((w) => w.id));
 
 for (const l of listings) {
   if (!userIds.has(l.sellerId)) warn(`listing ${l.id}: unknown seller ${l.sellerId}`);
-  if (!cityIds.has(l.cityId)) warn(`listing ${l.id}: unknown city ${l.cityId}`);
-  if (!districtIds.has(l.districtId)) warn(`listing ${l.id}: unknown district ${l.districtId}`);
+  if (l.cityId && !cityIds.has(l.cityId)) warn(`listing ${l.id}: unknown city ${l.cityId}`);
+  // A district is optional now; naming one that does not exist is still wrong.
+  if (l.districtId && !districtIds.has(l.districtId))
+    warn(`listing ${l.id}: unknown district ${l.districtId}`);
   if (!makeIds.has(l.makeId)) warn(`listing ${l.id}: unknown make ${l.makeId}`);
   if (!modelIds.has(l.modelId)) warn(`listing ${l.id}: unknown model ${l.modelId}`);
   if (l.rentalOfferId && !offerIds.has(l.rentalOfferId))
@@ -49,8 +51,9 @@ for (const l of listings) {
 
 for (const p of parts) {
   if (!userIds.has(p.sellerId)) warn(`part ${p.id}: unknown seller ${p.sellerId}`);
-  if (!cityIds.has(p.cityId)) warn(`part ${p.id}: unknown city ${p.cityId}`);
-  if (!districtIds.has(p.districtId)) warn(`part ${p.id}: unknown district ${p.districtId}`);
+  if (p.cityId && !cityIds.has(p.cityId)) warn(`part ${p.id}: unknown city ${p.cityId}`);
+  if (p.districtId && !districtIds.has(p.districtId))
+    warn(`part ${p.id}: unknown district ${p.districtId}`);
   for (const c of p.compatibility) {
     if (!makeIds.has(c.makeId)) warn(`part ${p.id}: unknown compat make ${c.makeId}`);
     for (const m of c.modelIds) if (!modelIds.has(m)) warn(`part ${p.id}: unknown compat model ${m}`);

@@ -4,7 +4,7 @@ import { BulkListings, type SellerChoice } from "@/components/admin/bulk-listing
 import { ListingForm, type FormTaxonomy } from "@/components/admin/listing-form";
 import { NewListingTabs } from "@/components/admin/new-listing-tabs";
 import { getMessages } from "@/i18n/dictionaries";
-import { cities, districts, districtsOf } from "@/mocks/geo";
+import { cities } from "@/mocks/geo";
 import { categories, categorySchemas, makes, models } from "@/mocks/taxonomy";
 import { sellerChoices } from "@/server/admin-listings";
 import { can } from "@/server/authorization";
@@ -49,11 +49,6 @@ export default async function AdminNewListingsPage() {
       years: model.years,
     })),
     cities: cities.map((city) => ({ id: city.id, name: city.name.az })),
-    districts: districts.map((district) => ({
-      id: district.id,
-      cityId: district.cityId,
-      name: district.name.az,
-    })),
     attributes: Object.fromEntries(
       vehicleCategories.map((row) => [
         row.id,
@@ -82,7 +77,6 @@ export default async function AdminNewListingsPage() {
   const make = makes[0];
   const model = models.find((row) => row.makeId === make?.id);
   const city = cities[0];
-  const district = city ? districtsOf(city.id)[0] : undefined;
   const required = (categorySchemas.motorcycles ?? []).filter((row) => row.required);
   const attributes = Object.fromEntries(
     (categorySchemas.motorcycles ?? []).map((row) => [
@@ -101,7 +95,6 @@ export default async function AdminNewListingsPage() {
       negotiable: true,
       condition: "used",
       cityId: city?.id ?? "",
-      districtId: district?.id ?? "",
       description:
         "İstəyə bağlı. Alıcının bilməli olduğu şeyləri yaz.",
       delivery: false,
@@ -134,11 +127,12 @@ export default async function AdminNewListingsPage() {
               </p>
               <p>
                 <span className="font-semibold">Mütləq:</span> category, makeId, modelId, year,
-                price, condition, cityId, districtId, attributes, locale
+                price, condition, attributes, locale
               </p>
               <p>
                 <span className="font-semibold">İstəyə bağlı:</span> negotiable, delivery,
-                customsCleared, photoKeys, sellerId, contactName, contactPhone, description
+                customsCleared, photoKeys, sellerId, contactName, contactPhone, description,
+                cityId
               </p>
               {required.length > 0 && (
                 <p>

@@ -141,7 +141,7 @@ function sortItems(items: CatalogItem[], sort: SortOption = "newest"): CatalogIt
       });
       break;
     case "nearest":
-      sorted.sort((a, b) => a.cityId.localeCompare(b.cityId));
+      sorted.sort((a, b) => (a.cityId ?? "￿").localeCompare(b.cityId ?? "￿"));
       break;
     default:
       sorted.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
@@ -213,8 +213,11 @@ export function getWorkshop(id: string): Workshop | undefined {
 }
 
 /** Location line for a card: "Baku, Yasamal". */
-export function locationOf(item: { cityId: string; districtId: string }) {
-  return { city: cityById.get(item.cityId), district: districtById.get(item.districtId) };
+export function locationOf(item: { cityId?: string; districtId?: string }) {
+  return {
+    city: item.cityId ? cityById.get(item.cityId) : undefined,
+    district: item.districtId ? districtById.get(item.districtId) : undefined,
+  };
 }
 
 /**
@@ -223,9 +226,9 @@ export function locationOf(item: { cityId: string; districtId: string }) {
  * In Baku the district is what tells listings apart; elsewhere the districts
  * are just "city centre", so the city name carries the information instead.
  */
-export function placeLabel(item: { cityId: string; districtId: string }) {
-  const city = cityById.get(item.cityId);
-  const district = districtById.get(item.districtId);
+export function placeLabel(item: { cityId?: string; districtId?: string }) {
+  const city = item.cityId ? cityById.get(item.cityId) : undefined;
+  const district = item.districtId ? districtById.get(item.districtId) : undefined;
   return city?.primary && district ? district.name : city?.name;
 }
 

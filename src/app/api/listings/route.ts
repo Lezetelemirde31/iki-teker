@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
-  const required = ["category", "makeId", "modelId", "cityId", "districtId"] as const;
+  const required = ["category", "makeId", "modelId"] as const;
   for (const field of required) {
     if (typeof body[field] !== "string" || !body[field]) {
       return NextResponse.json({ error: "missing", field }, { status: 400 });
@@ -38,8 +38,10 @@ export async function POST(request: Request) {
       price: Number(body.price),
       negotiable: body.negotiable === true,
       condition: body.condition === "new" ? "new" : "used",
-      cityId: body.cityId as string,
-      districtId: body.districtId as string,
+      ...(typeof body.cityId === "string" && body.cityId ? { cityId: body.cityId } : {}),
+      ...(typeof body.districtId === "string" && body.districtId
+        ? { districtId: body.districtId }
+        : {}),
       description: typeof body.description === "string" ? body.description : "",
       delivery: body.delivery === true,
       customsCleared: body.customsCleared === true,

@@ -38,8 +38,10 @@ type CatalogItemBase = {
   /** Shown instead of the owning account, when staff published for somebody else. */
   contactName?: string;
   contactPhone?: string;
-  cityId: ID;
-  districtId: ID;
+  /** Optional: sellers are not asked for a location. */
+  cityId?: ID;
+  /** Optional: sellers are asked for a city, not a district. */
+  districtId?: ID;
   delivery: boolean;
   status: ListingStatus;
   promotion: Promotion;

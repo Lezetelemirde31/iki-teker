@@ -296,8 +296,11 @@ heading("listing validation");
   line("empty description publishes", r.status, 201, r.json?.error);
   r = await postListing({ ...valid, attributes: { colour: "black" } });
   line("required attribute missing", r.status, 422, r.json?.error);
-  r = await postListing({ ...valid, cityId: "" });
-  line("city left blank", r.status, 400, r.json?.error);
+  // The seller is no longer asked where they are, so no location publishes.
+  r = await postListing({ ...valid, cityId: "", districtId: "" });
+  line("no location publishes", r.status, 201, r.json?.error);
+  r = await postListing({ ...valid, cityId: "city-nowhere" });
+  line("a city that does not exist", r.status, 422, r.json?.error);
 }
 
 heading("publishing");

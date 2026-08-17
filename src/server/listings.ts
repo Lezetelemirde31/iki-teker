@@ -33,8 +33,10 @@ export type ListingDraft = {
   price: number;
   negotiable: boolean;
   condition: string;
-  cityId: string;
-  districtId: string;
+  /** Optional: the seller is not asked, the panel may still set it. */
+  cityId?: string;
+  /** Optional. The form asks for a city; a district may still be sent. */
+  districtId?: string;
   description: string;
   delivery: boolean;
   customsCleared: boolean;
@@ -115,10 +117,12 @@ export async function createListing(
   }
 
   /* ---- location --------------------------------------------------------- */
-  const city = cityById.get(draft.cityId);
-  if (!city) return { ok: false, reason: "unknownCity", field: "cityId" };
-  const district = districtById.get(draft.districtId);
-  if (!district || district.cityId !== city.id) {
+  const city = draft.cityId ? cityById.get(draft.cityId) : undefined;
+  if (draft.cityId && !city) return { ok: false, reason: "unknownCity", field: "cityId" };
+  // Only checked when one is given. A district that belongs to another city
+  // is still a mistake worth refusing; not naming one is not.
+  const district = draft.districtId ? districtById.get(draft.districtId) : undefined;
+  if (draft.districtId && (!district || (city && district.cityId !== city.id))) {
     return { ok: false, reason: "districtMismatch", field: "districtId" };
   }
 
@@ -178,8 +182,8 @@ export async function createListing(
     attributes,
     sellerId,
     ...(contactPhone ? { contactPhone } : {}),
-    cityId: city.id,
-    districtId: district.id,
+    ...(city ? { cityId: city.id } : {}),
+    ...(district ? { districtId: district.id } : {}),
     // Queued for review, not published. There is now a screen that empties the
     // queue, so the alternative — a scam listing reaching buyers before anyone
     // has looked at it — is the worse trade.
@@ -205,8 +209,8 @@ export async function createListing(
     photos: listing.photos,
     sellerId: listing.sellerId,
     ...(contactPhone ? { contactPhone } : {}),
-    cityId: listing.cityId,
-    districtId: listing.districtId,
+    cityId: listing.cityId ?? null,
+    districtId: listing.districtId ?? null,
     delivery: listing.delivery,
     status: listing.status,
     makeId: listing.makeId,

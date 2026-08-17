@@ -26,20 +26,23 @@ const DEMO_COOKIE = "iki-demo-user";
  */
 const PRIVATE = ["/post", "/chats", "/favorites", "/account"];
 
-/** Best-effort locale negotiation: cookie first, then Accept-Language, then default. */
+/**
+ * Which language a visitor with no path gets.
+ *
+ * Their own earlier choice, if they made one — and otherwise Azerbaijani,
+ * whatever their browser asks for. The market is Azerbaijani; a phone sold
+ * here often ships set to Russian or English, and honouring that header put
+ * people who read Azerbaijani on a Russian page on the strength of a factory
+ * setting. Russian and English stay one tap away in the language picker, and
+ * that tap is remembered.
+ */
 function detectLocale(request: NextRequest) {
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   if (cookieLocale && (locales as readonly string[]).includes(cookieLocale)) {
     return cookieLocale;
   }
 
-  const header = request.headers.get("accept-language") ?? "";
-  const preferred = header
-    .split(",")
-    .map((part) => part.split(";")[0]?.trim().slice(0, 2).toLowerCase())
-    .find((code) => code && (locales as readonly string[]).includes(code));
-
-  return preferred ?? defaultLocale;
+  return defaultLocale;
 }
 
 export function middleware(request: NextRequest) {

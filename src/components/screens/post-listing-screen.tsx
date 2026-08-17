@@ -12,7 +12,6 @@ import { createTranslator } from "@/i18n/translate";
 import type { Messages } from "@/i18n/types";
 import { localized } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { cities, districtsOf } from "@/mocks/geo";
 import { categorySchemas, conditionLabels, makesFor, modelsFor } from "@/mocks/taxonomy";
 import type { AttributeValues, Condition, VehicleCategorySlug } from "@/types";
 
@@ -49,8 +48,6 @@ export function PostListingScreen({
   const [price, setPrice] = useState("");
   const [negotiable, setNegotiable] = useState(false);
   const [condition, setCondition] = useState<Condition>("used");
-  const [cityId, setCityId] = useState("");
-  const [districtId, setDistrictId] = useState("");
   const [description, setDescription] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [delivery, setDelivery] = useState(false);
@@ -63,7 +60,6 @@ export function PostListingScreen({
 
   const makes = useMemo(() => makesFor(category), [category]);
   const models = useMemo(() => (makeId ? modelsFor(makeId, category) : []), [makeId, category]);
-  const districts = useMemo(() => (cityId ? districtsOf(cityId) : []), [cityId]);
   const schema = categorySchemas[category];
 
   const model = models.find((m) => m.id === modelId);
@@ -75,8 +71,6 @@ export function PostListingScreen({
     modelId &&
     year &&
     price &&
-    cityId &&
-    districtId &&
     required.every((definition) => {
       const value = attributes[definition.key];
       return value !== undefined && value !== "";
@@ -100,8 +94,6 @@ export function PostListingScreen({
           price: Number(price),
           negotiable,
           condition,
-          cityId,
-          districtId,
           description,
           contactPhone,
           delivery,
@@ -268,28 +260,6 @@ export function PostListingScreen({
               checked={negotiable}
               onChange={setNegotiable}
               label={t("listing.negotiable")}
-            />
-          </Field>
-
-          <Field label={t("post.city")}>
-            <Select
-              value={cityId}
-              placeholder={t("post.choose")}
-              onChange={(value) => {
-                setCityId(value);
-                setDistrictId("");
-              }}
-              options={cities.map((city) => ({ value: city.id, label: localized(city.name, locale) }))}
-            />
-          </Field>
-
-          <Field label={t("post.district")}>
-            <Select
-              value={districtId}
-              placeholder={cityId ? t("post.choose") : t("post.chooseCityFirst")}
-              disabled={!cityId}
-              onChange={setDistrictId}
-              options={districts.map((d) => ({ value: d.id, label: localized(d.name, locale) }))}
             />
           </Field>
 

@@ -292,12 +292,13 @@ export const listings = pgTable(
     sellerId: text("seller_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    cityId: text("city_id")
-      .notNull()
-      .references(() => cities.id),
-    districtId: text("district_id")
-      .notNull()
-      .references(() => districts.id),
+    // Both optional. The posting form used to demand a city and then a
+    // district before it would accept anything — two questions about geography
+    // in a form whose subject is a motorcycle, and two more places to give up.
+    // Staff publishing from the panel still set a city, which is what the
+    // search filter reads, so listings gathered by hand stay findable.
+    cityId: text("city_id").references(() => cities.id),
+    districtId: text("district_id").references(() => districts.id),
     delivery: boolean("delivery").notNull().default(false),
     status: listingStatus("status").notNull().default("moderation"),
 

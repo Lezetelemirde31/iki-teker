@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * JSON object by hand to add a single listing is not a thing to ask of the
  * person running the marketplace, so this is the same fields with the taxonomy
  * already loaded: pick a make and only its models appear, pick a city and only
- * its districts, pick a category and its required attributes appear beneath.
+ * pick a category and its required attributes appear beneath.
  *
  * It posts to the same endpoint the bulk tool does, so the two cannot disagree
  * about what a listing is.
@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 export type Option = { id: string; name: string };
 export type MakeOption = Option & { categories: string[] };
 export type ModelOption = Option & { makeId: string; category: string; years: [number, number] };
-export type DistrictOption = Option & { cityId: string };
 export type AttributeOption = {
   key: string;
   label: string;
@@ -42,7 +41,6 @@ export type FormTaxonomy = {
   makes: MakeOption[];
   models: ModelOption[];
   cities: Option[];
-  districts: DistrictOption[];
   attributes: Record<string, AttributeOption[]>;
 };
 
@@ -60,7 +58,6 @@ const REASONS: Record<string, string> = {
   invalidYear: "İl modelin istehsal illərindən kənardır",
   invalidPrice: "Qiymət düzgün deyil",
   unknownCity: "Şəhər tanınmadı",
-  districtMismatch: "Rayon bu şəhərə aid deyil",
   missingAttribute: "Mütləq xüsusiyyət boşdur",
   unknownSeller: "Hesab tapılmadı",
   sellerBlocked: "Hesab bloklanıb",
@@ -95,7 +92,6 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
   const [negotiable, setNegotiable] = useState(true);
   const [condition, setCondition] = useState<"used" | "new">("used");
   const [cityId, setCityId] = useState(taxonomy.cities[0]?.id ?? "");
-  const [districtId, setDistrictId] = useState("");
   const [description, setDescription] = useState("");
   const [delivery, setDelivery] = useState(false);
   const [customsCleared, setCustomsCleared] = useState(true);
@@ -118,10 +114,6 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
   const models = useMemo(
     () => taxonomy.models.filter((model) => model.makeId === makeId && model.category === category),
     [taxonomy.models, makeId, category],
-  );
-  const districts = useMemo(
-    () => taxonomy.districts.filter((district) => district.cityId === cityId),
-    [taxonomy.districts, cityId],
   );
   const schema = taxonomy.attributes[category] ?? [];
   const model = taxonomy.models.find((row) => row.id === modelId);
@@ -178,7 +170,6 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
 
     if (!sellerId) return setError("Hesab seç.");
     if (!makeId || !modelId) return setError("Marka və model seç.");
-    if (!districtId) return setError("Rayon seç.");
     if (photos.some((photo) => photo.uploading)) return setError("Şəkillər hələ yüklənir.");
 
     setBusy(true);
@@ -200,7 +191,6 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
             negotiable,
             condition,
             cityId,
-            districtId,
             description: description.trim(),
             delivery,
             customsCleared,
@@ -446,10 +436,7 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
             <Label>Şəhər</Label>
             <select
               value={cityId}
-              onChange={(e) => {
-                setCityId(e.target.value);
-                setDistrictId("");
-              }}
+              onChange={(e) => setCityId(e.target.value)}
               className={FIELD}
             >
               {taxonomy.cities.map((city) => (
@@ -460,21 +447,6 @@ export function ListingForm({ taxonomy }: { taxonomy: FormTaxonomy }) {
             </select>
           </label>
 
-          <label className="space-y-1.5">
-            <Label>Rayon</Label>
-            <select
-              value={districtId}
-              onChange={(e) => setDistrictId(e.target.value)}
-              className={FIELD}
-            >
-              <option value="">Seç…</option>
-              {districts.map((district) => (
-                <option key={district.id} value={district.id}>
-                  {district.name}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
 
         <div className="flex flex-wrap gap-4 text-xs">

@@ -108,8 +108,8 @@ export function mapCatalogItem(row: ListingRow): CatalogItem {
     sellerId: row.sellerId,
     ...(row.contactName ? { contactName: row.contactName } : {}),
     ...(row.contactPhone ? { contactPhone: row.contactPhone } : {}),
-    cityId: row.cityId,
-    districtId: row.districtId,
+    ...(row.cityId ? { cityId: row.cityId } : {}),
+    ...(row.districtId ? { districtId: row.districtId } : {}),
     delivery: row.delivery,
     status: row.status,
     promotion: {

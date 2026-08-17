@@ -12,7 +12,6 @@ import { createTranslator } from "@/i18n/translate";
 import type { Messages } from "@/i18n/types";
 import { localized } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { cities, districtsOf } from "@/mocks/geo";
 import { categorySchemas, conditionLabels, makes } from "@/mocks/taxonomy";
 import type { AttributeValues, Condition } from "@/types";
 
@@ -53,8 +52,6 @@ export function PostPartScreen({
   const [price, setPrice] = useState("");
   const [negotiable, setNegotiable] = useState(false);
   const [condition, setCondition] = useState<Condition>("new");
-  const [cityId, setCityId] = useState("");
-  const [districtId, setDistrictId] = useState("");
   const [description, setDescription] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [delivery, setDelivery] = useState(true);
@@ -67,7 +64,6 @@ export function PostPartScreen({
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
 
-  const districts = useMemo(() => (cityId ? districtsOf(cityId) : []), [cityId]);
   const schema = categorySchemas[category];
 
   const types = category === "parts" ? partTypeKeys : gearTypeKeys;
@@ -79,8 +75,6 @@ export function PostPartScreen({
     title.trim().length >= 6 &&
     price &&
     Number(stock) >= 1 &&
-    cityId &&
-    districtId &&
     required.every((definition) => {
       const value = attributes[definition.key];
       return value !== undefined && value !== "";
@@ -112,8 +106,6 @@ export function PostPartScreen({
           price: Number(price),
           negotiable,
           condition,
-          cityId,
-          districtId,
           description,
           contactPhone,
           delivery,
@@ -317,34 +309,6 @@ export function PostPartScreen({
 
           <Field label={t("post.stock")}>
             <Input type="number" inputMode="numeric" value={stock} onChange={setStock} />
-          </Field>
-
-          <Field label={t("post.city")}>
-            <Select
-              value={cityId}
-              placeholder={t("post.choose")}
-              onChange={(value) => {
-                setCityId(value);
-                setDistrictId("");
-              }}
-              options={cities.map((city) => ({
-                value: city.id,
-                label: localized(city.name, locale),
-              }))}
-            />
-          </Field>
-
-          <Field label={t("post.district")}>
-            <Select
-              value={districtId}
-              placeholder={cityId ? t("post.choose") : t("post.chooseCityFirst")}
-              disabled={!cityId}
-              onChange={setDistrictId}
-              options={districts.map((d) => ({
-                value: d.id,
-                label: localized(d.name, locale),
-              }))}
-            />
           </Field>
 
           <Field label={t("post.description")} hint={t("post.descriptionOptional")}>
